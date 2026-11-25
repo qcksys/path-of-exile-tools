@@ -165,25 +165,28 @@ it.each([
         { yellowBeasts: "listing-count-weighted-mean-v1" },
         "refresh to reprice from captured stash listings",
     ],
-] as const)("describes the saved %s source policy without a species consent control: %j", (source, policy, caption) => {
-    const prefix = source === "poe.ninja" ? "poeninja:v1:" : "stash-recipe:v1:";
-    render(
-        <GraphPriceInput
-            label="Recipe price"
-            currency="chaos"
-            onChange={vi.fn()}
-            value={{
-                amount: 100,
-                currency: "chaos",
-                source: "market",
-                confidence: null,
-                cohortId: `${prefix}${encodeURIComponent(JSON.stringify({ source, game: "poe1", realm: "pc", league: "Standard", currency: "chaos", id: "yellowBeasts" in policy || "assumption" in policy ? id : "generated:locus-corruption", ...policy }))}`,
-            }}
-        />,
-    );
-    expect(screen.getByText((text) => text.includes(caption))).toBeTruthy();
-    expect(screen.queryByRole("checkbox")).toBeNull();
-});
+] as const)(
+    "describes the saved %s source policy without a species consent control: %j",
+    (source, policy, caption) => {
+        const prefix = source === "poe.ninja" ? "poeninja:v1:" : "stash-recipe:v1:";
+        render(
+            <GraphPriceInput
+                label="Recipe price"
+                currency="chaos"
+                onChange={vi.fn()}
+                value={{
+                    amount: 100,
+                    currency: "chaos",
+                    source: "market",
+                    confidence: null,
+                    cohortId: `${prefix}${encodeURIComponent(JSON.stringify({ source, game: "poe1", realm: "pc", league: "Standard", currency: "chaos", id: "yellowBeasts" in policy || "assumption" in policy ? id : "generated:locus-corruption", ...policy }))}`,
+                }}
+            />,
+        );
+        expect(screen.getByText((text) => text.includes(caption))).toBeTruthy();
+        expect(screen.queryByRole("checkbox")).toBeNull();
+    },
+);
 
 it("offers captured currency asks without a beast assumption and only replaces a manual amount explicitly", async () => {
     const fetcher = vi.fn().mockImplementation((url, init) =>
@@ -672,74 +675,76 @@ it("keeps direct asking prices separate from an explicitly selected vendor ingre
     });
 });
 
-it.each([
-    false,
-    true,
-])("offers an explicit NPC purchase without changing its manual price (service input: %s)", async (includeService) => {
-    vi.spyOn(Date, "now").mockReturnValue((vendorHour + 5400) * 1000);
-    const fetcher = vi.fn().mockResolvedValue(
-        new Response(
-            JSON.stringify({
-                quotes: { [vendorCurrencyOutputId]: vendorCurrencyQuote },
-                missing: {},
-            }),
-        ),
-    );
-    vi.stubGlobal("fetch", fetcher);
-    const onChange = vi.fn();
-    render(
-        <SourcePricePicker
-            graph={{
-                ...exchangeGraph(),
-                prices: {
-                    [vendorCurrencyOutputId]: {
-                        amount: 123,
-                        currency: "chaos",
-                        source: "manual",
-                        confidence: null,
+it.each([false, true])(
+    "offers an explicit NPC purchase without changing its manual price (service input: %s)",
+    async (includeService) => {
+        vi.spyOn(Date, "now").mockReturnValue((vendorHour + 5400) * 1000);
+        const fetcher = vi.fn().mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    quotes: { [vendorCurrencyOutputId]: vendorCurrencyQuote },
+                    missing: {},
+                }),
+            ),
+        );
+        vi.stubGlobal("fetch", fetcher);
+        const onChange = vi.fn();
+        render(
+            <SourcePricePicker
+                graph={{
+                    ...exchangeGraph(),
+                    prices: {
+                        [vendorCurrencyOutputId]: {
+                            amount: 123,
+                            currency: "chaos",
+                            source: "manual",
+                            confidence: null,
+                        },
                     },
-                },
-            }}
-            engine={engine}
-            entries={[
-                [vendorCurrencyOutputId, "Orb of Augmentation"],
-                ...(includeService
-                    ? [["service:recombine", "Recombination"] as [string, string]]
-                    : []),
-            ]}
-            onChange={onChange}
-        />,
-    );
-    fireEvent.click(
-        screen.getByText(
-            includeService ? "Currency, beast & temple asking prices" : "Currency asking prices",
-        ),
-    );
-    if (!includeService)
-        expect(screen.queryByRole("button", { name: "Find beast & temple prices" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Find asking prices" })).toBeTruthy();
-    fireEvent.click(screen.getByText("Vendor-upgrade ingredient estimates"));
-    expect(screen.getByText(/Purchase Items at Nessa/)).toBeTruthy();
-    expect(fetcher).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Find vendor-upgrade estimate" }));
-    await screen.findByText(/4 × Orb of Transmutation at/);
-    expect(JSON.parse(fetcher.mock.calls[0]![1].body)).toMatchObject({
-        ids: [vendorCurrencyOutputId],
-        vendorUpgrade: { inputId: vendorCurrencyInputId, conversion: "two-leg-exchange-v1" },
-    });
-    expect(screen.getByRole("link", { name: "Recipe" }).getAttribute("href")).toBe(
-        vendorCurrencyQuote.path.steps[0]!.sourceUrl,
-    );
-    expect(onChange).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Use vendor-upgrade estimate" }));
-    const price = onChange.mock.calls[0]![0].prices[vendorCurrencyOutputId];
-    expect(price.amount).toBeCloseTo((4 * 7) / 3150);
-    expect(decodeCraftingSourceReference(price.cohortId)).toMatchObject({
-        source: "vendor-upgrade",
-        path: vendorCurrencyQuote.path,
-        ingredient: vendorCurrencyQuote.ingredient,
-    });
-});
+                }}
+                engine={engine}
+                entries={[
+                    [vendorCurrencyOutputId, "Orb of Augmentation"],
+                    ...(includeService
+                        ? [["service:recombine", "Recombination"] as [string, string]]
+                        : []),
+                ]}
+                onChange={onChange}
+            />,
+        );
+        fireEvent.click(
+            screen.getByText(
+                includeService
+                    ? "Currency, beast & temple asking prices"
+                    : "Currency asking prices",
+            ),
+        );
+        if (!includeService)
+            expect(screen.queryByRole("button", { name: "Find beast & temple prices" })).toBeNull();
+        expect(screen.getByRole("button", { name: "Find asking prices" })).toBeTruthy();
+        fireEvent.click(screen.getByText("Vendor-upgrade ingredient estimates"));
+        expect(screen.getByText(/Purchase Items at Nessa/)).toBeTruthy();
+        expect(fetcher).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole("button", { name: "Find vendor-upgrade estimate" }));
+        await screen.findByText(/4 × Orb of Transmutation at/);
+        expect(JSON.parse(fetcher.mock.calls[0]![1].body)).toMatchObject({
+            ids: [vendorCurrencyOutputId],
+            vendorUpgrade: { inputId: vendorCurrencyInputId, conversion: "two-leg-exchange-v1" },
+        });
+        expect(screen.getByRole("link", { name: "Recipe" }).getAttribute("href")).toBe(
+            vendorCurrencyQuote.path.steps[0]!.sourceUrl,
+        );
+        expect(onChange).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole("button", { name: "Use vendor-upgrade estimate" }));
+        const price = onChange.mock.calls[0]![0].prices[vendorCurrencyOutputId];
+        expect(price.amount).toBeCloseTo((4 * 7) / 3150);
+        expect(decodeCraftingSourceReference(price.cohortId)).toMatchObject({
+            source: "vendor-upgrade",
+            path: vendorCurrencyQuote.path,
+            ingredient: vendorCurrencyQuote.ingredient,
+        });
+    },
+);
 
 it("refuses a vendor estimate after its exchange hour changes, including when the tab missed its timer", async () => {
     const now = vi.spyOn(Date, "now").mockReturnValue((vendorHour + 5400) * 1000);

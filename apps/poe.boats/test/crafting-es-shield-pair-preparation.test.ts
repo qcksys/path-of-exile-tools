@@ -161,31 +161,30 @@ it.each(["base", transmute, alteration])("keeps the total unknown without %s", (
     checkItem(graph, result.item!);
 });
 
-it.each([
-    undefined,
-    "base",
-    scour,
-])("composes paid Scouring with the pair preparation: %s", (missing) => {
-    const graph = preparation(missing, true);
-    const result = scriptedTrial(graph);
-    expect(result).toMatchObject({
-        cost: missing === undefined ? 24 : null,
-        purchases: 1,
-        actions: 4,
-        spending: {
-            "purchase:shield-make-titanium-base:buy": 1,
-            [scour]: 1,
-            [transmute]: 1,
-            [alteration]: 2,
-        },
-    });
-    expect(result.missingPrices).toEqual(
-        missing === undefined
-            ? []
-            : [missing === "base" ? "purchase:shield-make-titanium-base:buy" : missing],
-    );
-    checkItem(graph, result.item!);
-});
+it.each([undefined, "base", scour])(
+    "composes paid Scouring with the pair preparation: %s",
+    (missing) => {
+        const graph = preparation(missing, true);
+        const result = scriptedTrial(graph);
+        expect(result).toMatchObject({
+            cost: missing === undefined ? 24 : null,
+            purchases: 1,
+            actions: 4,
+            spending: {
+                "purchase:shield-make-titanium-base:buy": 1,
+                [scour]: 1,
+                [transmute]: 1,
+                [alteration]: 2,
+            },
+        });
+        expect(result.missingPrices).toEqual(
+            missing === undefined
+                ? []
+                : [missing === "base" ? "purchase:shield-make-titanium-base:buy" : missing],
+        );
+        checkItem(graph, result.item!);
+    },
+);
 
 it("retained r9 reports bounded unfinished preparation without inventing a completed cost", async () => {
     const graph = preparation();

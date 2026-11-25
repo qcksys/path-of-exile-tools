@@ -60,32 +60,32 @@ describe("Cadigan's Epiphany Jewel socket conversion", () => {
         expect(eligible).toBeGreaterThan(20);
     });
 
-    it.each([
-        "normal",
-        "magic",
-        "rare",
-    ] as const)("converts an empty socket on a %s item without altering its affixes or spending more than one augment", (rarity) => {
-        let item = { ...blank(), rarity, quality: 20, mirrored: true };
-        if (rarity !== "normal") {
-            const mod = engine.pool(item, { side: "prefix" })[0]!;
-            item = { ...item, mods: [engine.rollMod(mod.id, seededRandom(1))] };
-            if (rarity === "rare") item.mods[0]!.fractured = true;
-        }
-        const original = structuredClone(item);
-        const result = convert(item);
-        expect(result.item).toEqual({
-            ...engine.validateItem(item),
-            sockets: 0,
-            augments: [],
-            jewelSocket: source.id,
-        });
-        expect(result.cost).toEqual([{ id: source.id, name: source.name, amount: 1 }]);
-        expect(item).toEqual(original);
-        expect(engine.statTotals(result.item).get("num_socketed_runes") ?? 0).toBe(0);
-        expect(
-            engine.statTotals(result.item).get("dummy_display_stat_rune_create_jewel_socket") ?? 0,
-        ).toBe(0);
-    });
+    it.each(["normal", "magic", "rare"] as const)(
+        "converts an empty socket on a %s item without altering its affixes or spending more than one augment",
+        (rarity) => {
+            let item = { ...blank(), rarity, quality: 20, mirrored: true };
+            if (rarity !== "normal") {
+                const mod = engine.pool(item, { side: "prefix" })[0]!;
+                item = { ...item, mods: [engine.rollMod(mod.id, seededRandom(1))] };
+                if (rarity === "rare") item.mods[0]!.fractured = true;
+            }
+            const original = structuredClone(item);
+            const result = convert(item);
+            expect(result.item).toEqual({
+                ...engine.validateItem(item),
+                sockets: 0,
+                augments: [],
+                jewelSocket: source.id,
+            });
+            expect(result.cost).toEqual([{ id: source.id, name: source.name, amount: 1 }]);
+            expect(item).toEqual(original);
+            expect(engine.statTotals(result.item).get("num_socketed_runes") ?? 0).toBe(0);
+            expect(
+                engine.statTotals(result.item).get("dummy_display_stat_rune_create_jewel_socket") ??
+                    0,
+            ).toBe(0);
+        },
+    );
 
     it("replaces an unbound occupied socket and removes the previous augment's bonuses", () => {
         const item = { ...blank(), augments: [fireRune] };

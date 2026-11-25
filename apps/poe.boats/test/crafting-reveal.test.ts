@@ -204,39 +204,42 @@ describe.each(["poe1", "poe2"] as const)("%s reveal crafting", (game) => {
         const omenId = (suffix: string) =>
             catalog.crafting.currencies.find((entry) => entry.id.endsWith(`/${suffix}`))!.id;
 
-        it.each(
-            lichOmens,
-        )("combines %s with the Breach bone and retains its special reveal pool", (suffix, tag) => {
-            const bone = catalog.crafting.desecration.find((entry) => entry.tag)!;
-            const method = {
-                kind: "currency" as const,
-                id: bone.id,
-                omens: [omenId(suffix!), omenId("OmenOnAbyssAddSuffixes")],
-            };
-            expect(availableOmens(catalog, method).map((entry) => entry.id)).toContain(
-                method.omens[0],
-            );
-            const result = engine.apply(jewellery(), method, seededRandom(1));
-            expect(result.cost).toHaveLength(3);
-            const ordinary = engine.apply(
-                jewellery(),
-                { ...currency("abyssal_bench_ticket_jewellery"), omens: method.omens },
-                seededRandom(1),
-            ).item;
-            const ordinaryIds = new Set(engine.revealPool(ordinary).map((entry) => entry.id));
-            const pool = engine.revealPool(result.item);
-            expect(pool.some((entry) => !ordinaryIds.has(entry.id))).toBe(true);
-            const revealed = engine.prepareReveal(result.item, echoes, seededRandom(8)).item;
-            const rerolled = engine.rerollReveal(revealed, seededRandom(9));
-            for (const item of [revealed, rerolled]) {
-                expect(item.reveal?.source).toBe(bone.id);
-                expect(item.reveal?.omens).toEqual(method.omens);
-                expect(
-                    item.reveal?.choices.some((id) => engine.mod(id).implicit_tags.includes(tag!)),
-                ).toBe(true);
-                expect(engine.validateItem(JSON.parse(JSON.stringify(item)))).toEqual(item);
-            }
-        });
+        it.each(lichOmens)(
+            "combines %s with the Breach bone and retains its special reveal pool",
+            (suffix, tag) => {
+                const bone = catalog.crafting.desecration.find((entry) => entry.tag)!;
+                const method = {
+                    kind: "currency" as const,
+                    id: bone.id,
+                    omens: [omenId(suffix!), omenId("OmenOnAbyssAddSuffixes")],
+                };
+                expect(availableOmens(catalog, method).map((entry) => entry.id)).toContain(
+                    method.omens[0],
+                );
+                const result = engine.apply(jewellery(), method, seededRandom(1));
+                expect(result.cost).toHaveLength(3);
+                const ordinary = engine.apply(
+                    jewellery(),
+                    { ...currency("abyssal_bench_ticket_jewellery"), omens: method.omens },
+                    seededRandom(1),
+                ).item;
+                const ordinaryIds = new Set(engine.revealPool(ordinary).map((entry) => entry.id));
+                const pool = engine.revealPool(result.item);
+                expect(pool.some((entry) => !ordinaryIds.has(entry.id))).toBe(true);
+                const revealed = engine.prepareReveal(result.item, echoes, seededRandom(8)).item;
+                const rerolled = engine.rerollReveal(revealed, seededRandom(9));
+                for (const item of [revealed, rerolled]) {
+                    expect(item.reveal?.source).toBe(bone.id);
+                    expect(item.reveal?.omens).toEqual(method.omens);
+                    expect(
+                        item.reveal?.choices.some((id) =>
+                            engine.mod(id).implicit_tags.includes(tag!),
+                        ),
+                    ).toBe(true);
+                    expect(engine.validateItem(JSON.parse(JSON.stringify(item)))).toEqual(item);
+                }
+            },
+        );
 
         it.each(lichOmens)("guarantees one %s choice through reveals and Echoes", (suffix, tag) => {
             const method = {

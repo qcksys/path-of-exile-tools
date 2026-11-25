@@ -10,100 +10,100 @@ import { baseId, catalog, currency, engine } from "./crafting-fixtures";
 import { button, CraftingWorker, mount } from "./crafting-workbench-ui-fixtures";
 
 describe("crafting workbench", () => {
-    it.each([
-        false,
-        true,
-    ])("recombines an inventory donor and preserves spending, history and saves (advanced inputs: %s)", async (advanced) => {
-        const left = engine.addStartingMod(
-            engine.createItem(baseId),
-            "IncreasedLife1",
-            seededRandom(42),
-        );
-        left.rarity = "magic";
-        const suffix = engine
-            .pool({ ...engine.createItem(baseId), rarity: "rare" })
-            .find((entry) => entry.mod.generation_type === "suffix")!.id;
-        const donor = {
-            id: "recombine-donor",
-            name: "Suffix donor",
-            item: engine.addStartingMod(engine.createItem(baseId), suffix, seededRandom(42)),
-        };
-        if (advanced) {
-            left.influences = [0];
-            left.memoryStrands = 82;
-            donor.item.mods[0]!.fractured = true;
-            donor.item.memoryStrands = 22;
-        }
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game: "poe1",
-            patch: catalog.patch,
-            item: left,
-            method: currency("reroll_mod_values"),
-            target: { groups: [{ mods: ["IncreasedLife1"] }, { mods: [suffix] }] },
-            steps: [],
-            inventory: [donor],
-            prices: { "service:recombine": 2, "donor:recombine-donor": 4 },
-            seed: 42,
-            iterations: 1000,
-            maxActions: 1,
-        });
-        const key = `poe-boats:crafting:poe1:${catalog.patch}`;
-        localStorage.setItem(key, JSON.stringify({ recombination: project }));
-        mount("calculate");
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), {
-            target: { value: "recombination" },
-        });
-        fireEvent.click(button("Load project"));
-        const choose = async (name: string, label: string) => {
-            const picker = screen.getByRole("combobox", { name });
-            changeControl(picker, { target: { value: label } });
-            fireEvent.keyDown(picker, { key: "ArrowDown" });
-            fireEvent.click(await screen.findByRole("option", { name: label }));
-        };
-        await choose("Crafting method", "Recombine items");
-        await choose("Recombination donor", donor.name);
-        expect(screen.getByRole("region", { name: "Recombination model" }).textContent).toContain(
-            "inventory snapshots remain reusable",
-        );
-        fireEvent.click(button("Calculate odds"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
-        expect(sent.method).toEqual({ kind: "recombine", id: "recombine", donor });
-        expect(sent.target.groups).toEqual(project.target.groups);
-        fireEvent.click(button("Stop simulation"));
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        expectControlValue(screen.getByLabelText("Rarity"), "rare");
-        expect(screen.getByText("Emulator spending")).toBeDefined();
-        fireEvent.click(button("Save project"));
-        const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
-        expect(saved.method.donor).toEqual(donor);
-        expect(saved.inventory).toEqual([donor]);
-        expect(saved.item.rarity).toBe("rare");
-        if (advanced) {
-            expect(saved.item.memoryStrands).toBe(saved.item.influences.length ? 82 : 22);
-            if (saved.item.influences.length)
-                expect(saved.item.mods.every((mod: { fractured: boolean }) => !mod.fractured)).toBe(
-                    true,
-                );
-        }
-        fireEvent.click(button("Undo"));
-        expectControlValue(screen.getByLabelText("Rarity"), "magic");
-        if (advanced) expectControlValue(screen.getByLabelText("Memory strands"), "82");
-        expect(screen.queryByText("Emulator spending")).toBeNull();
-        fireEvent.click(button("Redo"));
-        expectControlValue(screen.getByLabelText("Rarity"), "rare");
-        changeControl(screen.getByLabelText("Saved project"), {
-            target: { value: "My crafting project" },
-        });
-        fireEvent.click(button("Load project"));
-        expectControlValue(
-            screen.getByRole("combobox", { name: "Recombination donor" }),
-            donor.name,
-        );
-    });
+    it.each([false, true])(
+        "recombines an inventory donor and preserves spending, history and saves (advanced inputs: %s)",
+        async (advanced) => {
+            const left = engine.addStartingMod(
+                engine.createItem(baseId),
+                "IncreasedLife1",
+                seededRandom(42),
+            );
+            left.rarity = "magic";
+            const suffix = engine
+                .pool({ ...engine.createItem(baseId), rarity: "rare" })
+                .find((entry) => entry.mod.generation_type === "suffix")!.id;
+            const donor = {
+                id: "recombine-donor",
+                name: "Suffix donor",
+                item: engine.addStartingMod(engine.createItem(baseId), suffix, seededRandom(42)),
+            };
+            if (advanced) {
+                left.influences = [0];
+                left.memoryStrands = 82;
+                donor.item.mods[0]!.fractured = true;
+                donor.item.memoryStrands = 22;
+            }
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game: "poe1",
+                patch: catalog.patch,
+                item: left,
+                method: currency("reroll_mod_values"),
+                target: { groups: [{ mods: ["IncreasedLife1"] }, { mods: [suffix] }] },
+                steps: [],
+                inventory: [donor],
+                prices: { "service:recombine": 2, "donor:recombine-donor": 4 },
+                seed: 42,
+                iterations: 1000,
+                maxActions: 1,
+            });
+            const key = `poe-boats:crafting:poe1:${catalog.patch}`;
+            localStorage.setItem(key, JSON.stringify({ recombination: project }));
+            mount("calculate");
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), {
+                target: { value: "recombination" },
+            });
+            fireEvent.click(button("Load project"));
+            const choose = async (name: string, label: string) => {
+                const picker = screen.getByRole("combobox", { name });
+                changeControl(picker, { target: { value: label } });
+                fireEvent.keyDown(picker, { key: "ArrowDown" });
+                fireEvent.click(await screen.findByRole("option", { name: label }));
+            };
+            await choose("Crafting method", "Recombine items");
+            await choose("Recombination donor", donor.name);
+            expect(
+                screen.getByRole("region", { name: "Recombination model" }).textContent,
+            ).toContain("inventory snapshots remain reusable");
+            fireEvent.click(button("Calculate odds"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
+            expect(sent.method).toEqual({ kind: "recombine", id: "recombine", donor });
+            expect(sent.target.groups).toEqual(project.target.groups);
+            fireEvent.click(button("Stop simulation"));
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            expectControlValue(screen.getByLabelText("Rarity"), "rare");
+            expect(screen.getByText("Emulator spending")).toBeDefined();
+            fireEvent.click(button("Save project"));
+            const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
+            expect(saved.method.donor).toEqual(donor);
+            expect(saved.inventory).toEqual([donor]);
+            expect(saved.item.rarity).toBe("rare");
+            if (advanced) {
+                expect(saved.item.memoryStrands).toBe(saved.item.influences.length ? 82 : 22);
+                if (saved.item.influences.length)
+                    expect(
+                        saved.item.mods.every((mod: { fractured: boolean }) => !mod.fractured),
+                    ).toBe(true);
+            }
+            fireEvent.click(button("Undo"));
+            expectControlValue(screen.getByLabelText("Rarity"), "magic");
+            if (advanced) expectControlValue(screen.getByLabelText("Memory strands"), "82");
+            expect(screen.queryByText("Emulator spending")).toBeNull();
+            fireEvent.click(button("Redo"));
+            expectControlValue(screen.getByLabelText("Rarity"), "rare");
+            changeControl(screen.getByLabelText("Saved project"), {
+                target: { value: "My crafting project" },
+            });
+            fireEvent.click(button("Load project"));
+            expectControlValue(
+                screen.getByRole("combobox", { name: "Recombination donor" }),
+                donor.name,
+            );
+        },
+    );
 
     it("selects an inventory donor, prices it and applies an Awakener transfer", () => {
         const target = { ...engine.createItem(baseId), influences: [0] };

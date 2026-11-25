@@ -23,7 +23,6 @@
         "module": "ESNext",
         "moduleResolution": "bundler",
         "jsx": "react-jsx",
-        "baseUrl": ".",
         "rootDirs": [".", "./.react-router/types"],
         "paths": {
             "~/*": ["./app/*"],

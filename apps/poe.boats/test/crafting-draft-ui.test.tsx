@@ -214,30 +214,30 @@ describe("automatic draft storage boundaries", () => {
         expect(localStorage.getItem(savedKey())).toBe(named);
     });
 
-    it.each([
-        "malformed",
-        "wrong game",
-        "wrong build",
-        "unknown base",
-    ])("preserves a %s draft until the user chooses to replace it", (failure) => {
-        const view = mount();
-        const invalid = draft();
-        view.unmount();
-        if (failure === "wrong game") invalid.game = "poe2";
-        if (failure === "wrong build") invalid.patch = "another-build";
-        if (failure === "unknown base") invalid.item.baseId = "missing";
-        const raw = failure === "malformed" ? "not json" : JSON.stringify(invalid);
-        localStorage.setItem(key(), raw);
-        mount();
-        expect(screen.getByRole("alert").textContent).toContain("could not be restored");
-        expect(localStorage.getItem(key())).toBe(raw);
-        changeControl(screen.getByLabelText("Item level"), { target: { value: "50" } });
-        expect(localStorage.getItem(key())).toBe(raw);
-        saveControls();
-        fireEvent.click(screen.getByRole("checkbox", { name: "Automatically save this draft" }));
-        expect(screen.queryByRole("alert")).toBeNull();
-        expect(draft().item.level).toBe(50);
-    });
+    it.each(["malformed", "wrong game", "wrong build", "unknown base"])(
+        "preserves a %s draft until the user chooses to replace it",
+        (failure) => {
+            const view = mount();
+            const invalid = draft();
+            view.unmount();
+            if (failure === "wrong game") invalid.game = "poe2";
+            if (failure === "wrong build") invalid.patch = "another-build";
+            if (failure === "unknown base") invalid.item.baseId = "missing";
+            const raw = failure === "malformed" ? "not json" : JSON.stringify(invalid);
+            localStorage.setItem(key(), raw);
+            mount();
+            expect(screen.getByRole("alert").textContent).toContain("could not be restored");
+            expect(localStorage.getItem(key())).toBe(raw);
+            changeControl(screen.getByLabelText("Item level"), { target: { value: "50" } });
+            expect(localStorage.getItem(key())).toBe(raw);
+            saveControls();
+            fireEvent.click(
+                screen.getByRole("checkbox", { name: "Automatically save this draft" }),
+            );
+            expect(screen.queryByRole("alert")).toBeNull();
+            expect(draft().item.level).toBe(50);
+        },
+    );
 
     it("keeps crafting usable when browser storage cannot be read", () => {
         const read = Storage.prototype.getItem;

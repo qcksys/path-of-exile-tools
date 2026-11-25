@@ -34,26 +34,28 @@ beforeEach(() => {
 });
 afterAll(() => vi.unstubAllGlobals());
 
-it.each([
-    false,
-    true,
-])("blocks an imported untagged resonator market price before worker simulation (scoped: %s)", async (scoped) => {
-    const graph = exchangeGraph();
-    const id = emptyResonatorQuote.id;
-    const key = scoped ? craftingNodeCostKey("transmute", id) : id;
-    graph.prices[key] = legacyResonatorPrice();
-    const before = structuredClone(graph);
-    await worker.onmessage!(new MessageEvent("message", { data: { type: "calculate", graph } }));
-    expect(worker.postMessage).toHaveBeenCalledWith(
-        expect.objectContaining({
-            type: "error",
-            error: expect.stringContaining("no verified empty provenance"),
-        }),
-    );
-    expect(createSimulation).not.toHaveBeenCalled();
-    expect(fetcher).not.toHaveBeenCalled();
-    expect(graph).toEqual(before);
-});
+it.each([false, true])(
+    "blocks an imported untagged resonator market price before worker simulation (scoped: %s)",
+    async (scoped) => {
+        const graph = exchangeGraph();
+        const id = emptyResonatorQuote.id;
+        const key = scoped ? craftingNodeCostKey("transmute", id) : id;
+        graph.prices[key] = legacyResonatorPrice();
+        const before = structuredClone(graph);
+        await worker.onmessage!(
+            new MessageEvent("message", { data: { type: "calculate", graph } }),
+        );
+        expect(worker.postMessage).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: "error",
+                error: expect.stringContaining("no verified empty provenance"),
+            }),
+        );
+        expect(createSimulation).not.toHaveBeenCalled();
+        expect(fetcher).not.toHaveBeenCalled();
+        expect(graph).toEqual(before);
+    },
+);
 
 it("accepts explicit manual resonator prices without rewriting the saved draft", async () => {
     const graph = { ...exchangeGraph(), iterations: 1 };

@@ -106,36 +106,39 @@ it("keeps r10 purchases and steps unchanged while r11 uses four explicit source 
     expect(graph.maxSteps).toBe(old.maxSteps);
 });
 
-it.each(
-    alternatives,
-)("prepares %s exactly like paid cleanup of an actual populated source", (id) => {
-    const { purchase, source } = fixture(id);
-    const methods = sourcePreparationMethods(engine, source);
-    const random = seededRandom(12);
-    let expected = actualSource(purchase);
-    for (const method of methods) {
-        expected = engine.apply(expected, method, random).item;
-    }
-    const result = prepareSourcePurchase(engine, purchase, seededRandom(12));
-    expect(result.item).toEqual(expected);
-    expect(result.item.mods.find((mod) => mod.id === fractureId)).toEqual(purchase.item.mods[0]);
-    expect(result.item.enchantments ?? []).toEqual([]);
-    expect(
-        result.item.implicits.map((mod) => [
-            engine.mod(mod.id).generation_type,
-            eldritchTier(engine.mod(mod.id)),
-        ]),
-    ).toEqual([
-        ["eater_of_worlds_implicit", 1],
-        ["searing_exarch_implicit", 2],
-    ]);
-    expect(result.actions).toBe(3 + Number(source.crafted) + Number(source.enchanted));
-    expect(
-        result.costs
-            .filter((cost) => cost.id === scour)
-            .reduce((sum, cost) => sum + cost.amount, 0),
-    ).toBe(Number(source.crafted) + 3 * Number(source.enchanted));
-});
+it.each(alternatives)(
+    "prepares %s exactly like paid cleanup of an actual populated source",
+    (id) => {
+        const { purchase, source } = fixture(id);
+        const methods = sourcePreparationMethods(engine, source);
+        const random = seededRandom(12);
+        let expected = actualSource(purchase);
+        for (const method of methods) {
+            expected = engine.apply(expected, method, random).item;
+        }
+        const result = prepareSourcePurchase(engine, purchase, seededRandom(12));
+        expect(result.item).toEqual(expected);
+        expect(result.item.mods.find((mod) => mod.id === fractureId)).toEqual(
+            purchase.item.mods[0],
+        );
+        expect(result.item.enchantments ?? []).toEqual([]);
+        expect(
+            result.item.implicits.map((mod) => [
+                engine.mod(mod.id).generation_type,
+                eldritchTier(engine.mod(mod.id)),
+            ]),
+        ).toEqual([
+            ["eater_of_worlds_implicit", 1],
+            ["searing_exarch_implicit", 2],
+        ]);
+        expect(result.actions).toBe(3 + Number(source.crafted) + Number(source.enchanted));
+        expect(
+            result.costs
+                .filter((cost) => cost.id === scour)
+                .reduce((sum, cost) => sum + cost.amount, 0),
+        ).toBe(Number(source.crafted) + 3 * Number(source.enchanted));
+    },
+);
 
 it("charges the purchase and every actual preparation cost and exposes them in the acquisition estimate and trace", () => {
     const { graph, node, purchase, source } = acquisitionGraph();
@@ -178,21 +181,21 @@ const required = [
         ),
     ),
 ];
-it.each([
-    "purchase",
-    ...required,
-])("keeps a missing %s price unknown despite a completed preparation", (missing) => {
-    const { graph, node, purchase } = acquisitionGraph();
-    if (missing === "purchase") purchase.price = null;
-    else delete graph.prices[missing];
-    const expected = missing === "purchase" ? `purchase:${node.id}:${purchase.id}` : missing;
-    expect(estimateSourcePurchase(engine, graph, node, purchase)).toMatchObject({
-        expectedCost: null,
-        missingPrices: [expected],
-    });
-    const result = runGraphTrial(graph, seededRandom(42));
-    expect(result).toMatchObject({ success: true, cost: null, missingPrices: [expected] });
-});
+it.each(["purchase", ...required])(
+    "keeps a missing %s price unknown despite a completed preparation",
+    (missing) => {
+        const { graph, node, purchase } = acquisitionGraph();
+        if (missing === "purchase") purchase.price = null;
+        else delete graph.prices[missing];
+        const expected = missing === "purchase" ? `purchase:${node.id}:${purchase.id}` : missing;
+        expect(estimateSourcePurchase(engine, graph, node, purchase)).toMatchObject({
+            expectedCost: null,
+            missingPrices: [expected],
+        });
+        const result = runGraphTrial(graph, seededRandom(42));
+        expect(result).toMatchObject({ success: true, cost: null, missingPrices: [expected] });
+    },
+);
 
 it("compares full preparation cost instead of treating the lowest unprepared ask as cheapest", () => {
     const { graph, node, purchase } = acquisitionGraph();

@@ -124,8 +124,8 @@ function showMarket(path: string) {
                             request,
                             context,
                             params: { category: params.category },
-                            unstable_pattern: "/2/market/:category?",
-                            unstable_url: new URL(request.url),
+                            pattern: "/2/market/:category?",
+                            url: new URL(request.url),
                         }),
                     Component: () => <Poe2MarketIndex loaderData={useLoaderData()} />,
                 },
@@ -136,8 +136,8 @@ function showMarket(path: string) {
                             request,
                             context,
                             params: { "*": params["*"]! },
-                            unstable_pattern: "/2/market/exchange/*",
-                            unstable_url: new URL(request.url),
+                            pattern: "/2/market/exchange/*",
+                            url: new URL(request.url),
                         }),
                     Component: () => <Poe2MarketExchangeItem loaderData={useLoaderData()} />,
                 },
@@ -219,8 +219,8 @@ it("redirects the bare market path and category queries to a category path", asy
             request: new Request(url),
             context,
             params: {},
-            unstable_pattern: "/2/market/:category?",
-            unstable_url: new URL(url),
+            pattern: "/2/market/:category?",
+            url: new URL(url),
         });
         if (!(response instanceof Response)) throw new Error("Expected redirect");
         expect(response.status).toBe(308);
@@ -235,8 +235,8 @@ it("rejects unknown categories and items outside the exchange catalogue", async 
             request: new Request("https://example.invalid/2/market/weapons"),
             context,
             params: { category: "weapons" },
-            unstable_pattern: "/2/market/:category?",
-            unstable_url: new URL("https://example.invalid/2/market/weapons"),
+            pattern: "/2/market/:category?",
+            url: new URL("https://example.invalid/2/market/weapons"),
         }),
     ).rejects.toMatchObject({ status: 404 });
     await expect(
@@ -244,8 +244,8 @@ it("rejects unknown categories and items outside the exchange catalogue", async 
             request: new Request("https://example.invalid/2/market/exchange/Unknown"),
             context,
             params: { "*": "Unknown" },
-            unstable_pattern: "/2/market/exchange/*",
-            unstable_url: new URL("https://example.invalid/2/market/exchange/Unknown"),
+            pattern: "/2/market/exchange/*",
+            url: new URL("https://example.invalid/2/market/exchange/Unknown"),
         }),
     ).rejects.toMatchObject({ status: 404 });
 });

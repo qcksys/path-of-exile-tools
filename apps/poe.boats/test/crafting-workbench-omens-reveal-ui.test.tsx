@@ -9,123 +9,133 @@ import { baseId, catalog, engine, getCatalog } from "./crafting-fixtures";
 import { button, CraftingWorker, mount } from "./crafting-workbench-ui-fixtures";
 
 describe("crafting workbench", () => {
-    it.each([
-        false,
-        true,
-    ])("selects Abyss essence, replaces its Mark (fractured: %s), and retains the reveal floor through Echoes and saves", async (fractured) => {
-        const data = getCatalog("poe2");
-        const crafting = new CraftingEngine(data);
-        const base = Object.entries(data.bases).find(
-            ([, entry]) => entry.name === "Golden Hoop",
-        )![0];
-        const item = crafting.addStartingMod(
-            crafting.createItem(base),
-            "IncreasedLife1",
-            seededRandom(1),
-        );
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game: "poe2",
-            patch: data.patch,
-            item,
-            method: { kind: "currency", id: "Metadata/Items/Currency/AbyssalBenchTicketJewellery" },
-            target: { groups: [], unrevealedCount: { min: 1, max: 1 } },
-            steps: [],
-            prices: {},
-            seed: 42,
-            iterations: 100,
-            maxActions: 3,
-        });
-        const key = `poe-boats:crafting:poe2:${data.patch}`;
-        localStorage.setItem(key, JSON.stringify({ abyss: project }));
-        mount("calculate", data);
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), { target: { value: "abyss" } });
-        fireEvent.click(button("Load project"));
-        const select = async (name: string) => {
-            const picker = screen.getByRole("combobox", { name: "Crafting method" });
-            changeControl(picker, { target: { value: name } });
-            fireEvent.keyDown(picker, { key: "ArrowDown" });
-            fireEvent.click(await screen.findByRole("option", { name }));
-        };
-        await select("Essence of the Abyss");
-        expect(screen.getByRole("region", { name: "Abyssal Mark model" }).textContent).toContain(
-            "not extracted",
-        );
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        const card = screen.getByRole("region", { name: "Current item" });
-        expect(card.textContent).toContain("Bears the Mark of the Abyssal Lord");
-        if (fractured) fireEvent.click(within(card).getByRole("button", { name: "Fracture" }));
-        const beforeBone = card.textContent;
-        fireEvent.click(button("Save project"));
-        const marked = JSON.parse(localStorage.getItem(key)!)["My crafting project"].item;
-        expect(marked.mods[0].crafted).toBe(true);
-        expect(marked.mods[0].fractured).toBe(fractured);
-        await select("Preserved Collarbone");
-        fireEvent.click(screen.getByRole("checkbox", { name: /^Omen of Sinistral Necromancy/ }));
-        fireEvent.click(button("Calculate odds"));
-        const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
-        expect(sent.item).toEqual(marked);
-        expect(sent.target.unrevealedCount).toEqual({ min: 1, max: 1 });
-        fireEvent.click(button("Stop simulation"));
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        expect(card.textContent).not.toContain("Bears the Mark");
-        expect(within(card).queryByRole("button", { name: "Unfracture" })).toBeNull();
-        const afterBone = card.textContent;
-        fireEvent.click(button("Undo"));
-        expect(card.textContent).toBe(beforeBone);
-        expect(screen.getByText("Emulator spending").closest("details")!.textContent).not.toContain(
-            "Preserved Collarbone1",
-        );
-        fireEvent.click(button("Redo"));
-        expect(card.textContent).toBe(afterBone);
-        expect(screen.getByLabelText("Abyssal Mark reveal").textContent).toContain(
-            "Minimum modifier level: 34",
-        );
-        expect(screen.getByRole("region", { name: "Reveal modifier" }).textContent).toContain(
-            "80%, 15% or 5% probability",
-        );
-        fireEvent.click(button("Reveal with Omen of Abyssal Echoes"));
-        fireEvent.click(button("Reroll reveal choices"));
-        fireEvent.click(screen.getByText("Emulator spending"));
-        const spending = screen.getByText("Emulator spending").closest("details")!;
-        expect(spending.textContent).toContain("Essence of the Abyss1");
-        expect(spending.textContent).toContain("Preserved Collarbone1");
-        expect(spending.textContent).toContain("Omen of Abyssal Echoes1");
-        expect(spending.textContent).not.toContain("Omen of Sinistral Necromancy");
-        fireEvent.click(button("Save project"));
-        const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
-        expect(saved.item.reveal.mark).toBe(marked.mods[0].id);
-        expect(saved.item.reveal.echoes.remaining).toBe(0);
-        expect(crafting.mod(saved.item.reveal.choices[0]).domain).toBe("desecrated");
-        expect(
-            saved.item.reveal.choices.every((id: string) => crafting.mod(id).required_level >= 34),
-        ).toBe(true);
-        fireEvent.click(button("Undo"));
-        expect(button("Reroll reveal choices").hasAttribute("disabled")).toBe(false);
-        changeControl(screen.getByLabelText("Saved project"), {
-            target: { value: "My crafting project" },
-        });
-        fireEvent.click(button("Load project"));
-        expect(button("Reroll reveal choices").hasAttribute("disabled")).toBe(true);
-        expect(screen.getByLabelText("Abyssal Mark reveal").textContent).toContain(
-            "Minimum modifier level: 34",
-        );
-        fireEvent.click(
-            within(screen.getByRole("region", { name: "Reveal modifier" })).getByRole("button", {
-                name: /^1\./,
-            }),
-        );
-        expect(screen.queryByRole("region", { name: "Reveal modifier" })).toBeNull();
-        expect(card.textContent).toContain("desecrated");
-        expect(screen.queryByRole("alert")).toBeNull();
-        fireEvent.click(button("Undo"));
-        expect(screen.getByLabelText("Abyssal Mark reveal")).toBeDefined();
-        fireEvent.click(button("Redo"));
-        expect(screen.queryByLabelText("Abyssal Mark reveal")).toBeNull();
-    });
+    it.each([false, true])(
+        "selects Abyss essence, replaces its Mark (fractured: %s), and retains the reveal floor through Echoes and saves",
+        async (fractured) => {
+            const data = getCatalog("poe2");
+            const crafting = new CraftingEngine(data);
+            const base = Object.entries(data.bases).find(
+                ([, entry]) => entry.name === "Golden Hoop",
+            )![0];
+            const item = crafting.addStartingMod(
+                crafting.createItem(base),
+                "IncreasedLife1",
+                seededRandom(1),
+            );
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game: "poe2",
+                patch: data.patch,
+                item,
+                method: {
+                    kind: "currency",
+                    id: "Metadata/Items/Currency/AbyssalBenchTicketJewellery",
+                },
+                target: { groups: [], unrevealedCount: { min: 1, max: 1 } },
+                steps: [],
+                prices: {},
+                seed: 42,
+                iterations: 100,
+                maxActions: 3,
+            });
+            const key = `poe-boats:crafting:poe2:${data.patch}`;
+            localStorage.setItem(key, JSON.stringify({ abyss: project }));
+            mount("calculate", data);
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), { target: { value: "abyss" } });
+            fireEvent.click(button("Load project"));
+            const select = async (name: string) => {
+                const picker = screen.getByRole("combobox", { name: "Crafting method" });
+                changeControl(picker, { target: { value: name } });
+                fireEvent.keyDown(picker, { key: "ArrowDown" });
+                fireEvent.click(await screen.findByRole("option", { name }));
+            };
+            await select("Essence of the Abyss");
+            expect(
+                screen.getByRole("region", { name: "Abyssal Mark model" }).textContent,
+            ).toContain("not extracted");
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            const card = screen.getByRole("region", { name: "Current item" });
+            expect(card.textContent).toContain("Bears the Mark of the Abyssal Lord");
+            if (fractured) fireEvent.click(within(card).getByRole("button", { name: "Fracture" }));
+            const beforeBone = card.textContent;
+            fireEvent.click(button("Save project"));
+            const marked = JSON.parse(localStorage.getItem(key)!)["My crafting project"].item;
+            expect(marked.mods[0].crafted).toBe(true);
+            expect(marked.mods[0].fractured).toBe(fractured);
+            await select("Preserved Collarbone");
+            fireEvent.click(
+                screen.getByRole("checkbox", { name: /^Omen of Sinistral Necromancy/ }),
+            );
+            fireEvent.click(button("Calculate odds"));
+            const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
+            expect(sent.item).toEqual(marked);
+            expect(sent.target.unrevealedCount).toEqual({ min: 1, max: 1 });
+            fireEvent.click(button("Stop simulation"));
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            expect(card.textContent).not.toContain("Bears the Mark");
+            expect(within(card).queryByRole("button", { name: "Unfracture" })).toBeNull();
+            const afterBone = card.textContent;
+            fireEvent.click(button("Undo"));
+            expect(card.textContent).toBe(beforeBone);
+            expect(
+                screen.getByText("Emulator spending").closest("details")!.textContent,
+            ).not.toContain("Preserved Collarbone1");
+            fireEvent.click(button("Redo"));
+            expect(card.textContent).toBe(afterBone);
+            expect(screen.getByLabelText("Abyssal Mark reveal").textContent).toContain(
+                "Minimum modifier level: 34",
+            );
+            expect(screen.getByRole("region", { name: "Reveal modifier" }).textContent).toContain(
+                "80%, 15% or 5% probability",
+            );
+            fireEvent.click(button("Reveal with Omen of Abyssal Echoes"));
+            fireEvent.click(button("Reroll reveal choices"));
+            fireEvent.click(screen.getByText("Emulator spending"));
+            const spending = screen.getByText("Emulator spending").closest("details")!;
+            expect(spending.textContent).toContain("Essence of the Abyss1");
+            expect(spending.textContent).toContain("Preserved Collarbone1");
+            expect(spending.textContent).toContain("Omen of Abyssal Echoes1");
+            expect(spending.textContent).not.toContain("Omen of Sinistral Necromancy");
+            fireEvent.click(button("Save project"));
+            const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
+            expect(saved.item.reveal.mark).toBe(marked.mods[0].id);
+            expect(saved.item.reveal.echoes.remaining).toBe(0);
+            expect(crafting.mod(saved.item.reveal.choices[0]).domain).toBe("desecrated");
+            expect(
+                saved.item.reveal.choices.every(
+                    (id: string) => crafting.mod(id).required_level >= 34,
+                ),
+            ).toBe(true);
+            fireEvent.click(button("Undo"));
+            expect(button("Reroll reveal choices").hasAttribute("disabled")).toBe(false);
+            changeControl(screen.getByLabelText("Saved project"), {
+                target: { value: "My crafting project" },
+            });
+            fireEvent.click(button("Load project"));
+            expect(button("Reroll reveal choices").hasAttribute("disabled")).toBe(true);
+            expect(screen.getByLabelText("Abyssal Mark reveal").textContent).toContain(
+                "Minimum modifier level: 34",
+            );
+            fireEvent.click(
+                within(screen.getByRole("region", { name: "Reveal modifier" })).getByRole(
+                    "button",
+                    {
+                        name: /^1\./,
+                    },
+                ),
+            );
+            expect(screen.queryByRole("region", { name: "Reveal modifier" })).toBeNull();
+            expect(card.textContent).toContain("desecrated");
+            expect(screen.queryByRole("alert")).toBeNull();
+            fireEvent.click(button("Undo"));
+            expect(screen.getByLabelText("Abyssal Mark reveal")).toBeDefined();
+            fireEvent.click(button("Redo"));
+            expect(screen.queryByLabelText("Abyssal Mark reveal")).toBeNull();
+        },
+    );
 
     it("switches away from an exhausted Putrefaction slot and preserves it through history and saves", () => {
         const data = getCatalog("poe2");
@@ -384,77 +394,81 @@ describe("crafting workbench", () => {
         expect(card.textContent).toContain(" · desecrated");
     });
 
-    it.each([
-        "ReforgeMoreLikely",
-        "ReforgeLessLikely",
-    ])("selects %s with its extracted multiplier, costs and undo history", async (id) => {
-        const recipe = catalog.crafting.harvest.find((entry) => entry.id === id)!;
-        const method = { kind: "harvest" as const, id };
-        const cost = engine.costs(method)[0]!;
-        const item = engine.addStartingMod(
-            engine.createItem(baseId),
-            "IncreasedLife1",
-            seededRandom(1),
-        );
-        item.quality = 20;
-        const project = craftingProjectSchema.parse({
-            format: 1,
-            game: "poe1",
-            patch: catalog.patch,
-            item,
-            method: { kind: "harvest", id: "ReforgeLife" },
-            target: { groups: [{ mods: ["IncreasedLife1", "IncreasedLife2"] }] },
-            steps: [],
-            prices: { [cost.id]: 0.01 },
-            seed: 3,
-            iterations: 100,
-            maxActions: 1,
-        });
-        const key = `poe-boats:crafting:poe1:${catalog.patch}`;
-        localStorage.setItem(key, JSON.stringify({ affinity: project }));
-        mount();
-        fireEvent.click(screen.getByText("Save, load, and export"));
-        changeControl(screen.getByLabelText("Saved project"), { target: { value: "affinity" } });
-        fireEvent.click(button("Load project"));
-        const picker = screen.getByRole("combobox", { name: "Crafting method" });
-        changeControl(picker, { target: { value: recipe.name } });
-        fireEvent.keyDown(picker, { key: "ArrowDown" });
-        fireEvent.click(await screen.findByRole("option", { name: `Harvest · ${recipe.name}` }));
-        expect(
-            screen.getByRole("region", { name: "Harvest modifier weighting" }).textContent,
-        ).toContain(`${recipe.affinityMultiplier}×`);
-        fireEvent.click(button("Calculate odds"));
-        const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
-        expect(sent.method).toEqual(method);
-        expect(sent.item.mods).toEqual(item.mods);
-        fireEvent.click(button("Stop simulation"));
-        const card = screen.getByRole("region", { name: "Current item" });
-        const before = card.textContent;
-        fireEvent.click(button("Apply craft"));
-        expect(screen.queryByRole("alert")).toBeNull();
-        expect(card.textContent).not.toBe(before);
-        expect(card.textContent).toContain("Quality: +20%");
-        fireEvent.click(screen.getByText("Emulator spending"));
-        expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
-            `${cost.name}${cost.amount}`,
-        );
-        const after = card.textContent;
-        fireEvent.click(button("Undo"));
-        expect(card.textContent).toBe(before);
-        fireEvent.click(button("Redo"));
-        expect(card.textContent).toBe(after);
-        fireEvent.click(button("Save project"));
-        const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
-        expect(saved.method).toEqual(method);
-        expect(saved.item.mods.length).toBeGreaterThanOrEqual(4);
-        expect(saved.item.quality).toBe(20);
-        fireEvent.click(button("Undo"));
-        changeControl(screen.getByLabelText("Saved project"), {
-            target: { value: "My crafting project" },
-        });
-        fireEvent.click(button("Load project"));
-        expect(card.textContent).toBe(after);
-    });
+    it.each(["ReforgeMoreLikely", "ReforgeLessLikely"])(
+        "selects %s with its extracted multiplier, costs and undo history",
+        async (id) => {
+            const recipe = catalog.crafting.harvest.find((entry) => entry.id === id)!;
+            const method = { kind: "harvest" as const, id };
+            const cost = engine.costs(method)[0]!;
+            const item = engine.addStartingMod(
+                engine.createItem(baseId),
+                "IncreasedLife1",
+                seededRandom(1),
+            );
+            item.quality = 20;
+            const project = craftingProjectSchema.parse({
+                format: 1,
+                game: "poe1",
+                patch: catalog.patch,
+                item,
+                method: { kind: "harvest", id: "ReforgeLife" },
+                target: { groups: [{ mods: ["IncreasedLife1", "IncreasedLife2"] }] },
+                steps: [],
+                prices: { [cost.id]: 0.01 },
+                seed: 3,
+                iterations: 100,
+                maxActions: 1,
+            });
+            const key = `poe-boats:crafting:poe1:${catalog.patch}`;
+            localStorage.setItem(key, JSON.stringify({ affinity: project }));
+            mount();
+            fireEvent.click(screen.getByText("Save, load, and export"));
+            changeControl(screen.getByLabelText("Saved project"), {
+                target: { value: "affinity" },
+            });
+            fireEvent.click(button("Load project"));
+            const picker = screen.getByRole("combobox", { name: "Crafting method" });
+            changeControl(picker, { target: { value: recipe.name } });
+            fireEvent.keyDown(picker, { key: "ArrowDown" });
+            fireEvent.click(
+                await screen.findByRole("option", { name: `Harvest · ${recipe.name}` }),
+            );
+            expect(
+                screen.getByRole("region", { name: "Harvest modifier weighting" }).textContent,
+            ).toContain(`${recipe.affinityMultiplier}×`);
+            fireEvent.click(button("Calculate odds"));
+            const sent = CraftingWorker.instances[0]!.postMessage.mock.calls[0]![0].project;
+            expect(sent.method).toEqual(method);
+            expect(sent.item.mods).toEqual(item.mods);
+            fireEvent.click(button("Stop simulation"));
+            const card = screen.getByRole("region", { name: "Current item" });
+            const before = card.textContent;
+            fireEvent.click(button("Apply craft"));
+            expect(screen.queryByRole("alert")).toBeNull();
+            expect(card.textContent).not.toBe(before);
+            expect(card.textContent).toContain("Quality: +20%");
+            fireEvent.click(screen.getByText("Emulator spending"));
+            expect(screen.getByText("Emulator spending").closest("details")!.textContent).toContain(
+                `${cost.name}${cost.amount}`,
+            );
+            const after = card.textContent;
+            fireEvent.click(button("Undo"));
+            expect(card.textContent).toBe(before);
+            fireEvent.click(button("Redo"));
+            expect(card.textContent).toBe(after);
+            fireEvent.click(button("Save project"));
+            const saved = JSON.parse(localStorage.getItem(key)!)["My crafting project"];
+            expect(saved.method).toEqual(method);
+            expect(saved.item.mods.length).toBeGreaterThanOrEqual(4);
+            expect(saved.item.quality).toBe(20);
+            fireEvent.click(button("Undo"));
+            changeControl(screen.getByLabelText("Saved project"), {
+                target: { value: "My crafting project" },
+            });
+            fireEvent.click(button("Load project"));
+            expect(card.textContent).toBe(after);
+        },
+    );
 
     it("combines three Waystone omens, saves their result, and restores spending with undo", () => {
         const data = getCatalog("poe2");

@@ -21,30 +21,30 @@ afterEach(() => {
 });
 
 describe("recombinator catalog loading", () => {
-    it.each([
-        "http",
-        "schema",
-    ])("reports a %s failure and loads the catalog on retry", async (failure) => {
-        const fetch = vi
-            .fn()
-            .mockResolvedValueOnce(
-                failure === "http"
-                    ? new Response("unavailable", { status: 503 })
-                    : Response.json({ game: "poe2" }),
-            )
-            .mockResolvedValueOnce(Response.json({ catalog: catalogFixture }));
-        vi.stubGlobal("fetch", fetch);
-        render(createElement(MemoryRouter, {}, createElement(RecombinatorPage)));
-        expect(await screen.findByRole("alert")).toBeDefined();
-        expect(screen.queryByTestId("catalog")).toBeNull();
-        await act(async () => {
-            fireEvent.click(screen.getByRole("button", { name: "Retry catalog" }));
-        });
-        expect(screen.getByTestId("catalog").textContent).toBe("fixture");
-        expect(screen.queryByRole("alert")).toBeNull();
-        expect(fetch).toHaveBeenLastCalledWith(
-            "/api/v1/recombinator/catalog",
-            expect.objectContaining({ cache: "reload" }),
-        );
-    });
+    it.each(["http", "schema"])(
+        "reports a %s failure and loads the catalog on retry",
+        async (failure) => {
+            const fetch = vi
+                .fn()
+                .mockResolvedValueOnce(
+                    failure === "http"
+                        ? new Response("unavailable", { status: 503 })
+                        : Response.json({ game: "poe2" }),
+                )
+                .mockResolvedValueOnce(Response.json({ catalog: catalogFixture }));
+            vi.stubGlobal("fetch", fetch);
+            render(createElement(MemoryRouter, {}, createElement(RecombinatorPage)));
+            expect(await screen.findByRole("alert")).toBeDefined();
+            expect(screen.queryByTestId("catalog")).toBeNull();
+            await act(async () => {
+                fireEvent.click(screen.getByRole("button", { name: "Retry catalog" }));
+            });
+            expect(screen.getByTestId("catalog").textContent).toBe("fixture");
+            expect(screen.queryByRole("alert")).toBeNull();
+            expect(fetch).toHaveBeenLastCalledWith(
+                "/api/v1/recombinator/catalog",
+                expect.objectContaining({ cache: "reload" }),
+            );
+        },
+    );
 });

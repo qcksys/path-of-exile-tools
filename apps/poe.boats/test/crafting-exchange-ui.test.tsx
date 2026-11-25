@@ -84,38 +84,40 @@ it("accepts a null-hour accounting currency unit", async () => {
     expect(onChange.mock.calls[0]![0].prices[chaosId].amount).toBe(1);
 });
 
-it.each([
-    false,
-    true,
-])("discards picker results on an hour change (copy only: %s)", async (copyOnly) => {
-    const now = vi.spyOn(Date, "now").mockReturnValue((exchangeQuote.hour! + 3600) * 1000 + 60_000);
-    vi.stubGlobal(
-        "fetch",
-        vi
-            .fn()
-            .mockResolvedValue(
-                new Response(
-                    JSON.stringify({ quotes: { [transmuteId]: exchangeQuote }, missing: {} }),
+it.each([false, true])(
+    "discards picker results on an hour change (copy only: %s)",
+    async (copyOnly) => {
+        const now = vi
+            .spyOn(Date, "now")
+            .mockReturnValue((exchangeQuote.hour! + 3600) * 1000 + 60_000);
+        vi.stubGlobal(
+            "fetch",
+            vi
+                .fn()
+                .mockResolvedValue(
+                    new Response(
+                        JSON.stringify({ quotes: { [transmuteId]: exchangeQuote }, missing: {} }),
+                    ),
                 ),
-            ),
-    );
-    const onChange = vi.fn();
-    render(
-        <ExchangePricePicker
-            graph={exchangeGraph()}
-            entries={[[transmuteId, "Orb of Transmutation"]]}
-            onChange={onChange}
-            copyOnly={copyOnly}
-        />,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Find exchange prices" }));
-    await screen.findByRole("button", { name: "Use exchange estimate" });
-    now.mockReturnValue((exchangeQuote.hour! + 7200) * 1000 + 60_000);
-    fireEvent.focus(globalThis.window);
-    expect(screen.queryByRole("button", { name: "Use exchange estimate" })).toBeNull();
-    expect(screen.getByRole("alert").textContent).toContain("Look up prices again");
-    expect(onChange).not.toHaveBeenCalled();
-});
+        );
+        const onChange = vi.fn();
+        render(
+            <ExchangePricePicker
+                graph={exchangeGraph()}
+                entries={[[transmuteId, "Orb of Transmutation"]]}
+                onChange={onChange}
+                copyOnly={copyOnly}
+            />,
+        );
+        fireEvent.click(screen.getByRole("button", { name: "Find exchange prices" }));
+        await screen.findByRole("button", { name: "Use exchange estimate" });
+        now.mockReturnValue((exchangeQuote.hour! + 7200) * 1000 + 60_000);
+        fireEvent.focus(globalThis.window);
+        expect(screen.queryByRole("button", { name: "Use exchange estimate" })).toBeNull();
+        expect(screen.getByRole("alert").textContent).toContain("Look up prices again");
+        expect(onChange).not.toHaveBeenCalled();
+    },
+);
 
 it("refuses a stale bulk selection even before an hour-change event", async () => {
     const now = vi.spyOn(Date, "now").mockReturnValue((exchangeQuote.hour! + 3600) * 1000 + 60_000);
@@ -274,111 +276,114 @@ it.each([
     { bound: true, absent: false },
     { bound: false, absent: true },
     { bound: true, absent: true },
-])("shows history when a current quote is missing (saved binding: $bound, absent hour: $absent)", async ({
-    bound,
-    absent,
-}) => {
-    const latest = {
-        ...exchangeSnapshot,
-        hour: exchangeSnapshot.hour + 3600,
-        volumeTraded: { [transmuteId]: 0, [chaosId]: 0 },
-    };
-    const message = absent
-        ? "No captured exchange observation is available at the selected completed hour."
-        : "No positive traded volume in the latest hour.";
-    const fetcher = vi
-        .fn()
-        .mockResolvedValueOnce(
-            new Response(
-                JSON.stringify({
-                    quotes: {},
-                    missing: { [transmuteId]: message },
-                }),
-            ),
-        )
-        .mockResolvedValueOnce(
-            new Response(
-                JSON.stringify({
-                    history: absent ? [exchangeSnapshot] : [latest, exchangeSnapshot],
-                    nextBefore: null,
-                }),
-            ),
+])(
+    "shows history when a current quote is missing (saved binding: $bound, absent hour: $absent)",
+    async ({ bound, absent }) => {
+        const latest = {
+            ...exchangeSnapshot,
+            hour: exchangeSnapshot.hour + 3600,
+            volumeTraded: { [transmuteId]: 0, [chaosId]: 0 },
+        };
+        const message = absent
+            ? "No captured exchange observation is available at the selected completed hour."
+            : "No positive traded volume in the latest hour.";
+        const fetcher = vi
+            .fn()
+            .mockResolvedValueOnce(
+                new Response(
+                    JSON.stringify({
+                        quotes: {},
+                        missing: { [transmuteId]: message },
+                    }),
+                ),
+            )
+            .mockResolvedValueOnce(
+                new Response(
+                    JSON.stringify({
+                        history: absent ? [exchangeSnapshot] : [latest, exchangeSnapshot],
+                        nextBefore: null,
+                    }),
+                ),
+            );
+        vi.stubGlobal("fetch", fetcher);
+        const onChange = vi.fn();
+        const original = exchangeGraph();
+        const graph = bound ? bindExchangePrice(original, transmuteId, exchangeQuote) : original;
+        const before = structuredClone(graph);
+        render(
+            <ExchangePricePicker
+                graph={graph}
+                entries={[[transmuteId, "Orb of Transmutation"]]}
+                onChange={onChange}
+            />,
         );
-    vi.stubGlobal("fetch", fetcher);
-    const onChange = vi.fn();
-    const original = exchangeGraph();
-    const graph = bound ? bindExchangePrice(original, transmuteId, exchangeQuote) : original;
-    const before = structuredClone(graph);
-    render(
-        <ExchangePricePicker
-            graph={graph}
-            entries={[[transmuteId, "Orb of Transmutation"]]}
-            onChange={onChange}
-        />,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Find exchange prices" }));
-    await screen.findByText(message);
-    expect(
-        screen.getByRole("combobox", { name: "Exchange estimate window" }).textContent,
-    ).toContain("Latest completed hour");
-    const missing = screen.getByRole("region", { name: "Exchange price for Orb of Transmutation" });
-    fireEvent.click(within(missing).getByRole("button", { name: "View exchange history" }));
-    const history = await screen.findByRole("region", { name: "Exchange price history" });
-    if (!absent) {
-        expect(within(history).getAllByRole("row")[1]?.textContent).toContain("Unknown");
+        fireEvent.click(screen.getByRole("button", { name: "Find exchange prices" }));
+        await screen.findByText(message);
         expect(
-            within(within(history).getAllByRole("row")[1]!).getAllByRole("cell")[2]?.textContent,
-        ).toBe("0");
-    }
-    expect(within(history).getAllByRole("row").at(-1)?.textContent).toContain("2.0000");
-    expect(JSON.parse(fetcher.mock.calls[1]![1].body)).toEqual({
-        realm: "pc",
-        league: "Standard",
-        itemId: transmuteId,
-        quoteId: chaosId,
-        limit: 168,
-    });
-    expect(screen.queryByRole("button", { name: "Use exchange estimate" })).toBeNull();
-    expect(onChange).not.toHaveBeenCalled();
-    expect(graph).toEqual(before);
-});
+            screen.getByRole("combobox", { name: "Exchange estimate window" }).textContent,
+        ).toContain("Latest completed hour");
+        const missing = screen.getByRole("region", {
+            name: "Exchange price for Orb of Transmutation",
+        });
+        fireEvent.click(within(missing).getByRole("button", { name: "View exchange history" }));
+        const history = await screen.findByRole("region", { name: "Exchange price history" });
+        if (!absent) {
+            expect(within(history).getAllByRole("row")[1]?.textContent).toContain("Unknown");
+            expect(
+                within(within(history).getAllByRole("row")[1]!).getAllByRole("cell")[2]
+                    ?.textContent,
+            ).toBe("0");
+        }
+        expect(within(history).getAllByRole("row").at(-1)?.textContent).toContain("2.0000");
+        expect(JSON.parse(fetcher.mock.calls[1]![1].body)).toEqual({
+            realm: "pc",
+            league: "Standard",
+            itemId: transmuteId,
+            quoteId: chaosId,
+            limit: 168,
+        });
+        expect(screen.queryByRole("button", { name: "Use exchange estimate" })).toBeNull();
+        expect(onChange).not.toHaveBeenCalled();
+        expect(graph).toEqual(before);
+    },
+);
 
-it.each([
-    "manual",
-    "market",
-] as const)("keeps history available after a failed lookup and preserves a %s amount", async (source) => {
-    const fetcher = vi
-        .fn()
-        .mockResolvedValueOnce(new Response(null, { status: 503 }))
-        .mockResolvedValueOnce(new Response(JSON.stringify({ history: [], nextBefore: null })));
-    vi.stubGlobal("fetch", fetcher);
-    const original = exchangeGraph();
-    const graph =
-        source === "market"
-            ? bindExchangePrice(original, transmuteId, exchangeQuote)
-            : {
-                  ...original,
-                  prices: {
-                      [transmuteId]: { amount: 0, currency: "chaos", source, confidence: null },
-                  },
-              };
-    const before = structuredClone(graph);
-    const onChange = vi.fn();
-    render(
-        <ExchangePricePicker
-            graph={graph}
-            entries={[
-                [transmuteId, "Orb of Transmutation"],
-                ["service:recombine", "Recombination"],
-            ]}
-            onChange={onChange}
-        />,
-    );
-    expect(screen.getAllByRole("button", { name: "View exchange history" })).toHaveLength(1);
-    fireEvent.click(screen.getByRole("button", { name: "Find exchange prices" }));
-    expect(await screen.findByRole("alert")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "View exchange history" }));
-    expect(await screen.findByText("No captured history for this pair.")).toBeTruthy();
-    expect(onChange).not.toHaveBeenCalled();
-    expect(graph).toEqual(before);
-});
+it.each(["manual", "market"] as const)(
+    "keeps history available after a failed lookup and preserves a %s amount",
+    async (source) => {
+        const fetcher = vi
+            .fn()
+            .mockResolvedValueOnce(new Response(null, { status: 503 }))
+            .mockResolvedValueOnce(new Response(JSON.stringify({ history: [], nextBefore: null })));
+        vi.stubGlobal("fetch", fetcher);
+        const original = exchangeGraph();
+        const graph =
+            source === "market"
+                ? bindExchangePrice(original, transmuteId, exchangeQuote)
+                : {
+                      ...original,
+                      prices: {
+                          [transmuteId]: { amount: 0, currency: "chaos", source, confidence: null },
+                      },
+                  };
+        const before = structuredClone(graph);
+        const onChange = vi.fn();
+        render(
+            <ExchangePricePicker
+                graph={graph}
+                entries={[
+                    [transmuteId, "Orb of Transmutation"],
+                    ["service:recombine", "Recombination"],
+                ]}
+                onChange={onChange}
+            />,
+        );
+        expect(screen.getAllByRole("button", { name: "View exchange history" })).toHaveLength(1);
+        fireEvent.click(screen.getByRole("button", { name: "Find exchange prices" }));
+        expect(await screen.findByRole("alert")).toBeTruthy();
+        fireEvent.click(screen.getByRole("button", { name: "View exchange history" }));
+        expect(await screen.findByText("No captured history for this pair.")).toBeTruthy();
+        expect(onChange).not.toHaveBeenCalled();
+        expect(graph).toEqual(before);
+    },
+);

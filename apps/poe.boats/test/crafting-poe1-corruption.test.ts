@@ -54,35 +54,34 @@ describe("PoE 1 equipment Vaal Orbs", () => {
         expect(engine.corruptionKind(engine.createItem(map))).toBe("map");
     });
 
-    it.each([
-        "normal",
-        "magic",
-        "rare",
-    ] as const)("rerolls %s equipment to six affixes with no extra count roll", (rarity) => {
-        const item = { ...blank(), rarity, quality: 20, memoryStrands: 82 };
-        const random = force("reroll-six");
-        const result = engine.apply(item, vaal, random).item;
-        expect(result).toMatchObject({
-            rarity: "rare",
-            corrupted: true,
-            quality: 20,
-            memoryStrands: 82,
-        });
-        expect(engine.counts(result)).toMatchObject({ prefixes: 3, suffixes: 3 });
-        expect(result.mods).toHaveLength(6);
-        expect(vi.mocked(random.pick).mock.calls).toHaveLength(7);
-        expect(result.implicits).toEqual(item.implicits);
-        expect(item.corrupted).toBe(false);
-        expect(item.mods).toEqual([]);
-        expect(engine.validateItem(JSON.parse(JSON.stringify(result)))).toEqual(result);
-        const text = exportCraftingItemText(engine, result);
-        const imported = importCraftingItemText(engine, text)[0]!.item;
-        expect(exportCraftingItemText(engine, imported)).toBe(text);
-        expect(imported.mods.map((entry) => entry.id)).toEqual(
-            result.mods.map((entry) => entry.id),
-        );
-        expect(imported).toMatchObject({ corrupted: true, memoryStrands: 82, quality: 20 });
-    });
+    it.each(["normal", "magic", "rare"] as const)(
+        "rerolls %s equipment to six affixes with no extra count roll",
+        (rarity) => {
+            const item = { ...blank(), rarity, quality: 20, memoryStrands: 82 };
+            const random = force("reroll-six");
+            const result = engine.apply(item, vaal, random).item;
+            expect(result).toMatchObject({
+                rarity: "rare",
+                corrupted: true,
+                quality: 20,
+                memoryStrands: 82,
+            });
+            expect(engine.counts(result)).toMatchObject({ prefixes: 3, suffixes: 3 });
+            expect(result.mods).toHaveLength(6);
+            expect(vi.mocked(random.pick).mock.calls).toHaveLength(7);
+            expect(result.implicits).toEqual(item.implicits);
+            expect(item.corrupted).toBe(false);
+            expect(item.mods).toEqual([]);
+            expect(engine.validateItem(JSON.parse(JSON.stringify(result)))).toEqual(result);
+            const text = exportCraftingItemText(engine, result);
+            const imported = importCraftingItemText(engine, text)[0]!.item;
+            expect(exportCraftingItemText(engine, imported)).toBe(text);
+            expect(imported.mods.map((entry) => entry.id)).toEqual(
+                result.mods.map((entry) => entry.id),
+            );
+            expect(imported).toMatchObject({ corrupted: true, memoryStrands: 82, quality: 20 });
+        },
+    );
 
     it("preserves fractures, protected prefixes, influences and their raw rolls during rerolls", () => {
         let item = engine.addStartingMod(

@@ -75,16 +75,15 @@ it("preserves positional arguments, repeated flags and explicit negation without
     ]);
     expect(prompts.text).not.toHaveBeenCalled();
 });
-it.each([
-    ["--help"],
-    ["ingest", "--help"],
-    [],
-])("prints help without performing work: %j", async (...args) => {
-    const { program, action, output } = fixture();
-    expect(await runCli(program, args)).toBe(0);
-    expect(output.join("")).toContain("Usage:");
-    expect(action).not.toHaveBeenCalled();
-});
+it.each([["--help"], ["ingest", "--help"], []])(
+    "prints help without performing work: %j",
+    async (...args) => {
+        const { program, action, output } = fixture();
+        expect(await runCli(program, args)).toBe(0);
+        expect(output.join("")).toContain("Usage:");
+        expect(action).not.toHaveBeenCalled();
+    },
+);
 it.each([
     ["unknown"],
     ["ingest", "--typo"],

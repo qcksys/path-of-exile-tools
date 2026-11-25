@@ -181,38 +181,38 @@ it("keeps preferences usable when storage is unavailable and clears the error on
     expect(screen.queryByRole("alert")).toBeNull();
 });
 
-it.each([
-    "advanced",
-    "classic",
-])("temporarily reverses %s output with Alt without persisting the reversal", (itemOutput) => {
-    localStorage.setItem(storageKey, JSON.stringify({ itemOutput }));
-    const view = render(<Settings />);
-    const save = vi.spyOn(Storage.prototype, "setItem");
-    const advanced = itemOutput === "advanced";
-    fireEvent.keyDown(window, { key: "Alt", altKey: true });
-    expect(currentDisplay().advanced).toBe(!advanced);
-    fireEvent.keyDown(window, { key: "Alt", altKey: true, repeat: true });
-    expect(currentDisplay().advanced).toBe(!advanced);
-    fireEvent.keyUp(window, { key: "Alt" });
-    expect(currentDisplay().advanced).toBe(advanced);
-    fireEvent.keyDown(window, { key: "Alt", altKey: true });
-    fireEvent.blur(window);
-    expect(currentDisplay().advanced).toBe(advanced);
-    fireEvent.keyDown(window, { key: "Alt", altKey: true });
-    fireEvent(document, new Event("visibilitychange"));
-    expect(currentDisplay().advanced).toBe(advanced);
-    fireEvent.keyDown(screen.getByLabelText("Editable text"), { key: "Alt", altKey: true });
-    expect(currentDisplay().advanced).toBe(advanced);
-    fireEvent.keyDown(window, { key: "Alt", altKey: true, ctrlKey: true });
-    fireEvent.keyDown(window, { key: "Alt", altKey: true, metaKey: true });
-    expect(currentDisplay().advanced).toBe(advanced);
-    expect(save).not.toHaveBeenCalled();
-    const remove = vi.spyOn(window, "removeEventListener");
-    view.unmount();
-    expect(remove).toHaveBeenCalledWith("keydown", expect.any(Function));
-    expect(remove).toHaveBeenCalledWith("keyup", expect.any(Function));
-    expect(remove).toHaveBeenCalledWith("blur", expect.any(Function));
-});
+it.each(["advanced", "classic"])(
+    "temporarily reverses %s output with Alt without persisting the reversal",
+    (itemOutput) => {
+        localStorage.setItem(storageKey, JSON.stringify({ itemOutput }));
+        const view = render(<Settings />);
+        const save = vi.spyOn(Storage.prototype, "setItem");
+        const advanced = itemOutput === "advanced";
+        fireEvent.keyDown(window, { key: "Alt", altKey: true });
+        expect(currentDisplay().advanced).toBe(!advanced);
+        fireEvent.keyDown(window, { key: "Alt", altKey: true, repeat: true });
+        expect(currentDisplay().advanced).toBe(!advanced);
+        fireEvent.keyUp(window, { key: "Alt" });
+        expect(currentDisplay().advanced).toBe(advanced);
+        fireEvent.keyDown(window, { key: "Alt", altKey: true });
+        fireEvent.blur(window);
+        expect(currentDisplay().advanced).toBe(advanced);
+        fireEvent.keyDown(window, { key: "Alt", altKey: true });
+        fireEvent(document, new Event("visibilitychange"));
+        expect(currentDisplay().advanced).toBe(advanced);
+        fireEvent.keyDown(screen.getByLabelText("Editable text"), { key: "Alt", altKey: true });
+        expect(currentDisplay().advanced).toBe(advanced);
+        fireEvent.keyDown(window, { key: "Alt", altKey: true, ctrlKey: true });
+        fireEvent.keyDown(window, { key: "Alt", altKey: true, metaKey: true });
+        expect(currentDisplay().advanced).toBe(advanced);
+        expect(save).not.toHaveBeenCalled();
+        const remove = vi.spyOn(window, "removeEventListener");
+        view.unmount();
+        expect(remove).toHaveBeenCalledWith("keydown", expect.any(Function));
+        expect(remove).toHaveBeenCalledWith("keyup", expect.any(Function));
+        expect(remove).toHaveBeenCalledWith("blur", expect.any(Function));
+    },
+);
 
 it("renders on the server without reading or writing browser storage", () => {
     const read = vi.spyOn(Storage.prototype, "getItem");

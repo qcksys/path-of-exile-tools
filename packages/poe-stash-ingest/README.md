@@ -483,6 +483,32 @@ pages, or of exchange digests with `--exchange`. Replay (`replayRawArchive` in
 `src/ps/raw-archive.ts`) checks each file's SHA-256 against its manifest before reading it, so a
 damaged file yields no pages, and then checks every page's SHA-256 and the page count.
 
+### Capture fallback
+
+A separate capture process still loses the stream while its host is down. With `CAPTURE_LEASE_URL`
+and `CAPTURE_LEASE_TOKEN`, `capture` fetches only while it holds a lease from the
+[`apps/capture-lease`](../../apps/capture-lease/README.md) Worker, which starts a Cloudflare Container
+to capture while this host is silent (`src/ps/capture-lease.ts`, `src/ps/capture-fallback.ts`).
+
+- **Home** (`CAPTURE_LEASE_ROLE=home`, the default) renews every 10 s and reports the cursor after
+  its last synced page. It stops fetching once its last renewal is a minute old, before the Worker
+  can give the lease to the Container, and reports a failed `stash` stage while it cannot reach
+  the Worker.
+- **Fallback** (`CAPTURE_LEASE_ROLE=fallback`) is the Container. Its disk does not outlive it, so it
+  writes pages to segments of at most 256 MB or 5 minutes, uploads each, and only then reports the
+  cursor after it. On SIGTERM it uploads what it has before exiting.
+- **Handback.** While the Container holds the lease, home downloads its segments in order and
+  appends their pages to the spool (`appendRawLines`), with their original capture times. Home leaves
+  its latest spooled hour unsealed meanwhile, and imports nothing more while four hours wait to be
+  sealed. Once home has imported every segment, the Container uploads its last pages and reports
+  its final cursor, and home continues from there. `import-state.json` beside the spool records the
+  last segment imported.
+
+A new holder may fetch again a few pages that its predecessor fetched but had not reported, which
+the worker already handles; no stream position is skipped. Losing the lease costs about the first
+two minutes of an outage. A Container that dies loses the pages it had not uploaded, and its
+successor fetches those positions again.
+
 ## Likely-sale policy
 
 `src/ps/sales.ts` owns the policy. A removal is a sale candidate when the stream reached its current cursor within the hour before it; removals seen further behind (initial catch-up or a long outage) are `unobserved`. A candidate is classified at the first poll that reaches the cursor at least an hour after its removal. The stream is a complete, ordered log, so by then any relist within that hour has been seen; backlogs or polling gaps in between do not delay or reset it.

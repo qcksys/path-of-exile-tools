@@ -79,6 +79,10 @@ services:
       PS_RAW_ARCHIVE_DIR: /backups/raw
       INGEST_STATUS_FILE: /backups/raw/capture-status.json
       PS_RAW_SEAL_THREADS: "8"
+      # With CAPTURE_LEASE_URL in pc.env, this fetches only while it holds the capture lease and a
+      # Cloudflare Container captures while it is away (apps/capture-lease). Off without the URL.
+      CAPTURE_LEASE_ROLE: home
+      CAPTURE_LEASE_TOKEN_FILE: /run/secrets/capture_lease_token
     volumes:
       - ./backups/pc:/backups
     secrets:
@@ -88,6 +92,8 @@ services:
         target: poe_boats_ingest_token
       - source: pc_b2_application_key
         target: b2_application_key
+      - source: pc_capture_lease_token
+        target: capture_lease_token
   poe2:
     <<: *worker
     cpus: 1.0
@@ -119,7 +125,9 @@ services:
       # second of commits on a host crash, and point-in-time recovery, for write speed.
       - --skip-log-bin
       - --innodb-flush-log-at-trx-commit=2
-      - --innodb-buffer-pool-size=4G
+      # With a 4G pool the server used 5.45 GiB once the dev data was loaded; 3G leaves it room
+      # under mem_limit without raising a limit the workers' limits already overcommit.
+      - --innodb-buffer-pool-size=3G
       - --innodb-redo-log-capacity=2G
       - --skip-name-resolve
     environment:
@@ -162,6 +170,8 @@ secrets:
     file: ./secrets/pc_ingest_token
   pc_b2_application_key:
     file: ./secrets/pc_b2_application_key
+  pc_capture_lease_token:
+    file: ./secrets/pc_capture_lease_token
   poe2_client_secret:
     file: ./secrets/poe2_client_secret
   poe2_ingest_token:

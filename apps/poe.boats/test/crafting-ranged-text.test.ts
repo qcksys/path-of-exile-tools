@@ -24,18 +24,22 @@ describe.each(["poe1", "poe2"] as const)("%s Path of Building ranged text", (gam
             .map((line) => `{range:${fraction}}{modGroup:${id}}${line}`)
             .join("\n");
 
-    it.each([
-        0, 0.5, 1,
-    ])("imports life at range position %s with the build's bounds", (fraction) => {
-        const result = importCraftingItemText(engine, text(ranged("IncreasedLife1", fraction)));
-        expect(result).toHaveLength(1);
-        const expected = (game === "poe1" ? [10, 17, 24] : [10, 15, 19])[fraction * 2];
-        expect(result[0]!.item.mods[0]).toMatchObject({ id: "IncreasedLife1", values: [expected] });
-        expect(result[0]!.warnings).toEqual([]);
-        expect(exportCraftingItemText(engine, result[0]!.item)).toContain(
-            `+${expected} to maximum Life`,
-        );
-    });
+    it.each([0, 0.5, 1])(
+        "imports life at range position %s with the build's bounds",
+        (fraction) => {
+            const result = importCraftingItemText(engine, text(ranged("IncreasedLife1", fraction)));
+            expect(result).toHaveLength(1);
+            const expected = (game === "poe1" ? [10, 17, 24] : [10, 15, 19])[fraction * 2];
+            expect(result[0]!.item.mods[0]).toMatchObject({
+                id: "IncreasedLife1",
+                values: [expected],
+            });
+            expect(result[0]!.warnings).toEqual([]);
+            expect(exportCraftingItemText(engine, result[0]!.item)).toContain(
+                `+${expected} to maximum Life`,
+            );
+        },
+    );
 
     it("resolves an unannotated tier and preserves a fractured ranged roll", () => {
         const result = importCraftingItemText(
@@ -144,19 +148,14 @@ describe.each(["poe1", "poe2"] as const)("%s Path of Building ranged text", (gam
         expect(result?.mod.values).toEqual(game === "poe1" ? [77, -7] : [-38]);
     });
 
-    it.each([
-        "",
-        "NaN",
-        "Infinity",
-        "-0.1",
-        "1.1",
-        "0.5,0.8",
-        "0x1",
-    ])("rejects invalid fraction %j", (fraction) => {
-        expect(() =>
-            importCraftingItemText(engine, text(`{range:${fraction}}+(10-19) to maximum Life`)),
-        ).toThrow("fraction between 0 and 1");
-    });
+    it.each(["", "NaN", "Infinity", "-0.1", "1.1", "0.5,0.8", "0x1"])(
+        "rejects invalid fraction %j",
+        (fraction) => {
+            expect(() =>
+                importCraftingItemText(engine, text(`{range:${fraction}}+(10-19) to maximum Life`)),
+            ).toThrow("fraction between 0 and 1");
+        },
+    );
 
     it("normalizes negative percentages to the extracted increased or reduced wording", () => {
         const id = game === "poe1" ? "FlaskInstantRecoveryOnLowLife1" : "ReducedBleedDuration1";
@@ -189,19 +188,19 @@ describe.each(["poe1", "poe2"] as const)("%s Path of Building ranged text", (gam
         );
     });
 
-    it.each([
-        "Prefix",
-        "Suffix",
-    ])("rejects unknown %s blueprints before or after Item Level without dropping modifiers", (side) => {
-        const blueprint = `${side}: {range:0.5}UnknownModifier`;
-        for (const input of [
-            text("").replace("Item Level: 86", `Crafted: true\n${blueprint}\nItem Level: 86`),
-            text(blueprint),
-        ])
-            expect(() => importCraftingItemText(engine, input)).toThrow(
-                "does not match an extracted modifier",
-            );
-    });
+    it.each(["Prefix", "Suffix"])(
+        "rejects unknown %s blueprints before or after Item Level without dropping modifiers",
+        (side) => {
+            const blueprint = `${side}: {range:0.5}UnknownModifier`;
+            for (const input of [
+                text("").replace("Item Level: 86", `Crafted: true\n${blueprint}\nItem Level: 86`),
+                text(blueprint),
+            ])
+                expect(() => importCraftingItemText(engine, input)).toThrow(
+                    "does not match an extracted modifier",
+                );
+        },
+    );
 
     it("rejects missing, duplicate, incomplete and unused range annotations", () => {
         for (const line of [

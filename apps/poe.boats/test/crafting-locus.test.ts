@@ -37,41 +37,39 @@ function force(outcome: string, influence?: number) {
 }
 
 describe("PoE 1 jewel Vaal corruption", () => {
-    it.each([
-        "Cobalt Jewel",
-        "Crimson Jewel",
-        "Viridian Jewel",
-        "Murderous Eye Jewel",
-    ])("supports every modeled branch on %s", (name) => {
-        const item = blank(name);
-        expect(engine.corruptionKind(item)).toBe("poe1-jewel");
-        for (const outcome of ["none", "unique-jewel", "implicit", "reroll-rare"]) {
-            const result = engine.apply(item, vaal, force(outcome));
-            expect(result.item.corrupted).toBe(true);
-            expect(engine.validateItem(result.item)).toEqual(result.item);
-            expect(result.cost).toEqual([{ id: vaal.id, name: "Vaal Orb", amount: 1 }]);
-            if (outcome === "none" || outcome === "unique-jewel")
-                expect(result.item).toEqual({ ...item, corrupted: true });
-            if (outcome === "implicit") {
-                expect(result.item.implicits).toHaveLength(1);
-                expect(result.item.mods).toEqual([]);
-                expect(result.item.rarity).toBe("normal");
+    it.each(["Cobalt Jewel", "Crimson Jewel", "Viridian Jewel", "Murderous Eye Jewel"])(
+        "supports every modeled branch on %s",
+        (name) => {
+            const item = blank(name);
+            expect(engine.corruptionKind(item)).toBe("poe1-jewel");
+            for (const outcome of ["none", "unique-jewel", "implicit", "reroll-rare"]) {
+                const result = engine.apply(item, vaal, force(outcome));
+                expect(result.item.corrupted).toBe(true);
+                expect(engine.validateItem(result.item)).toEqual(result.item);
+                expect(result.cost).toEqual([{ id: vaal.id, name: "Vaal Orb", amount: 1 }]);
+                if (outcome === "none" || outcome === "unique-jewel")
+                    expect(result.item).toEqual({ ...item, corrupted: true });
+                if (outcome === "implicit") {
+                    expect(result.item.implicits).toHaveLength(1);
+                    expect(result.item.mods).toEqual([]);
+                    expect(result.item.rarity).toBe("normal");
+                }
+                if (outcome === "reroll-rare") {
+                    expect(result.item.rarity).toBe("rare");
+                    expect(result.item.mods.length).toBeGreaterThanOrEqual(3);
+                    expect(result.item.mods.length).toBeLessThanOrEqual(4);
+                    expect(engine.counts(result.item).prefixes).toBeLessThanOrEqual(2);
+                    expect(engine.counts(result.item).suffixes).toBeLessThanOrEqual(2);
+                }
+                const text = exportCraftingItemText(engine, result.item);
+                expect(
+                    importCraftingItemText(engine, text).some(
+                        (entry) => exportCraftingItemText(engine, entry.item) === text,
+                    ),
+                ).toBe(true);
             }
-            if (outcome === "reroll-rare") {
-                expect(result.item.rarity).toBe("rare");
-                expect(result.item.mods.length).toBeGreaterThanOrEqual(3);
-                expect(result.item.mods.length).toBeLessThanOrEqual(4);
-                expect(engine.counts(result.item).prefixes).toBeLessThanOrEqual(2);
-                expect(engine.counts(result.item).suffixes).toBeLessThanOrEqual(2);
-            }
-            const text = exportCraftingItemText(engine, result.item);
-            expect(
-                importCraftingItemText(engine, text).some(
-                    (entry) => exportCraftingItemText(engine, entry.item) === text,
-                ),
-            ).toBe(true);
-        }
-    });
+        },
+    );
 
     it("preserves a fractured jewel affix during a rare reroll and keeps PoE 2 scaling out", () => {
         const item = engine.addStartingMod(
@@ -143,41 +141,38 @@ describe("PoE 1 Locus of Corruption", () => {
         expect(() => poe2.validateMethod(locus)).toThrow("extracted Locus");
     });
 
-    it.each([
-        "Coral Ring",
-        "Two-Stone Ring",
-        "Plate Vest",
-        "Cobalt Jewel",
-        "Murderous Eye Jewel",
-    ])("adds two compatible implicits to %s and preserves text and ordinary affixes", (name) => {
-        let item = { ...blank(name), rarity: "rare" as const };
-        item = {
-            ...engine.addStartingMod(item, engine.pool(item)[0]!.id, seededRandom(1)),
-            rarity: "rare",
-        };
-        const result = engine.apply(item, locus, force("two-implicits"));
-        expect(result.item.mods).toEqual(item.mods);
-        expect(
-            result.item.implicits.filter(
-                (entry) => engine.mod(entry.id).generation_type === "corrupted",
-            ),
-        ).toHaveLength(2);
-        expect(result.item.twiceCorrupted).toBeUndefined();
-        expect(result.cost).toEqual([{ id: locus.id, name: "Locus of Corruption", amount: 1 }]);
-        expect(engine.validateItem(result.item)).toEqual(result.item);
-        const text = exportCraftingItemText(engine, result.item);
-        expect(
-            importCraftingItemText(engine, text).some(
-                (entry) => exportCraftingItemText(engine, entry.item) === text,
-            ),
-        ).toBe(true);
-        const duplicate = {
-            ...result.item,
-            implicits: [result.item.implicits[0], result.item.implicits[0]],
-        };
-        expect(() => engine.validateItem(duplicate)).toThrow("invalid corrupted implicit");
-        expect(() => engine.validateItem({ ...result.item, corrupted: false })).toThrow();
-    });
+    it.each(["Coral Ring", "Two-Stone Ring", "Plate Vest", "Cobalt Jewel", "Murderous Eye Jewel"])(
+        "adds two compatible implicits to %s and preserves text and ordinary affixes",
+        (name) => {
+            let item = { ...blank(name), rarity: "rare" as const };
+            item = {
+                ...engine.addStartingMod(item, engine.pool(item)[0]!.id, seededRandom(1)),
+                rarity: "rare",
+            };
+            const result = engine.apply(item, locus, force("two-implicits"));
+            expect(result.item.mods).toEqual(item.mods);
+            expect(
+                result.item.implicits.filter(
+                    (entry) => engine.mod(entry.id).generation_type === "corrupted",
+                ),
+            ).toHaveLength(2);
+            expect(result.item.twiceCorrupted).toBeUndefined();
+            expect(result.cost).toEqual([{ id: locus.id, name: "Locus of Corruption", amount: 1 }]);
+            expect(engine.validateItem(result.item)).toEqual(result.item);
+            const text = exportCraftingItemText(engine, result.item);
+            expect(
+                importCraftingItemText(engine, text).some(
+                    (entry) => exportCraftingItemText(engine, entry.item) === text,
+                ),
+            ).toBe(true);
+            const duplicate = {
+                ...result.item,
+                implicits: [result.item.implicits[0], result.item.implicits[0]],
+            };
+            expect(() => engine.validateItem(duplicate)).toThrow("invalid corrupted implicit");
+            expect(() => engine.validateItem({ ...result.item, corrupted: false })).toThrow();
+        },
+    );
 
     it("replaces Gilded and Eldritch implicits, retains locked implicits and removes no more than two", () => {
         const ring = blank("Coral Ring");
@@ -222,17 +217,18 @@ describe("PoE 1 Locus of Corruption", () => {
         expect(engine.validateItem(preserved)).toEqual(preserved);
     });
 
-    it.each([
-        0, 1, 2, 3, 4, 5,
-    ])("rerolls with extracted influence %i when the base supports it", (influence) => {
-        const item = blank("Plate Vest");
-        const result = engine.apply(item, locus, force("influenced-rare", influence)).item;
-        expect(result.influences).toEqual([influence]);
-        expect(result.rarity).toBe("rare");
-        expect(result.mods.length).toBeGreaterThanOrEqual(4);
-        expect(result.mods.length).toBeLessThanOrEqual(6);
-        expect(engine.validateItem(result)).toEqual(result);
-    });
+    it.each([0, 1, 2, 3, 4, 5])(
+        "rerolls with extracted influence %i when the base supports it",
+        (influence) => {
+            const item = blank("Plate Vest");
+            const result = engine.apply(item, locus, force("influenced-rare", influence)).item;
+            expect(result.influences).toEqual([influence]);
+            expect(result.rarity).toBe("rare");
+            expect(result.mods.length).toBeGreaterThanOrEqual(4);
+            expect(result.mods.length).toBeLessThanOrEqual(6);
+            expect(engine.validateItem(result)).toEqual(result);
+        },
+    );
 
     it("keeps existing influences and fractures and gives jewels no invented influence", () => {
         const influenced = { ...blank("Plate Vest"), influences: [0, 1] };

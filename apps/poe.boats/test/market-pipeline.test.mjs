@@ -107,17 +107,21 @@ describe("sale inference", () => {
             salesPrices: { divine: { median: 10, count: 1 } },
         });
     });
-    it.each([
-        "item-0",
-        "replacement-id",
-    ])("suppresses a same-seller relist with ID %s in another stash", async (id) => {
-        await seed();
-        await ingest([
-            { ...stash, id: "moved-stash", items: [{ ...item, id, note: "~price 100 divine" }] },
-        ]);
-        await mature();
-        expect((await events())[0].status).toBe("relisted");
-    });
+    it.each(["item-0", "replacement-id"])(
+        "suppresses a same-seller relist with ID %s in another stash",
+        async (id) => {
+            await seed();
+            await ingest([
+                {
+                    ...stash,
+                    id: "moved-stash",
+                    items: [{ ...item, id, note: "~price 100 divine" }],
+                },
+            ]);
+            await mature();
+            expect((await events())[0].status).toBe("relisted");
+        },
+    );
     describe("Watcher's Eye", () => {
         const haste = "12% increased Movement Speed while affected by Haste";
         const grace = "6% chance to Blind Enemies which Hit you while affected by Grace";
@@ -509,34 +513,35 @@ it("rejects relabeling stored observations as another realm", async () => {
     await expect(assertSourceRealm(db.conn, "poe2")).rejects.toThrow("realm");
 });
 
-it.each([
-    200, 503,
-])("still delivers pending hours when upstream fails and checkpoints return %s", async (status) => {
-    await ingest([stash]);
-    await db.conn.run("UPDATE ps_listing_hour SET observed_hour = observed_hour - 3600");
-    client.public.stashTabs.mockRejectedValueOnce(new Error("upstream unavailable"));
-    const network = vi.fn().mockImplementation((_url, request) => {
-        const payload = JSON.parse(request.body);
-        return Promise.resolve(
-            Response.json(
-                { written: payload.rows.length },
-                { status: payload.stream === "stash-checkpoints" ? status : 200 },
-            ),
+it.each([200, 503])(
+    "still delivers pending hours when upstream fails and checkpoints return %s",
+    async (status) => {
+        await ingest([stash]);
+        await db.conn.run("UPDATE ps_listing_hour SET observed_hour = observed_hour - 3600");
+        client.public.stashTabs.mockRejectedValueOnce(new Error("upstream unavailable"));
+        const network = vi.fn().mockImplementation((_url, request) => {
+            const payload = JSON.parse(request.body);
+            return Promise.resolve(
+                Response.json(
+                    { written: payload.rows.length },
+                    { status: payload.stream === "stash-checkpoints" ? status : 200 },
+                ),
+            );
+        });
+        vi.stubGlobal("fetch", network);
+        await expect(runPipeline(db.conn, client, { pages: 1, currency: false })).rejects.toThrow(
+            "pipeline stages failed",
         );
-    });
-    vi.stubGlobal("fetch", network);
-    await expect(runPipeline(db.conn, client, { pages: 1, currency: false })).rejects.toThrow(
-        "pipeline stages failed",
-    );
-    expect(await queryAll(db.conn, "SELECT * FROM rollup_state")).toHaveLength(1);
-    expect(network.mock.calls.map(([, request]) => JSON.parse(request.body).stream)).toEqual([
-        "stash-checkpoints",
-        "psapi",
-    ]);
-    expect(await queryAll(db.conn, "SELECT delivered FROM ps_checkpoint")).toEqual([
-        { delivered: status === 200 },
-    ]);
-});
+        expect(await queryAll(db.conn, "SELECT * FROM rollup_state")).toHaveLength(1);
+        expect(network.mock.calls.map(([, request]) => JSON.parse(request.body).stream)).toEqual([
+            "stash-checkpoints",
+            "psapi",
+        ]);
+        expect(await queryAll(db.conn, "SELECT delivered FROM ps_checkpoint")).toEqual([
+            { delivered: status === 200 },
+        ]);
+    },
+);
 
 describe("exchange before stash", () => {
     const streams = (network) =>

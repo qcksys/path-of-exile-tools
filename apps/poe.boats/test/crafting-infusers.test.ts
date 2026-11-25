@@ -81,22 +81,24 @@ describe("PoE 2 quality Infusers", () => {
         }
     });
 
-    it.each([
-        "normal",
-        "magic",
-        "rare",
-    ] as const)("uses the item-level increment and caps low-level %s items without corruption on their first use", (rarity) => {
-        const item = { ...blank(), level: 1, rarity };
-        expect(engine.apply(item, method, seededRandom(1)).item).toEqual({ ...item, quality: 30 });
-        expect(
-            calculateExact(
-                engine,
-                blank(),
-                method,
-                engine.validateTarget({ groups: [], quality: { min: 22, max: 22 } }),
-            ).probability,
-        ).toBeCloseTo(0.2);
-    });
+    it.each(["normal", "magic", "rare"] as const)(
+        "uses the item-level increment and caps low-level %s items without corruption on their first use",
+        (rarity) => {
+            const item = { ...blank(), level: 1, rarity };
+            expect(engine.apply(item, method, seededRandom(1)).item).toEqual({
+                ...item,
+                quality: 30,
+            });
+            expect(
+                calculateExact(
+                    engine,
+                    blank(),
+                    method,
+                    engine.validateTarget({ groups: [], quality: { min: 22, max: 22 } }),
+                ).probability,
+            ).toBeCloseTo(0.2);
+        },
+    );
 
     it("rolls corruption using starting excess quality and preserves modifiers, sockets and rarity", () => {
         let item = engine.addStartingMod(

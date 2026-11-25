@@ -205,17 +205,16 @@ describe("pinned method storage and applicability", () => {
         );
     });
 
-    it.each([
-        "not json",
-        "{}",
-        '[1,"currency:removed"]',
-    ])("ignores invalid stored preferences %s and repairs them on pin", (raw) => {
-        localStorage.setItem(storageKey(), raw);
-        render(<PinnedMethods {...props} />);
-        expect(screen.queryByRole("combobox", { name: "Pinned crafting methods" })).toBeNull();
-        fireEvent.click(pinButton());
-        expect(JSON.parse(localStorage.getItem(storageKey())!)).toEqual([option.pin]);
-    });
+    it.each(["not json", "{}", '[1,"currency:removed"]'])(
+        "ignores invalid stored preferences %s and repairs them on pin",
+        (raw) => {
+            localStorage.setItem(storageKey(), raw);
+            render(<PinnedMethods {...props} />);
+            expect(screen.queryByRole("combobox", { name: "Pinned crafting methods" })).toBeNull();
+            fireEvent.click(pinButton());
+            expect(JSON.parse(localStorage.getItem(storageKey())!)).toEqual([option.pin]);
+        },
+    );
 
     it("reports failed writes without claiming the pin was saved and allows retry", () => {
         render(<PinnedMethods {...props} />);

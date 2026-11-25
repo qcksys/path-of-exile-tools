@@ -79,33 +79,35 @@ describe("Tangled Fossil revealed effects", () => {
         expect(engine.pool(item)).toEqual(ordinary);
     });
 
-    it.each([
-        false,
-        true,
-    ])("crafts with the selected pair and charges physical ingredients (normal: %s)", (normal) => {
-        const selected = method("life", "resistance", [], normal);
-        const item = normal ? engine.createItem(baseId) : blank();
-        const eligible = new Set(
-            engine
-                .pool(blank(), { fossils: selected.ids, tangled: selected.tangled })
-                .map((entry) => entry.id),
-        );
-        for (let seed = 0; seed < 20; seed++) {
-            const result = engine.apply(item, selected, seededRandom(seed));
-            expect(result.item.rarity).toBe("rare");
-            expect(result.item.mods.length).toBeGreaterThanOrEqual(4);
-            expect(result.item.mods.every((entry) => eligible.has(entry.id))).toBe(true);
-            expect(result.item.mods.some((entry) => tangled.added.includes(entry.id))).toBe(false);
-            expect(engine.validateItem(result.item)).toEqual(result.item);
-        }
-        expect(engine.costs(selected, item).map(({ id, amount }) => ({ id, amount }))).toEqual([
-            { id: tangled.id, amount: 1 },
-            { id: selected.resonator, amount: 1 },
-        ]);
-        expect(engine.methodName(selected)).toContain("Tangled Fossil");
-        for (const description of engine.fossil(selected.tangled!).descriptions)
-            expect(engine.methodName(selected)).toContain(description);
-    });
+    it.each([false, true])(
+        "crafts with the selected pair and charges physical ingredients (normal: %s)",
+        (normal) => {
+            const selected = method("life", "resistance", [], normal);
+            const item = normal ? engine.createItem(baseId) : blank();
+            const eligible = new Set(
+                engine
+                    .pool(blank(), { fossils: selected.ids, tangled: selected.tangled })
+                    .map((entry) => entry.id),
+            );
+            for (let seed = 0; seed < 20; seed++) {
+                const result = engine.apply(item, selected, seededRandom(seed));
+                expect(result.item.rarity).toBe("rare");
+                expect(result.item.mods.length).toBeGreaterThanOrEqual(4);
+                expect(result.item.mods.every((entry) => eligible.has(entry.id))).toBe(true);
+                expect(result.item.mods.some((entry) => tangled.added.includes(entry.id))).toBe(
+                    false,
+                );
+                expect(engine.validateItem(result.item)).toEqual(result.item);
+            }
+            expect(engine.costs(selected, item).map(({ id, amount }) => ({ id, amount }))).toEqual([
+                { id: tangled.id, amount: 1 },
+                { id: selected.resonator, amount: 1 },
+            ]);
+            expect(engine.methodName(selected)).toContain("Tangled Fossil");
+            for (const description of engine.fossil(selected.tangled!).descriptions)
+                expect(engine.methodName(selected)).toContain(description);
+        },
+    );
 
     it("rejects missing, unrelated and standalone outcome records before random selection", () => {
         const valid = method();

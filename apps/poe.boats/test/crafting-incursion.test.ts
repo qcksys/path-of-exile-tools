@@ -27,26 +27,27 @@ const engine329 = new CraftingEngine(
     ),
 );
 
-it.each(
-    incursionGloveModifiers,
-)("accepts prepared %s on gloves without adding it to ordinary rolls", (id) => {
-    const item = engine329.addStartingMod(nnnBase("Slink Gloves"), id, seededRandom(1));
-    expect(item.mods[0]!.id).toBe(id);
-    expect(engine329.pool({ ...item, mods: [] }).some((entry) => entry.id === id)).toBe(false);
-    expect(() => engine329.addStartingMod(nnnBase("Necrotic Armour"), id, seededRandom(1))).toThrow(
-        "not available",
-    );
-    expect(incursionModifierPool(engine329.catalog, nnnBase("Slink Gloves"))).toHaveLength(3);
-    expect(incursionModifierPool(engine329.catalog, nnnBase("Necrotic Armour"))).toEqual([]);
-    const outcomes = recombinationOutcomes(engine329, item, nnnBase("Sorcerer Gloves"));
-    expect(outcomes.reduce((sum, outcome) => sum + outcome.weight, 0)).toBeCloseTo(1);
-    expect(
-        outcomes
-            .filter(({ value }) => value.mods.some((mod) => mod.id === id))
-            .reduce((sum, outcome) => sum + outcome.weight, 0),
-    ).toBeCloseTo(0.59);
-    for (const { value } of outcomes) expect(engine329.validateItem(value)).toEqual(value);
-});
+it.each(incursionGloveModifiers)(
+    "accepts prepared %s on gloves without adding it to ordinary rolls",
+    (id) => {
+        const item = engine329.addStartingMod(nnnBase("Slink Gloves"), id, seededRandom(1));
+        expect(item.mods[0]!.id).toBe(id);
+        expect(engine329.pool({ ...item, mods: [] }).some((entry) => entry.id === id)).toBe(false);
+        expect(() =>
+            engine329.addStartingMod(nnnBase("Necrotic Armour"), id, seededRandom(1)),
+        ).toThrow("not available");
+        expect(incursionModifierPool(engine329.catalog, nnnBase("Slink Gloves"))).toHaveLength(3);
+        expect(incursionModifierPool(engine329.catalog, nnnBase("Necrotic Armour"))).toEqual([]);
+        const outcomes = recombinationOutcomes(engine329, item, nnnBase("Sorcerer Gloves"));
+        expect(outcomes.reduce((sum, outcome) => sum + outcome.weight, 0)).toBeCloseTo(1);
+        expect(
+            outcomes
+                .filter(({ value }) => value.mods.some((mod) => mod.id === id))
+                .reduce((sum, outcome) => sum + outcome.weight, 0),
+        ).toBeCloseTo(0.59);
+        for (const { value } of outcomes) expect(engine329.validateItem(value)).toEqual(value);
+    },
+);
 
 it("drops the Temple-only glove suffixes from 3.30.0", () => {
     const engine330 = engine;

@@ -120,32 +120,32 @@ it.each(donors)("$id adds two paid steps using the existing Normal source", ({ i
     expect(graph.prices[annul]).toBeUndefined();
 });
 
-it.each(donors)("$id charges Essence misses and loss of either required prefix", ({
-    id,
-    wanted,
-}) => {
-    const graph = preparation(id);
-    const draws = sequence(wanted);
-    const trial = new CraftingGraphTrial(engine, graph, scriptedRandom(draws), {
-        entry: id,
-        classify: false,
-    });
-    while (!trial.done) trial.advance();
-    const result = trial.result();
-    expect(draws).toEqual([]);
-    expect(result).toMatchObject({
-        status: "returned",
-        error: null,
-        cost: 31,
-        missingPrices: [],
-        purchases: 1,
-        actions: 8,
-        spending: { [`purchase:${baseId}:buy`]: 1, [essence]: 4, [annul]: 4 },
-    });
-    checkItem(result.item!, purchase(graph, id).alternative.item);
-    const ready = graph.nodes.find((node) => node.id === `${id}-make-isolate`)!.output;
-    expect(createCraftingItemQuery(engine).matches(result.item!, ready)).toBe("match");
-});
+it.each(donors)(
+    "$id charges Essence misses and loss of either required prefix",
+    ({ id, wanted }) => {
+        const graph = preparation(id);
+        const draws = sequence(wanted);
+        const trial = new CraftingGraphTrial(engine, graph, scriptedRandom(draws), {
+            entry: id,
+            classify: false,
+        });
+        while (!trial.done) trial.advance();
+        const result = trial.result();
+        expect(draws).toEqual([]);
+        expect(result).toMatchObject({
+            status: "returned",
+            error: null,
+            cost: 31,
+            missingPrices: [],
+            purchases: 1,
+            actions: 8,
+            spending: { [`purchase:${baseId}:buy`]: 1, [essence]: 4, [annul]: 4 },
+        });
+        checkItem(result.item!, purchase(graph, id).alternative.item);
+        const ready = graph.nodes.find((node) => node.id === `${id}-make-isolate`)!.output;
+        expect(createCraftingItemQuery(engine).matches(result.item!, ready)).toBe("match");
+    },
+);
 
 it.each(
     donors.flatMap((donor) => ["base", essence, annul].map((missing) => ({ ...donor, missing }))),
@@ -170,30 +170,31 @@ it.each(
     checkItem(result.item!, purchase(graph, id).alternative.item);
 });
 
-it.each(donors)("retained r9 produces the exact $id donor with reconciled costs", async ({
-    id,
-}) => {
-    const graph = preparation(id);
-    graph.entry = id;
-    graph.seed = 42;
-    graph.iterations = 1;
-    graph.maxSteps = 10000;
-    graph.outcomes = [{ ...graph.outcomes[0]!, query: purchase(graph, id).node.output }];
-    const retained = await retainedRevision(ruleset);
-    const simulation = retained.runtime.createSimulation(retained.catalog, graph, {
-        estimateIterations: 1,
-        workLimit: 10000,
-    });
-    while (!simulation.done) simulation.runBatch(100);
-    const result = simulation.result();
-    expect(result).toMatchObject({ complete: true, trials: 1, errors: {}, missingPrices: [] });
-    const sample = result.samples[0]!;
-    expect(sample.success).toBe(true);
-    expect(sample.purchases).toBe(1);
-    expect(sample.actions).toBe(sample.spending[essence]! + sample.spending[annul]!);
-    expect(sample.cost).toBe(11 + 2 * sample.spending[essence]! + 3 * sample.spending[annul]!);
-    checkItem(sample.item!, purchase(graph, id).alternative.item);
-});
+it.each(donors)(
+    "retained r9 produces the exact $id donor with reconciled costs",
+    async ({ id }) => {
+        const graph = preparation(id);
+        graph.entry = id;
+        graph.seed = 42;
+        graph.iterations = 1;
+        graph.maxSteps = 10000;
+        graph.outcomes = [{ ...graph.outcomes[0]!, query: purchase(graph, id).node.output }];
+        const retained = await retainedRevision(ruleset);
+        const simulation = retained.runtime.createSimulation(retained.catalog, graph, {
+            estimateIterations: 1,
+            workLimit: 10000,
+        });
+        while (!simulation.done) simulation.runBatch(100);
+        const result = simulation.result();
+        expect(result).toMatchObject({ complete: true, trials: 1, errors: {}, missingPrices: [] });
+        const sample = result.samples[0]!;
+        expect(sample.success).toBe(true);
+        expect(sample.purchases).toBe(1);
+        expect(sample.actions).toBe(sample.spending[essence]! + sample.spending[annul]!);
+        expect(sample.cost).toBe(11 + 2 * sample.spending[essence]! + 3 * sample.spending[annul]!);
+        checkItem(sample.item!, purchase(graph, id).alternative.item);
+    },
+);
 
 it("buys two independent bases when both NNN preparations are consumed", () => {
     const graph = preparation("donor-1");

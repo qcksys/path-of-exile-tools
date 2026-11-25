@@ -47,27 +47,26 @@ describe("Tainted Jeweller's Orb", () => {
         expect(poe2.currencySupported("reroll_socket_numbers_hellscape")).toBe(false);
     });
 
-    it.each([
-        "normal",
-        "magic",
-        "rare",
-    ] as const)("adds and removes a socket on %s items without changing modifiers or strands", (rarity) => {
-        const prepared = { ...item(), rarity };
-        if (rarity !== "normal")
-            prepared.mods = [engine.rollMod("IncreasedLife1", seededRandom(1))];
-        const before = structuredClone(prepared);
-        for (const [random, sockets] of [
-            [first, 5],
-            [last, 3],
-        ] as const) {
-            const result = engine.apply(prepared, method, random);
-            expect(result.item).toEqual({ ...prepared, sockets });
-            expect(result.cost).toEqual([
-                { id: method.id, name: engine.methodName(method), amount: 1 },
-            ]);
-        }
-        expect(prepared).toEqual(before);
-    });
+    it.each(["normal", "magic", "rare"] as const)(
+        "adds and removes a socket on %s items without changing modifiers or strands",
+        (rarity) => {
+            const prepared = { ...item(), rarity };
+            if (rarity !== "normal")
+                prepared.mods = [engine.rollMod("IncreasedLife1", seededRandom(1))];
+            const before = structuredClone(prepared);
+            for (const [random, sockets] of [
+                [first, 5],
+                [last, 3],
+            ] as const) {
+                const result = engine.apply(prepared, method, random);
+                expect(result.item).toEqual({ ...prepared, sockets });
+                expect(result.cost).toEqual([
+                    { id: method.id, name: engine.methodName(method), amount: 1 },
+                ]);
+            }
+            expect(prepared).toEqual(before);
+        },
+    );
 
     it("uses each base's extracted capacity and item-level thresholds", () => {
         for (const [level, maximum] of [

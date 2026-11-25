@@ -109,11 +109,14 @@ describe("gem capture", () => {
             21,
             "Level 1–4 · Quality 21–23%",
         ],
-    ] as const)("puts %s (%s) at level %i, quality %s in %s", (name, tags, level, quality, value) => {
-        const signature = extractModSignature(gem("g", name, level, quality, {}, tags));
-        expect(signature?.kind).toBe("gem");
-        expect(signatureValue(signature)).toBe(value);
-    });
+    ] as const)(
+        "puts %s (%s) at level %i, quality %s in %s",
+        (name, tags, level, quality, value) => {
+            const signature = extractModSignature(gem("g", name, level, quality, {}, tags));
+            expect(signature?.kind).toBe("gem");
+            expect(signatureValue(signature)).toBe(value);
+        },
+    );
 
     it("reads no tags from a gem whose first property has values", () => {
         const untagged = gem("g", "Empower Support", 3, 0);

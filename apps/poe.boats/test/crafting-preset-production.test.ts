@@ -293,14 +293,14 @@ it("pays for failed Onslaught isolation and Elusive regals while reusing one Red
     expect(result.visits["onslaught-base-make-reset"]!.recovered).toBe(1);
 });
 
-it.each([
-    "purchase:tailwind-base-make-base:buy",
-    ...redeemerCurrencies,
-])("keeps Redeemer preparation unpriced when %s is missing", (missing) => {
-    const result = redeemerRecoveryTrial(missing);
-    expect(result.cost).toBeNull();
-    expect(result.missingPrices).toEqual([missing]);
-});
+it.each(["purchase:tailwind-base-make-base:buy", ...redeemerCurrencies])(
+    "keeps Redeemer preparation unpriced when %s is missing",
+    (missing) => {
+        const result = redeemerRecoveryTrial(missing);
+        expect(result.cost).toBeNull();
+        expect(result.missingPrices).toEqual([missing]);
+    },
+);
 
 function pricedHunterPreparation(selected = ruleset, model = engine) {
     const graph = projectFromPreset(model, selected, "tailwind-boots");
@@ -338,84 +338,84 @@ it("pays all four currencies and returns the full original Hunter Normal item", 
     }
 });
 
-it.each([
-    "purchase:tailwind-base-make-base:buy",
-    ...hunterPreparation.map(([, id]) => id),
-])("keeps Hunter preparation unpriced when %s is missing", (missing) => {
-    const graph = pricedHunterPreparation();
-    if (missing.startsWith("purchase:"))
-        purchase(graph, "tailwind-base-make-base").alternative.price = null;
-    else delete graph.prices[missing];
-    const trial = new CraftingGraphTrial(engine, graph, seededRandom(42), {
-        entry: "tailwind-base",
-        classify: false,
-    });
-    while (!trial.done) trial.advance();
-    expect(trial.result()).toMatchObject({
-        status: "returned",
-        error: null,
-        cost: null,
-        missingPrices: [missing],
-    });
-    expect(trial.result().item).toEqual(purchase(graph, "tailwind-base").alternative.item);
-});
+it.each(["purchase:tailwind-base-make-base:buy", ...hunterPreparation.map(([, id]) => id)])(
+    "keeps Hunter preparation unpriced when %s is missing",
+    (missing) => {
+        const graph = pricedHunterPreparation();
+        if (missing.startsWith("purchase:"))
+            purchase(graph, "tailwind-base-make-base").alternative.price = null;
+        else delete graph.prices[missing];
+        const trial = new CraftingGraphTrial(engine, graph, seededRandom(42), {
+            entry: "tailwind-base",
+            classify: false,
+        });
+        while (!trial.done) trial.advance();
+        expect(trial.result()).toMatchObject({
+            status: "returned",
+            error: null,
+            cost: null,
+            missingPrices: [missing],
+        });
+        expect(trial.result().item).toEqual(purchase(graph, "tailwind-base").alternative.item);
+    },
+);
 
-it.each([
-    "r9",
-    "r10",
-])("retained %s pays for a new base and four crafts on each Hunter acquisition", async (revision) => {
-    const selected = historyIndex.revisions.find(
-        (entry) => entry.game === "poe1" && entry.revision === revision,
-    )!;
-    // Retained revisions run 3.29 graphs, built with the catalog they published.
-    const retained = await retainedRevision(selected);
-    const graph = pricedHunterPreparation(
-        selected,
-        new CraftingEngine(craftingCatalogSchema.parse(retained.catalog)),
-    );
-    const any = purchase(graph, "tailwind-base").node.output;
-    graph.nodes.push({
-        kind: "craft",
-        id: "consume-twice",
-        name: "Consume two independently prepared Hunter bases",
-        output: any,
-        inputs: [
-            { id: "first", name: "First", source: "tailwind-base" },
-            { id: "second", name: "Second", source: "tailwind-base" },
-        ],
-        method: { kind: "recombine", id: "recombine" },
-        branches: [],
-        ordering: "automatic",
-        fallback: { kind: "return" },
-    });
-    graph.entry = "consume-twice";
-    graph.outcomes = [{ ...graph.outcomes[0]!, id: "ready", name: "Ready", query: any }];
-    graph.iterations = 1;
-    graph.prices["service:recombine"] = quote(3);
-    const simulation = retained.runtime.createSimulation(retained.catalog, graph, {
-        estimateIterations: 1,
-        workLimit: 1000,
-    });
-    while (!simulation.done) simulation.runBatch(100);
-    const result = simulation.result();
-    expect(result).toMatchObject({
-        complete: true,
-        trials: 1,
-        meanCost: 59,
-        missingPrices: [],
-        errors: {},
-    });
-    expect(result.samples[0]).toMatchObject({
-        purchases: 2,
-        actions: 9,
-        cost: 59,
-        spending: {
-            "purchase:tailwind-base-make-base:buy": 2,
-            ...Object.fromEntries(hunterPreparation.map(([, id]) => [id, 2])),
-            "service:recombine": 1,
-        },
-    });
-});
+it.each(["r9", "r10"])(
+    "retained %s pays for a new base and four crafts on each Hunter acquisition",
+    async (revision) => {
+        const selected = historyIndex.revisions.find(
+            (entry) => entry.game === "poe1" && entry.revision === revision,
+        )!;
+        // Retained revisions run 3.29 graphs, built with the catalog they published.
+        const retained = await retainedRevision(selected);
+        const graph = pricedHunterPreparation(
+            selected,
+            new CraftingEngine(craftingCatalogSchema.parse(retained.catalog)),
+        );
+        const any = purchase(graph, "tailwind-base").node.output;
+        graph.nodes.push({
+            kind: "craft",
+            id: "consume-twice",
+            name: "Consume two independently prepared Hunter bases",
+            output: any,
+            inputs: [
+                { id: "first", name: "First", source: "tailwind-base" },
+                { id: "second", name: "Second", source: "tailwind-base" },
+            ],
+            method: { kind: "recombine", id: "recombine" },
+            branches: [],
+            ordering: "automatic",
+            fallback: { kind: "return" },
+        });
+        graph.entry = "consume-twice";
+        graph.outcomes = [{ ...graph.outcomes[0]!, id: "ready", name: "Ready", query: any }];
+        graph.iterations = 1;
+        graph.prices["service:recombine"] = quote(3);
+        const simulation = retained.runtime.createSimulation(retained.catalog, graph, {
+            estimateIterations: 1,
+            workLimit: 1000,
+        });
+        while (!simulation.done) simulation.runBatch(100);
+        const result = simulation.result();
+        expect(result).toMatchObject({
+            complete: true,
+            trials: 1,
+            meanCost: 59,
+            missingPrices: [],
+            errors: {},
+        });
+        expect(result.samples[0]).toMatchObject({
+            purchases: 2,
+            actions: 9,
+            cost: 59,
+            spending: {
+                "purchase:tailwind-base-make-base:buy": 2,
+                ...Object.fromEntries(hunterPreparation.map(([, id]) => [id, 2])),
+                "service:recombine": 1,
+            },
+        });
+    },
+);
 
 const nnnShieldCosts = [
     "Metadata/Items/Currency/CurrencyEssenceDoubt1",
@@ -424,62 +424,64 @@ const nnnShieldCosts = [
     "Metadata/Items/Currency/CurrencyAddModToRare",
 ] as const;
 
-it.each([
-    "percent",
-    "block",
-])("adds optional %s NNN preparation without changing the shield recipe", (id) => {
-    const graph = projectFromPreset(engine, ruleset, "es-block-shield");
-    const { node, alternative } = purchase(graph, id);
-    expect(node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
-    expect(node.alternatives[1]).toEqual({
-        kind: "production",
-        id: "make-nnn",
-        name: "Isolate NNN evasion, then Exalt the required prefix",
-        nodeId: `${id}-make-reset`,
-    });
-    const steps = graph.nodes.filter(
-        (node): node is GraphCraftNode =>
-            node.kind === "craft" && node.id.startsWith(`${id}-make-`),
-    );
-    expect(steps).toHaveLength(5);
-    expect(steps[0]).toMatchObject({
-        inputs: [{ source: "flat-make-base" }],
-        method: { kind: "essence", id: nnnShieldCosts[0] },
-    });
-    expect(
-        discoverCraftingCosts(
-            engine,
-            steps.map((step) => step.method),
-        )
-            .map((cost) => cost.id)
-            .sort(),
-    ).toEqual([...nnnShieldCosts].sort());
-    expect(graph.nodes.filter((node) => node.kind === "acquire")).toHaveLength(7);
-    const nnn = alternative.item.mods.find((mod) => mod.essence)!;
-    const wanted = alternative.item.mods.find((mod) => !mod.essence)!.id;
-    const isolated = { ...alternative.item, mods: [nnn] };
-    expect(engine.pool(isolated, { level: 60 }).some((mod) => mod.id === wanted)).toBe(false);
-    expect(engine.pool(isolated).some((mod) => mod.id === wanted && mod.weight > 0)).toBe(true);
-    expect(graph.prices[nnnShieldCosts[0]]).toBeUndefined();
-    expect(graph.prices[nnnShieldCosts[3]]).toBeUndefined();
-    const retained = historyIndex.revisions.find(
-        (entry) => entry.game === "poe1" && entry.revision === "r8",
-    )!;
-    const original = projectFromPreset(engine, retained, "es-block-shield");
-    const withoutPreparation = graph.nodes
-        .filter((node) => !node.id.includes("-make"))
-        .map((node) =>
-            node.kind === "acquire"
-                ? {
-                      ...node,
-                      alternatives: node.alternatives.filter((entry) => entry.kind === "purchase"),
-                  }
-                : node,
+it.each(["percent", "block"])(
+    "adds optional %s NNN preparation without changing the shield recipe",
+    (id) => {
+        const graph = projectFromPreset(engine, ruleset, "es-block-shield");
+        const { node, alternative } = purchase(graph, id);
+        expect(node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
+        expect(node.alternatives[1]).toEqual({
+            kind: "production",
+            id: "make-nnn",
+            name: "Isolate NNN evasion, then Exalt the required prefix",
+            nodeId: `${id}-make-reset`,
+        });
+        const steps = graph.nodes.filter(
+            (node): node is GraphCraftNode =>
+                node.kind === "craft" && node.id.startsWith(`${id}-make-`),
         );
-    expect(withoutPreparation).toEqual(original.nodes);
-    for (const key of ["entry", "outcomes", "iterations", "maxSteps", "prices"] as const)
-        expect(graph[key]).toEqual(original[key]);
-});
+        expect(steps).toHaveLength(5);
+        expect(steps[0]).toMatchObject({
+            inputs: [{ source: "flat-make-base" }],
+            method: { kind: "essence", id: nnnShieldCosts[0] },
+        });
+        expect(
+            discoverCraftingCosts(
+                engine,
+                steps.map((step) => step.method),
+            )
+                .map((cost) => cost.id)
+                .sort(),
+        ).toEqual([...nnnShieldCosts].sort());
+        expect(graph.nodes.filter((node) => node.kind === "acquire")).toHaveLength(7);
+        const nnn = alternative.item.mods.find((mod) => mod.essence)!;
+        const wanted = alternative.item.mods.find((mod) => !mod.essence)!.id;
+        const isolated = { ...alternative.item, mods: [nnn] };
+        expect(engine.pool(isolated, { level: 60 }).some((mod) => mod.id === wanted)).toBe(false);
+        expect(engine.pool(isolated).some((mod) => mod.id === wanted && mod.weight > 0)).toBe(true);
+        expect(graph.prices[nnnShieldCosts[0]]).toBeUndefined();
+        expect(graph.prices[nnnShieldCosts[3]]).toBeUndefined();
+        const retained = historyIndex.revisions.find(
+            (entry) => entry.game === "poe1" && entry.revision === "r8",
+        )!;
+        const original = projectFromPreset(engine, retained, "es-block-shield");
+        const withoutPreparation = graph.nodes
+            .filter((node) => !node.id.includes("-make"))
+            .map((node) =>
+                node.kind === "acquire"
+                    ? {
+                          ...node,
+                          alternatives: node.alternatives.filter(
+                              (entry) => entry.kind === "purchase",
+                          ),
+                      }
+                    : node,
+            );
+        expect(withoutPreparation).toEqual(original.nodes);
+        for (const key of ["entry", "outcomes", "iterations", "maxSteps", "prices"] as const)
+            expect(graph[key]).toEqual(original[key]);
+    },
+);
 
 function nnnShieldRecoveryTrial(id: string, missing?: string, scourBase = false) {
     const graph = projectFromPreset(engine, ruleset, "es-block-shield");
@@ -549,23 +551,23 @@ function nnnShieldRecoveryTrial(id: string, missing?: string, scourBase = false)
     return result;
 }
 
-it.each([
-    "percent",
-    "block",
-])("pays %s NNN isolation and Exalt retries without repurchasing the base", (id) => {
-    const result = nnnShieldRecoveryTrial(id);
-    expect(result.purchases).toBe(1);
-    expect(result.actions).toBe(17);
-    expect(result.cost).toBe(75);
-    expect(result.missingPrices).toEqual([]);
-    expect(result.spending).toEqual({
-        "purchase:flat-make-base:buy": 1,
-        ...Object.fromEntries(nnnShieldCosts.map((cost, index) => [cost, [3, 9, 2, 3][index]])),
-    });
-    expect(result.visits[`${id}-make-isolate`]!.recovered).toBe(4);
-    expect(result.visits[`${id}-make-annul`]!.recovered).toBe(1);
-    expect(result.visits[`${id}-make-reset`]!.recovered).toBe(2);
-});
+it.each(["percent", "block"])(
+    "pays %s NNN isolation and Exalt retries without repurchasing the base",
+    (id) => {
+        const result = nnnShieldRecoveryTrial(id);
+        expect(result.purchases).toBe(1);
+        expect(result.actions).toBe(17);
+        expect(result.cost).toBe(75);
+        expect(result.missingPrices).toEqual([]);
+        expect(result.spending).toEqual({
+            "purchase:flat-make-base:buy": 1,
+            ...Object.fromEntries(nnnShieldCosts.map((cost, index) => [cost, [3, 9, 2, 3][index]])),
+        });
+        expect(result.visits[`${id}-make-isolate`]!.recovered).toBe(4);
+        expect(result.visits[`${id}-make-annul`]!.recovered).toBe(1);
+        expect(result.visits[`${id}-make-reset`]!.recovered).toBe(2);
+    },
+);
 
 it.each(
     ["percent", "block"].flatMap((id) =>
@@ -577,20 +579,20 @@ it.each(
     expect(result.missingPrices).toEqual([missing]);
 });
 
-it.each([
-    "percent",
-    "block",
-])("%s NNN preparation composes with paid Scouring of the Magic source", (id) => {
-    const result = nnnShieldRecoveryTrial(id, undefined, true);
-    expect(result.purchases).toBe(1);
-    expect(result.actions).toBe(18);
-    expect(result.cost).toBe(80);
-    expect(result.missingPrices).toEqual([]);
-    expect(result.spending).toEqual({
-        "purchase:shield-make-titanium-base:buy": 1,
-        ...Object.fromEntries(nnnShieldCosts.map((cost, index) => [cost, [3, 9, 3, 3][index]])),
-    });
-});
+it.each(["percent", "block"])(
+    "%s NNN preparation composes with paid Scouring of the Magic source",
+    (id) => {
+        const result = nnnShieldRecoveryTrial(id, undefined, true);
+        expect(result.purchases).toBe(1);
+        expect(result.actions).toBe(18);
+        expect(result.cost).toBe(80);
+        expect(result.missingPrices).toEqual([]);
+        expect(result.spending).toEqual({
+            "purchase:shield-make-titanium-base:buy": 1,
+            ...Object.fromEntries(nnnShieldCosts.map((cost, index) => [cost, [3, 9, 3, 3][index]])),
+        });
+    },
+);
 
 it("keeps pinned shield purchase previews unchanged with NNN preparation available", () => {
     const graph = projectFromPreset(engine, ruleset, "es-block-shield");
@@ -668,89 +670,89 @@ it.each(donors)("%s offers explicit preparation for its isolated natural donors"
     }
 });
 
-it.each(inputs)("$preset/$id pays for rerolling and recovery without rebuying the base", ({
-    preset,
-    id,
-}) => {
-    const graph = projectFromPreset(engine, ruleset, preset);
-    const { node, alternative: magic } = purchase(graph, id, "buy-magic");
-    const { alternative: base } = purchase(graph, `${id}-make-base`);
-    node.choice = { mode: "pinned", alternativeId: "make-magic" };
-    base.price = quote(11);
-    const wanted = magic.item.mods[0]!.id;
-    const other = engine.pool(magic.item)[0]!.id;
-    const sequence = [1, other, 2, wanted, other, wanted, 2, wanted, other, other];
-    const methods = ["-transmute", "-alteration", ""].map((suffix) => {
-        const step = graph.nodes.find((node) => node.id === `${id}-make${suffix}`)!;
-        if (step.kind !== "craft" || step.method.kind !== "currency")
-            throw new Error("Expected preparation currency");
-        return step.method.id;
-    });
-    methods.forEach((id, index) => {
-        graph.prices[id] = quote([2, 3, 5][index]!);
-    });
-    const trial = new CraftingGraphTrial(engine, graph, scriptedRandom(sequence), {
-        entry: id,
-        classify: false,
-        trace: true,
-    });
-    while (!trial.done) trial.advance();
-    const result = trial.result();
-    expect(result.error).toBeNull();
-    expect(result.status).toBe("returned");
-    expect(sequence).toEqual([]);
-    expect(result.purchases).toBe(1);
-    expect(result.actions).toBe(5);
-    expect(result.spending).toEqual({
-        [`purchase:${id}-make-base:buy`]: 1,
-        [methods[0]!]: 1,
-        [methods[1]!]: 2,
-        [methods[2]!]: 2,
-    });
-    expect(result.cost).toBe(29);
-    expect(result.missingPrices).toEqual([]);
-    expect(result.item).toEqual(
-        engine.addStartingMod({ ...base.item, rarity: "magic" }, wanted, scriptedRandom([])),
-    );
-    expect(createCraftingItemQuery(engine).matches(result.item!, node.output)).toBe("match");
-    expect(result.visits[`${id}-make`]!.recovered).toBeGreaterThan(0);
-});
+it.each(inputs)(
+    "$preset/$id pays for rerolling and recovery without rebuying the base",
+    ({ preset, id }) => {
+        const graph = projectFromPreset(engine, ruleset, preset);
+        const { node, alternative: magic } = purchase(graph, id, "buy-magic");
+        const { alternative: base } = purchase(graph, `${id}-make-base`);
+        node.choice = { mode: "pinned", alternativeId: "make-magic" };
+        base.price = quote(11);
+        const wanted = magic.item.mods[0]!.id;
+        const other = engine.pool(magic.item)[0]!.id;
+        const sequence = [1, other, 2, wanted, other, wanted, 2, wanted, other, other];
+        const methods = ["-transmute", "-alteration", ""].map((suffix) => {
+            const step = graph.nodes.find((node) => node.id === `${id}-make${suffix}`)!;
+            if (step.kind !== "craft" || step.method.kind !== "currency")
+                throw new Error("Expected preparation currency");
+            return step.method.id;
+        });
+        methods.forEach((id, index) => {
+            graph.prices[id] = quote([2, 3, 5][index]!);
+        });
+        const trial = new CraftingGraphTrial(engine, graph, scriptedRandom(sequence), {
+            entry: id,
+            classify: false,
+            trace: true,
+        });
+        while (!trial.done) trial.advance();
+        const result = trial.result();
+        expect(result.error).toBeNull();
+        expect(result.status).toBe("returned");
+        expect(sequence).toEqual([]);
+        expect(result.purchases).toBe(1);
+        expect(result.actions).toBe(5);
+        expect(result.spending).toEqual({
+            [`purchase:${id}-make-base:buy`]: 1,
+            [methods[0]!]: 1,
+            [methods[1]!]: 2,
+            [methods[2]!]: 2,
+        });
+        expect(result.cost).toBe(29);
+        expect(result.missingPrices).toEqual([]);
+        expect(result.item).toEqual(
+            engine.addStartingMod({ ...base.item, rarity: "magic" }, wanted, scriptedRandom([])),
+        );
+        expect(createCraftingItemQuery(engine).matches(result.item!, node.output)).toBe("match");
+        expect(result.visits[`${id}-make`]!.recovered).toBeGreaterThan(0);
+    },
+);
 
-it.each(inputs)("$preset/$id preparation preserves the full recipe's final item", ({
-    preset,
-    id,
-}) => {
-    const graph = projectFromPreset(engine, ruleset, preset);
-    const { node, alternative: rare } = purchase(graph, id);
-    const wanted = rare.item.mods[0]!.id;
-    const { alternative: base } = purchase(graph, `${id}-make-base`);
-    const prepared = engine.addStartingMod(
-        { ...base.item, rarity: "magic" },
-        wanted,
-        scriptedRandom([]),
-    );
-    rare.item.mods = prepared.mods;
-    const bought = runGraphTrial(graph, seededRandom(42));
-    expect(bought.success).toBe(true);
-    const random = seededRandom(42);
-    const rolling: CraftingRandom = {
-        integer: (min) => min,
-        pick: (choices) => {
-            const count =
-                choices.length === 2 && choices[0]!.value === 1 && choices[1]!.value === 2;
-            if (count) return choices[0]!.value;
-            return (
-                choices.find(({ value, weight }) => weight > 0 && value === wanted)?.value ??
-                random.pick(choices)
-            );
-        },
-    };
-    node.choice = { mode: "pinned", alternativeId: "make-magic" };
-    const made = runGraphTrial(graph, rolling);
-    expect(made.error).toBeNull();
-    expect(made.success).toBe(true);
-    expect(made.item).toEqual(bought.item);
-    expect(made.spending["service:recombine"]).toBe(bought.spending["service:recombine"]);
-    expect(made.missingPrices).toContain(`purchase:${id}-make-base:buy`);
-    expect(made.cost).toBeNull();
-});
+it.each(inputs)(
+    "$preset/$id preparation preserves the full recipe's final item",
+    ({ preset, id }) => {
+        const graph = projectFromPreset(engine, ruleset, preset);
+        const { node, alternative: rare } = purchase(graph, id);
+        const wanted = rare.item.mods[0]!.id;
+        const { alternative: base } = purchase(graph, `${id}-make-base`);
+        const prepared = engine.addStartingMod(
+            { ...base.item, rarity: "magic" },
+            wanted,
+            scriptedRandom([]),
+        );
+        rare.item.mods = prepared.mods;
+        const bought = runGraphTrial(graph, seededRandom(42));
+        expect(bought.success).toBe(true);
+        const random = seededRandom(42);
+        const rolling: CraftingRandom = {
+            integer: (min) => min,
+            pick: (choices) => {
+                const count =
+                    choices.length === 2 && choices[0]!.value === 1 && choices[1]!.value === 2;
+                if (count) return choices[0]!.value;
+                return (
+                    choices.find(({ value, weight }) => weight > 0 && value === wanted)?.value ??
+                    random.pick(choices)
+                );
+            },
+        };
+        node.choice = { mode: "pinned", alternativeId: "make-magic" };
+        const made = runGraphTrial(graph, rolling);
+        expect(made.error).toBeNull();
+        expect(made.success).toBe(true);
+        expect(made.item).toEqual(bought.item);
+        expect(made.spending["service:recombine"]).toBe(bought.spending["service:recombine"]);
+        expect(made.missingPrices).toContain(`purchase:${id}-make-base:buy`);
+        expect(made.cost).toBeNull();
+    },
+);

@@ -85,57 +85,60 @@ it.each([
         false,
         false,
     ],
-] as const)("keeps the %s broad modifier pool from becoming a complete prepared acquisition price", async (name, modId, fractured, family) => {
-    const { catalog, engine, ruleset } = name === "Slink Gloves" ? temple : current;
-    const baseId = Object.entries(catalog.bases).find(([, base]) => base.name === name)![0];
-    const item = engine.validateItem({
-        ...engine.createItem(baseId, 86),
-        rarity: "rare",
-        mods: [engine.rollMod(modId, seededRandom(1), { fractured })],
-    });
-    const record = createCraftingItemQuery(engine).record(item);
-    const definition = classifier.manifest.cohorts.find(
-        (cohort) =>
-            cohort.purpose === (fractured ? "fracture" : "isolated-modifier") &&
-            cohort.id.startsWith("donor-family:") === family &&
-            matchItem(record, cohort.query) === "match",
-    )!;
-    expect(definition).toBeDefined();
-    const graph = { ...marketGraph(), ruleset: rulesetReference(ruleset) };
-    const node = graph.nodes[0]!;
-    if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
-        throw new Error("Fixture");
-    node.alternatives[0].item = item;
-    node.output = itemQuerySchema.parse({
-        game: "poe1",
-        groups: [{ type: "and", filters: [{ kind: "mod", ids: [modId], fractured }] }],
-    });
-    expect(() =>
-        bindCohortPurchasePrice(graph, engine, node.id, "buy", {
-            ...marketCandidate,
-            ...(family ? { assumption: "display-equivalent-v1" as const } : {}),
-            definition: {
-                ...definition,
-                revision: classifier.manifest.revision,
-                catalogHash: classifier.manifest.catalogHash,
-            },
-            latest: {
-                ...marketCandidate.latest,
-                cohortId: definition.id,
-                revision: classifier.manifest.revision,
-            },
-        }),
-    ).toThrow("does not guarantee the configured");
-    const retained = await retainedRevision(
-        historyIndex.revisions.find(
-            (entry) => entry.game === "poe1" && entry.revision === graph.ruleset.revision,
-        )!,
-    );
-    const simulation = retained.runtime.createSimulation(retained.catalog, graph, {
-        estimateIterations: 3,
-        workLimit: 1000,
-    });
-    while (!simulation.done) simulation.runBatch();
-    expect(simulation.result().meanCost).toBeNull();
-    expect(node.alternatives[0].price).toBeNull();
-});
+] as const)(
+    "keeps the %s broad modifier pool from becoming a complete prepared acquisition price",
+    async (name, modId, fractured, family) => {
+        const { catalog, engine, ruleset } = name === "Slink Gloves" ? temple : current;
+        const baseId = Object.entries(catalog.bases).find(([, base]) => base.name === name)![0];
+        const item = engine.validateItem({
+            ...engine.createItem(baseId, 86),
+            rarity: "rare",
+            mods: [engine.rollMod(modId, seededRandom(1), { fractured })],
+        });
+        const record = createCraftingItemQuery(engine).record(item);
+        const definition = classifier.manifest.cohorts.find(
+            (cohort) =>
+                cohort.purpose === (fractured ? "fracture" : "isolated-modifier") &&
+                cohort.id.startsWith("donor-family:") === family &&
+                matchItem(record, cohort.query) === "match",
+        )!;
+        expect(definition).toBeDefined();
+        const graph = { ...marketGraph(), ruleset: rulesetReference(ruleset) };
+        const node = graph.nodes[0]!;
+        if (node.kind !== "acquire" || node.alternatives[0]?.kind !== "purchase")
+            throw new Error("Fixture");
+        node.alternatives[0].item = item;
+        node.output = itemQuerySchema.parse({
+            game: "poe1",
+            groups: [{ type: "and", filters: [{ kind: "mod", ids: [modId], fractured }] }],
+        });
+        expect(() =>
+            bindCohortPurchasePrice(graph, engine, node.id, "buy", {
+                ...marketCandidate,
+                ...(family ? { assumption: "display-equivalent-v1" as const } : {}),
+                definition: {
+                    ...definition,
+                    revision: classifier.manifest.revision,
+                    catalogHash: classifier.manifest.catalogHash,
+                },
+                latest: {
+                    ...marketCandidate.latest,
+                    cohortId: definition.id,
+                    revision: classifier.manifest.revision,
+                },
+            }),
+        ).toThrow("does not guarantee the configured");
+        const retained = await retainedRevision(
+            historyIndex.revisions.find(
+                (entry) => entry.game === "poe1" && entry.revision === graph.ruleset.revision,
+            )!,
+        );
+        const simulation = retained.runtime.createSimulation(retained.catalog, graph, {
+            estimateIterations: 3,
+            workLimit: 1000,
+        });
+        while (!simulation.done) simulation.runBatch();
+        expect(simulation.result().meanCost).toBeNull();
+        expect(node.alternatives[0].price).toBeNull();
+    },
+);

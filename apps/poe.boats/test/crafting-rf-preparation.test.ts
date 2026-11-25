@@ -268,19 +268,13 @@ it("excludes an Eldritch Normal Royal that cannot take Hunter influence from the
     ).not.toContain(cohort.id);
 });
 
-it.each([
-    "base",
-    transmute,
-    regal,
-    hunter,
-    primal,
-    horror,
-    divine,
-    scour,
-])("remains unpriced without %s", (missing) => {
-    const { result } = runPreparation(missing);
-    expect(result.cost).toBeNull();
-    expect(result.missingPrices).toEqual([
-        missing === "base" ? `purchase:${sourceId}:buy-scour` : missing,
-    ]);
-});
+it.each(["base", transmute, regal, hunter, primal, horror, divine, scour])(
+    "remains unpriced without %s",
+    (missing) => {
+        const { result } = runPreparation(missing);
+        expect(result.cost).toBeNull();
+        expect(result.missingPrices).toEqual([
+            missing === "base" ? `purchase:${sourceId}:buy-scour` : missing,
+        ]);
+    },
+);

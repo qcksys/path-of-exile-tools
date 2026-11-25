@@ -97,20 +97,20 @@ describe("saved planner authorization and commands", () => {
         expect(queries.getSetWithData).not.toHaveBeenCalled();
     });
 
-    it.each([
-        null,
-        fixture("other-owner"),
-    ])("refuses missing and foreign sets without mutations", async (data) => {
-        vi.mocked(queries.getSetWithData).mockResolvedValue(data);
-        await expect(getSavedSet(context, "set")).rejects.toMatchObject({ status: 404 });
-        await expect(
-            updateSavedSet(context, { setId: "set", name: "Changed" }),
-        ).rejects.toMatchObject({ status: 404 });
-        await expect(deleteSavedSet(context, "set")).rejects.toMatchObject({ status: 404 });
-        expect(queries.updateSet).not.toHaveBeenCalled();
-        expect(queries.deleteSet).not.toHaveBeenCalled();
-        expect(queries.getSetWithData).toHaveBeenCalledWith(db, "set", "owner", true);
-    });
+    it.each([null, fixture("other-owner")])(
+        "refuses missing and foreign sets without mutations",
+        async (data) => {
+            vi.mocked(queries.getSetWithData).mockResolvedValue(data);
+            await expect(getSavedSet(context, "set")).rejects.toMatchObject({ status: 404 });
+            await expect(
+                updateSavedSet(context, { setId: "set", name: "Changed" }),
+            ).rejects.toMatchObject({ status: 404 });
+            await expect(deleteSavedSet(context, "set")).rejects.toMatchObject({ status: 404 });
+            expect(queries.updateSet).not.toHaveBeenCalled();
+            expect(queries.deleteSet).not.toHaveBeenCalled();
+            expect(queries.getSetWithData).toHaveBeenCalledWith(db, "set", "owner", true);
+        },
+    );
 
     it("refuses child IDs outside the locked parent set", async () => {
         await expect(

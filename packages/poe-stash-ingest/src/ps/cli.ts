@@ -359,13 +359,34 @@ program
                 rateLimit = info;
             },
         });
-        await runCapture(client, {
-            archive,
-            realm: REALM,
-            signal: stop.signal,
-            onStatus: status.update,
-            rateLimit: () => rateLimit,
-        });
+        const { captureLeaseSettings, createHomeLease, createLeaseApi } = await import(
+            "#src/ps/capture-lease.ts"
+        );
+        const leaseSettings = captureLeaseSettings();
+        const api = leaseSettings && createLeaseApi(leaseSettings);
+        if (api && leaseSettings?.role === "fallback") {
+            const { runFallbackCapture } = await import("#src/ps/capture-fallback.ts");
+            await runFallbackCapture(client, {
+                dir: archive.dir,
+                api,
+                realm: REALM,
+                signal: stop.signal,
+                onStatus: status.update,
+                rateLimit: () => rateLimit,
+            });
+        } else {
+            const lease = api && createHomeLease({ api, dir: archive.dir });
+            const renewing = lease?.run(stop.signal);
+            await runCapture(client, {
+                archive,
+                realm: REALM,
+                signal: stop.signal,
+                onStatus: status.update,
+                rateLimit: () => rateLimit,
+                lease,
+            });
+            await renewing;
+        }
         await status.close();
         // A seal in progress restarts from its spool, and must not hold up the replacement.
         process.exit(0);

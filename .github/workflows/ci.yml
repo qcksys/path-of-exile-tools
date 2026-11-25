@@ -124,7 +124,8 @@ jobs:
       matrix:
         shard: [1, 2, 3, 4]
     container:
-      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      # Keep in step with @playwright/test in pnpm-workspace.yaml: the image holds its browsers.
+      image: mcr.microsoft.com/playwright:v1.65.1-noble
       options: --init --ipc=host
     env:
       APP_ENV: test

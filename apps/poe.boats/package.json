@@ -51,7 +51,6 @@
         "@poe-tools/trade-bridge": "workspace:*",
         "@qcksys/drizzle-extensions": "catalog:",
         "@qcksys/pino-cloudflare": "catalog:",
-        "@react-router/cloudflare": "catalog:",
         "@scalar/hono-api-reference": "catalog:",
         "@tailwindcss/typography": "catalog:",
         "@tanstack/react-table": "catalog:",

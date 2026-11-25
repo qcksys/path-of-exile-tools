@@ -94,55 +94,56 @@ describe("Allflame Ducats", () => {
         expect(() => second.validateMethod(tzamoto)).toThrow("Allflame");
     });
 
-    it.each([
-        "reset",
-        "destroy",
-    ])("offers and persists Tzamoto's %s outcome with one cost and no old imprint", (outcome) => {
-        const start = engine.apply(
-            item(),
-            { kind: "beast", id: "EinharMasterCraft27" },
-            seededRandom(1),
-        ).item;
-        const before = structuredClone(start);
-        const offered = engine.prepareAllflame(start, tzamoto, force(outcome));
-        expect(start).toEqual(before);
-        expect(offered.item.allflameCopies).toHaveLength(1);
-        expect(offered.item.imprint).toBeUndefined();
-        expect(offered.cost).toEqual([
-            { id: tzamoto.id, name: "Tzamoto's Ducat", amount: 1 },
-            { id: sulphur, name: "Dead Man's Sulphur", amount: 6100 },
-        ]);
-        const saved = validateProject(
-            catalog,
-            JSON.parse(JSON.stringify(project(offered.item, tzamoto))),
-        );
-        const selected = engine.chooseAllflame(saved.item, 0);
-        expect(selected.imprint).toBeUndefined();
-        expect(selected.mods).toEqual(start.mods);
-        expect(selected.memoryStrands).toBe(82);
-        expect(selected.quality).toBe(20);
-        expect(selected.socketLinks).toEqual(start.socketLinks);
-        expect(selected.allflameCrafted).toBe(true);
-        expect(selected.intangibility).toBe(outcome === "reset" ? 0 : 80);
-        expect(Boolean(selected.destroyed)).toBe(outcome === "destroy");
-        expect(selected.destroyedBy).toBe(outcome === "destroy" ? tzamoto.id : undefined);
-        expect(engine.matches(selected, reset)).toBe(outcome === "reset");
-        expect(engine.matches(selected, engine.validateTarget({ groups: [] }))).toBe(
-            outcome === "reset",
-        );
-        expect(engine.validateItem(JSON.parse(JSON.stringify(selected)))).toEqual(selected);
-        if (outcome === "destroy") {
-            expect(() => exportCraftingItemText(engine, selected)).toThrow("destroyed");
-            expect(() =>
-                engine.apply(selected, currency("restore_imprint"), seededRandom(1)),
-            ).toThrow("Destroyed");
-            expect(() => engine.apply(selected, tzamoto, seededRandom(1))).toThrow("intact");
-        } else {
-            expect(
-                importCraftingItemText(engine, exportCraftingItemText(engine, selected))[0]!.item,
-            ).toEqual(selected);
-        }
-    });
+    it.each(["reset", "destroy"])(
+        "offers and persists Tzamoto's %s outcome with one cost and no old imprint",
+        (outcome) => {
+            const start = engine.apply(
+                item(),
+                { kind: "beast", id: "EinharMasterCraft27" },
+                seededRandom(1),
+            ).item;
+            const before = structuredClone(start);
+            const offered = engine.prepareAllflame(start, tzamoto, force(outcome));
+            expect(start).toEqual(before);
+            expect(offered.item.allflameCopies).toHaveLength(1);
+            expect(offered.item.imprint).toBeUndefined();
+            expect(offered.cost).toEqual([
+                { id: tzamoto.id, name: "Tzamoto's Ducat", amount: 1 },
+                { id: sulphur, name: "Dead Man's Sulphur", amount: 6100 },
+            ]);
+            const saved = validateProject(
+                catalog,
+                JSON.parse(JSON.stringify(project(offered.item, tzamoto))),
+            );
+            const selected = engine.chooseAllflame(saved.item, 0);
+            expect(selected.imprint).toBeUndefined();
+            expect(selected.mods).toEqual(start.mods);
+            expect(selected.memoryStrands).toBe(82);
+            expect(selected.quality).toBe(20);
+            expect(selected.socketLinks).toEqual(start.socketLinks);
+            expect(selected.allflameCrafted).toBe(true);
+            expect(selected.intangibility).toBe(outcome === "reset" ? 0 : 80);
+            expect(Boolean(selected.destroyed)).toBe(outcome === "destroy");
+            expect(selected.destroyedBy).toBe(outcome === "destroy" ? tzamoto.id : undefined);
+            expect(engine.matches(selected, reset)).toBe(outcome === "reset");
+            expect(engine.matches(selected, engine.validateTarget({ groups: [] }))).toBe(
+                outcome === "reset",
+            );
+            expect(engine.validateItem(JSON.parse(JSON.stringify(selected)))).toEqual(selected);
+            if (outcome === "destroy") {
+                expect(() => exportCraftingItemText(engine, selected)).toThrow("destroyed");
+                expect(() =>
+                    engine.apply(selected, currency("restore_imprint"), seededRandom(1)),
+                ).toThrow("Destroyed");
+                expect(() => engine.apply(selected, tzamoto, seededRandom(1))).toThrow("intact");
+            } else {
+                expect(
+                    importCraftingItemText(engine, exportCraftingItemText(engine, selected))[0]!
+                        .item,
+                ).toEqual(selected);
+            }
+        },
+    );
 
     it("rejects forged destruction sources and destroyed imprint snapshots", () => {
         const destroyed = engine.apply(item(), tzamoto, force("destroy")).item;

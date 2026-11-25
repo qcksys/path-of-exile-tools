@@ -348,11 +348,15 @@ export default function ProcessFlow({
                     onNodesChange={(changes) => {
                         onNodesChange(changes);
                         const positions = new Map(
-                            changes.flatMap((change) =>
-                                change.type === "position" && !change.dragging && change.position
-                                    ? [[change.id, change.position] as const]
-                                    : [],
-                            ),
+                            changes
+                                .toArray()
+                                .flatMap((change) =>
+                                    change.type === "position" &&
+                                    !change.dragging &&
+                                    change.position
+                                        ? [[change.id, change.position] as const]
+                                        : [],
+                                ),
                         );
                         if (positions.size)
                             onChange(
@@ -370,8 +374,11 @@ export default function ProcessFlow({
                         onChange(connectProcessSteps(steps, connection))
                     }
                     deleteKeyCode={null}
+                    // React Flow 13 follows the page's dark class; the canvas stays light as before.
+                    forceColorMode="light"
                     fitView
-                    fitViewOptions={{ maxZoom: 0.9, padding: 0.2 }}
+                    // A plain number is pixels since React Flow 13; 8% matches the old 0.2.
+                    fitViewOptions={{ maxZoom: 0.9, padding: "8%" }}
                     minZoom={0.1}
                     maxZoom={1.5}
                     preventScrolling={false}
@@ -398,7 +405,7 @@ export default function ProcessFlow({
                             variant="outline"
                             size="icon-sm"
                             aria-label="Fit process flow"
-                            onClick={() => void instance?.fitView({ maxZoom: 0.9, padding: 0.2 })}
+                            onClick={() => void instance?.fitView({ maxZoom: 0.9, padding: "8%" })}
                         >
                             <Maximize />
                         </Button>

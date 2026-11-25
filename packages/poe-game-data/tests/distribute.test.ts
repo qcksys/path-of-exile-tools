@@ -195,48 +195,48 @@ it.each([
     ["4.5.5.4.10", "4.5.5-build.4.10"],
     ["0.5.5.8", "0.5.5-build.8"],
 ])("maps build %s to version %s", (build, version) =>
-    expect(packageVersionForBuild(build)).toBe(version));
+    expect(packageVersionForBuild(build)).toBe(version),
+);
 
-it.each([
-    "3.27",
-    "3.027.0",
-    "3.27.0-beta",
-    "3.27.0+foo",
-    "3.27.0/../file",
-])("rejects invalid build %s", (build) => expect(() => packageVersionForBuild(build)).toThrow());
+it.each(["3.27", "3.027.0", "3.27.0-beta", "3.27.0+foo", "3.27.0/../file"])(
+    "rejects invalid build %s",
+    (build) => expect(() => packageVersionForBuild(build)).toThrow(),
+);
 
-it.each([
-    "poe1",
-    "poe2",
-] as const)("packages every canonical JSON file for %s and regenerates deterministically", async (game) => {
-    const { directory, packagesRoot, snapshot } = await fixture(game);
-    await writeJson(join(directory, "data/stale.json"), {});
-    const other = game === "poe1" ? "poe2" : "poe1";
-    await writeBytes(join(packagesRoot, dataPackages[other], "sentinel"), "unchanged");
-    const output = await materializePackage(snapshot, packagesRoot);
-    expect(output.files).toBe(8);
-    const { manifest, counts } = await verifyDataPackage(directory);
-    expect(counts.bases).toBe(1);
-    expect(manifest.client_build).toBe(game === "poe1" ? "3.29.3.3" : "4.5.5.4");
-    expect(Object.keys(manifest.files)).not.toContain("mods.min.json");
-    expect(Object.keys(manifest.files)).not.toContain("Art/example.png");
-    expect(await readFile(join(directory, "data/mods.json"))).toEqual(
-        await readFile(join(snapshot, "normalized/mods.json")),
-    );
-    expect(await readFile(join(packagesRoot, dataPackages[other], "sentinel"), "utf8")).toBe(
-        "unchanged",
-    );
-    const first = await readFile(join(directory, "manifest.json"), "utf8");
-    await materializePackage(snapshot, packagesRoot);
-    expect(await readFile(join(directory, "manifest.json"), "utf8")).toBe(first);
-    expect(dataPackageManifestSchema.safeParse({ ...manifest, version: "1.0.0" }).success).toBe(
-        false,
-    );
-    expect(dataPackageManifestSchema.safeParse({ ...manifest, game: other }).success).toBe(false);
-    expect(
-        dataPackageManifestSchema.safeParse({ ...manifest, client_build: "invalid" }).success,
-    ).toBe(false);
-});
+it.each(["poe1", "poe2"] as const)(
+    "packages every canonical JSON file for %s and regenerates deterministically",
+    async (game) => {
+        const { directory, packagesRoot, snapshot } = await fixture(game);
+        await writeJson(join(directory, "data/stale.json"), {});
+        const other = game === "poe1" ? "poe2" : "poe1";
+        await writeBytes(join(packagesRoot, dataPackages[other], "sentinel"), "unchanged");
+        const output = await materializePackage(snapshot, packagesRoot);
+        expect(output.files).toBe(8);
+        const { manifest, counts } = await verifyDataPackage(directory);
+        expect(counts.bases).toBe(1);
+        expect(manifest.client_build).toBe(game === "poe1" ? "3.29.3.3" : "4.5.5.4");
+        expect(Object.keys(manifest.files)).not.toContain("mods.min.json");
+        expect(Object.keys(manifest.files)).not.toContain("Art/example.png");
+        expect(await readFile(join(directory, "data/mods.json"))).toEqual(
+            await readFile(join(snapshot, "normalized/mods.json")),
+        );
+        expect(await readFile(join(packagesRoot, dataPackages[other], "sentinel"), "utf8")).toBe(
+            "unchanged",
+        );
+        const first = await readFile(join(directory, "manifest.json"), "utf8");
+        await materializePackage(snapshot, packagesRoot);
+        expect(await readFile(join(directory, "manifest.json"), "utf8")).toBe(first);
+        expect(dataPackageManifestSchema.safeParse({ ...manifest, version: "1.0.0" }).success).toBe(
+            false,
+        );
+        expect(dataPackageManifestSchema.safeParse({ ...manifest, game: other }).success).toBe(
+            false,
+        );
+        expect(
+            dataPackageManifestSchema.safeParse({ ...manifest, client_build: "invalid" }).success,
+        ).toBe(false);
+    },
+);
 
 it.each([
     ["data/mods.json", "{}", "hash mismatch"],
@@ -309,17 +309,18 @@ it("commits only verified data packages and refuses an occupied index", async ()
     expect((await commitDataPackages([output], root)).committed).toBe(false);
 });
 
-it.each([
-    "poe1",
-    "poe2",
-] as const)("validates every committed %s JSON file and relationship", async (game) => {
-    const { manifest, counts } = await verifyDataPackage(
-        join(packageDirectory, "..", dataPackages[game]),
-    );
-    expect(manifest.game).toBe(game);
-    expect(counts.bases).toBeGreaterThan(5000);
-    expect(counts.mods).toBeGreaterThan(10000);
-}, 30_000);
+it.each(["poe1", "poe2"] as const)(
+    "validates every committed %s JSON file and relationship",
+    async (game) => {
+        const { manifest, counts } = await verifyDataPackage(
+            join(packageDirectory, "..", dataPackages[game]),
+        );
+        expect(manifest.game).toBe(game);
+        expect(counts.bases).toBeGreaterThan(5000);
+        expect(counts.mods).toBeGreaterThan(10000);
+    },
+    30_000,
+);
 
 it("detects missing JSON Schemas and incorrect schema references", async () => {
     const { directory, packagesRoot, snapshot } = await fixture();

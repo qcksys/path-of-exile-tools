@@ -99,25 +99,27 @@ describe("Masterwork Rune upgrades", () => {
         expect(engine.methodName({ ...method, socket: 1 })).toContain("Upgrade socket 2");
     });
 
-    it.each([
-        "corrupted",
-        "sanctified",
-        "mirrored",
-    ] as const)("preserves %s state, affixes and quality under the socketed-augment model", (flag) => {
-        const item = body([id("RuneFireGreater")]);
-        item[flag] = true;
-        item.rarity = "rare";
-        item.quality = 20;
-        const mod = engine.pool(item, { side: "prefix" })[0]!;
-        item.mods = [{ ...engine.rollMod(mod.id, seededRandom(1)), fractured: true }];
-        const result = apply(item).item;
-        expect(result).toEqual({ ...engine.validateItem(item), augments: [id("RuneFirePerfect")] });
-        expect(
-            importCraftingItemText(engine, exportCraftingItemText(engine, result)).map(
-                (match) => match.item,
-            ),
-        ).toContainEqual(result);
-    });
+    it.each(["corrupted", "sanctified", "mirrored"] as const)(
+        "preserves %s state, affixes and quality under the socketed-augment model",
+        (flag) => {
+            const item = body([id("RuneFireGreater")]);
+            item[flag] = true;
+            item.rarity = "rare";
+            item.quality = 20;
+            const mod = engine.pool(item, { side: "prefix" })[0]!;
+            item.mods = [{ ...engine.rollMod(mod.id, seededRandom(1)), fractured: true }];
+            const result = apply(item).item;
+            expect(result).toEqual({
+                ...engine.validateItem(item),
+                augments: [id("RuneFirePerfect")],
+            });
+            expect(
+                importCraftingItemText(engine, exportCraftingItemText(engine, result)).map(
+                    (match) => match.item,
+                ),
+            ).toContainEqual(result);
+        },
+    );
 
     it("rejects missing sockets, non-tiered augments and false upgrader identities before randomness", () => {
         const random = seededRandom(42);

@@ -124,31 +124,30 @@ describe("crafting trade translation", () => {
         ).toBe(true);
     });
 
-    it.each([
-        "or",
-        "not",
-        "count",
-    ])("drops an unsupported %s group whole instead of changing its meaning", (type) => {
-        const result = buildCraftingTradeSearch(
-            catalog,
-            query([
-                {
-                    type,
-                    value: { max: 1 },
-                    filters: [
-                        { kind: "range", field: "openPrefixes", value: { min: 1 } },
-                        { kind: "mod", ids: ["unknown"] },
-                    ],
-                },
-            ]),
-            "Standard",
-            poe1,
-        );
-        expect(result.payload.query.stats).toEqual([]);
-        expect(result.payload.query.filters).toEqual({});
-        expect(result.warnings).toHaveLength(1);
-        expect(result.fidelity).toBe("approximate");
-    });
+    it.each(["or", "not", "count"])(
+        "drops an unsupported %s group whole instead of changing its meaning",
+        (type) => {
+            const result = buildCraftingTradeSearch(
+                catalog,
+                query([
+                    {
+                        type,
+                        value: { max: 1 },
+                        filters: [
+                            { kind: "range", field: "openPrefixes", value: { min: 1 } },
+                            { kind: "mod", ids: ["unknown"] },
+                        ],
+                    },
+                ]),
+                "Standard",
+                poe1,
+            );
+            expect(result.payload.query.stats).toEqual([]);
+            expect(result.payload.query.filters).toEqual({});
+            expect(result.warnings).toHaveLength(1);
+            expect(result.fidelity).toBe("approximate");
+        },
+    );
 
     it("preserves OR, NOT and bounded counts when every condition is an exact pseudo stat", () => {
         const filters = [

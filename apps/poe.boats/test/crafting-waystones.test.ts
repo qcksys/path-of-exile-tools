@@ -41,73 +41,73 @@ function waystone(count = 6): CraftingItem {
 }
 
 describe("PoE 2 Waystone reroll omens", () => {
-    it.each(cases)("$name excludes its extracted reward tag and replaces every mutable modifier", ({
-        id,
-        tag,
-    }) => {
-        const item = waystone();
-        const before = structuredClone(item);
-        expect(catalog.crafting.currencies.find((entry) => entry.id === id)!.description).toContain(
-            "do not grant",
-        );
-        expect(
-            engine
-                .pool({ ...item, mods: [] })
-                .some((entry) => entry.mod.implicit_tags.includes(tag)),
-        ).toBe(true);
-        const method = { ...chaos, omens: [id] };
-        for (let seed = 0; seed < 10; seed++) {
-            const random = seededRandom(seed);
-            const pick = vi.spyOn(random, "pick");
-            const result = engine.apply(item, method, random);
-            expect(result.item.mods).toHaveLength(6);
-            expect(pick).toHaveBeenCalledTimes(6);
+    it.each(cases)(
+        "$name excludes its extracted reward tag and replaces every mutable modifier",
+        ({ id, tag }) => {
+            const item = waystone();
+            const before = structuredClone(item);
             expect(
-                result.item.mods.every(
-                    (entry) => !engine.mod(entry.id).implicit_tags.includes(tag),
-                ),
-            ).toBe(true);
-            expect(result.cost.map((entry) => [entry.id, entry.amount])).toEqual([
-                [chaos.id, 1],
-                [id, 1],
-            ]);
-            expect(result.item.baseId).toBe(item.baseId);
-            expect(result.item.level).toBe(item.level);
-        }
-        expect(item).toEqual(before);
-    });
-
-    it.each(cases)("combines three exclusions to leave $tag and respects available affix groups", ({
-        id,
-        tag,
-        maximum,
-    }) => {
-        const method = {
-            ...chaos,
-            omens: cases.filter((entry) => entry.id !== id).map((entry) => entry.id),
-        };
-        expect(omenEffects(catalog, method).excludedWaystoneTags).toHaveLength(3);
-        for (let seed = 0; seed < 10; seed++) {
-            const result = engine.apply(waystone(), method, seededRandom(seed)).item;
-            expect(result.mods).toHaveLength(maximum);
+                catalog.crafting.currencies.find((entry) => entry.id === id)!.description,
+            ).toContain("do not grant");
             expect(
-                result.mods.every((entry) => engine.mod(entry.id).implicit_tags.includes(tag)),
+                engine
+                    .pool({ ...item, mods: [] })
+                    .some((entry) => entry.mod.implicit_tags.includes(tag)),
             ).toBe(true);
-            expect(engine.counts(result).prefixes).toBeLessThanOrEqual(3);
-            expect(engine.counts(result).suffixes).toBeLessThanOrEqual(3);
-        }
-    });
+            const method = { ...chaos, omens: [id] };
+            for (let seed = 0; seed < 10; seed++) {
+                const random = seededRandom(seed);
+                const pick = vi.spyOn(random, "pick");
+                const result = engine.apply(item, method, random);
+                expect(result.item.mods).toHaveLength(6);
+                expect(pick).toHaveBeenCalledTimes(6);
+                expect(
+                    result.item.mods.every(
+                        (entry) => !engine.mod(entry.id).implicit_tags.includes(tag),
+                    ),
+                ).toBe(true);
+                expect(result.cost.map((entry) => [entry.id, entry.amount])).toEqual([
+                    [chaos.id, 1],
+                    [id, 1],
+                ]);
+                expect(result.item.baseId).toBe(item.baseId);
+                expect(result.item.level).toBe(item.level);
+            }
+            expect(item).toEqual(before);
+        },
+    );
 
-    it.each([
-        1, 3, 4, 5,
-    ])("replaces %i starting modifiers without adding extra modifiers", (count) => {
-        const result = engine.apply(
-            waystone(count),
-            { ...chaos, omens: [cases[0]!.id] },
-            seededRandom(1),
-        ).item;
-        expect(result.mods).toHaveLength(count);
-    });
+    it.each(cases)(
+        "combines three exclusions to leave $tag and respects available affix groups",
+        ({ id, tag, maximum }) => {
+            const method = {
+                ...chaos,
+                omens: cases.filter((entry) => entry.id !== id).map((entry) => entry.id),
+            };
+            expect(omenEffects(catalog, method).excludedWaystoneTags).toHaveLength(3);
+            for (let seed = 0; seed < 10; seed++) {
+                const result = engine.apply(waystone(), method, seededRandom(seed)).item;
+                expect(result.mods).toHaveLength(maximum);
+                expect(
+                    result.mods.every((entry) => engine.mod(entry.id).implicit_tags.includes(tag)),
+                ).toBe(true);
+                expect(engine.counts(result).prefixes).toBeLessThanOrEqual(3);
+                expect(engine.counts(result).suffixes).toBeLessThanOrEqual(3);
+            }
+        },
+    );
+
+    it.each([1, 3, 4, 5])(
+        "replaces %i starting modifiers without adding extra modifiers",
+        (count) => {
+            const result = engine.apply(
+                waystone(count),
+                { ...chaos, omens: [cases[0]!.id] },
+                seededRandom(1),
+            ).item;
+            expect(result.mods).toHaveLength(count);
+        },
+    );
 
     it("retains fractures and clears replaced unrevealed modifiers", () => {
         const item = waystone();

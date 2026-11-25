@@ -88,21 +88,21 @@ async function database() {
     return db;
 }
 
-it.each([
-    true,
-    false,
-])("checkpoints committed PC capture before replay with currency capture %s", async (currency) => {
-    const db = await database();
-    try {
-        await runPipeline(db.conn, client, { pages: 5, league: "Allflame", currency });
-        expect(fixture.events).toEqual(
-            currency ? stages : stages.filter((stage) => stage !== "exchange"),
-        );
-    } finally {
-        vi.restoreAllMocks();
-        await db.close();
-    }
-});
+it.each([true, false])(
+    "checkpoints committed PC capture before replay with currency capture %s",
+    async (currency) => {
+        const db = await database();
+        try {
+            await runPipeline(db.conn, client, { pages: 5, league: "Allflame", currency });
+            expect(fixture.events).toEqual(
+                currency ? stages : stages.filter((stage) => stage !== "exchange"),
+            );
+        } finally {
+            vi.restoreAllMocks();
+            await db.close();
+        }
+    },
+);
 
 it("checkpoints earlier committed work after an ordinary capture transaction rolls back", async () => {
     const db = await database();
@@ -191,35 +191,34 @@ it("logs a checkpoint failure, skips replay, delivers committed work and retries
     }
 });
 
-it.each([
-    "capture",
-    "exchange",
-    "checkpoint",
-])("stops immediately with the exact fatal rollback error from %s", async (stage) => {
-    const db = await database();
-    const failure = new TransactionRollbackError(
-        new Error("Commit failed"),
-        new Error("Rollback failed"),
-    );
-    fixture.failedStage = stage;
-    fixture.error = failure;
-    const status = vi.fn(async () => {});
-    try {
-        await expect(
-            runPipeline(db.conn, client, { pages: 5, league: "Allflame", onStatus: status }),
-        ).rejects.toBe(failure);
-        expect(fixture.events).toEqual(stages.slice(0, stages.indexOf(stage) + 1));
-        expect(status).toHaveBeenLastCalledWith(
-            expect.objectContaining({
-                state: "error",
-                failedStages: [stage === "exchange" ? "currency" : "stash"],
-            }),
+it.each(["capture", "exchange", "checkpoint"])(
+    "stops immediately with the exact fatal rollback error from %s",
+    async (stage) => {
+        const db = await database();
+        const failure = new TransactionRollbackError(
+            new Error("Commit failed"),
+            new Error("Rollback failed"),
         );
-    } finally {
-        vi.restoreAllMocks();
-        await db.close();
-    }
-});
+        fixture.failedStage = stage;
+        fixture.error = failure;
+        const status = vi.fn(async () => {});
+        try {
+            await expect(
+                runPipeline(db.conn, client, { pages: 5, league: "Allflame", onStatus: status }),
+            ).rejects.toBe(failure);
+            expect(fixture.events).toEqual(stages.slice(0, stages.indexOf(stage) + 1));
+            expect(status).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    state: "error",
+                    failedStages: [stage === "exchange" ? "currency" : "stash"],
+                }),
+            );
+        } finally {
+            vi.restoreAllMocks();
+            await db.close();
+        }
+    },
+);
 
 it("keeps the PoE 2 exchange-only pipeline free of the PC checkpoint and replay", async () => {
     fixture.realm = "poe2";

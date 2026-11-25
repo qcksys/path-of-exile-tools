@@ -10,55 +10,61 @@ function table(values: number[]) {
     return bytes;
 }
 
-it.each([
-    "poe1",
-    "poe2",
-] as const)("decodes %s tables and validates foreign references", async (game) => {
-    const paths: string[] = [];
-    const schema = {
-        version: 8,
-        tables: [
+it.each(["poe1", "poe2"] as const)(
+    "decodes %s tables and validates foreign references",
+    async (game) => {
+        const paths: string[] = [];
+        const schema = {
+            version: 8,
+            tables: [
+                {
+                    name: "Targets",
+                    validFor: 3,
+                    columns: [
+                        {
+                            name: "Id",
+                            type: "i64",
+                            array: false,
+                            interval: false,
+                            references: null,
+                        },
+                    ],
+                },
+                {
+                    name: "Links",
+                    validFor: 3,
+                    columns: [
+                        {
+                            name: "Target",
+                            type: "row",
+                            array: false,
+                            interval: false,
+                            references: { table: "Targets" },
+                        },
+                    ],
+                },
+            ],
+        };
+        const tables = new Tables(
+            game,
             {
-                name: "Targets",
-                validFor: 3,
-                columns: [
-                    { name: "Id", type: "i64", array: false, interval: false, references: null },
-                ],
+                get: async (path) => {
+                    paths.push(path);
+                    return path.includes("Targets") ? table([42]) : table([0, 7]);
+                },
             },
-            {
-                name: "Links",
-                validFor: 3,
-                columns: [
-                    {
-                        name: "Target",
-                        type: "row",
-                        array: false,
-                        interval: false,
-                        references: { table: "Targets" },
-                    },
-                ],
-            },
-        ],
-    };
-    const tables = new Tables(
-        game,
-        {
-            get: async (path) => {
-                paths.push(path);
-                return path.includes("Targets") ? table([42]) : table([0, 7]);
-            },
-        },
-        schema,
-    );
-    await tables.load(["Targets", "Links"]);
-    expect(paths[0]).toBe(`Data/${game === "poe2" ? "Balance/" : ""}Targets.datc64`);
-    expect(tables.rows("Links")[0]?.ref("Target")?.number("Id")).toBe(42);
-    expect(() => tables.rows("Links")[1]?.ref("Target")).toThrow("unresolved Targets");
-    schema.tables[0]!.columns[0]!.type = "i32";
-    await expect(
-        new Tables(game, { get: async () => table([42]) }, schema).load(["Targets"]),
-    ).rejects.toThrow("schema row size");
-});
+            schema,
+        );
+        await tables.load(["Targets", "Links"]);
+        expect(paths[0]).toBe(`Data/${game === "poe2" ? "Balance/" : ""}Targets.datc64`);
+        expect(tables.rows("Links")[0]?.ref("Target")?.number("Id")).toBe(42);
+        expect(() => tables.rows("Links")[1]?.ref("Target")).toThrow("unresolved Targets");
+        schema.tables[0]!.columns[0]!.type = "i32";
+        await expect(
+            new Tables(game, { get: async () => table([42]) }, schema).load(["Targets"]),
+        ).rejects.toThrow("schema row size");
+    },
+);
 
 it("reads PoE 2 ItemVisualIdentity rows with the three strings 0.5.5.8 appended to the schema", async () => {
     // Each row holds Id and DDSFile, then `extra` unknown bytes; strings are UTF-16 offsets into

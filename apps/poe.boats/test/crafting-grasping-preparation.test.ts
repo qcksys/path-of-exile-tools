@@ -91,83 +91,85 @@ function scriptedRandom(draws: string[]): CraftingRandom {
     };
 }
 
-it.each(
-    sources,
-)("$id preserves the observed exact source constraints in its generated cohort", (source) => {
-    const graph = projectFromPreset(engine, ruleset, "global-defence-chest");
-    const { node, alternative } = purchase(graph, sourceId, source.id);
-    const item = alternative.item;
-    const queries = createCraftingItemQuery(engine);
-    const record = queries.record(item);
-    const eligible = craftingPresetCohorts(engine, ruleset).filter(
-        (cohort) => cohortPriceCoverage(cohort, record, node.output).covered,
-    );
-    expect(eligible).toHaveLength(1);
-    const cohort = eligible[0]!;
-    expect(item).toMatchObject({
-        baseId: "Metadata/Items/Armours/BodyArmours/BodyStrDexInt2",
-        level: source.level,
-        rarity: "rare",
-        influences: [],
-        corrupted: false,
-        mirrored: false,
-    });
-    expect(item.mods.map((mod) => mod.id)).toEqual(source.mods);
-    expect(item.mods.every((mod) => !mod.crafted && !mod.fractured)).toBe(true);
-    expect(engine.counts(item)).toEqual(source.counts);
-    expect(engine.validateItem(item)).toEqual(item);
-    expect(craftingMarketItemIssue(engine, item)).toBeNull();
-    expect(alternative.price).toBeNull();
-    expect(matchItem(record, cohort.query)).toBe("match");
-    const filters = cohort.query.groups.flatMap((group) => group.filters);
-    for (const id of source.mods)
-        expect(filters).toContainEqual({
-            kind: "mod",
-            ids: [id],
-            side: engine.mod(id).generation_type,
-            fractured: false,
-            crafted: false,
-            count: { min: 1 },
+it.each(sources)(
+    "$id preserves the observed exact source constraints in its generated cohort",
+    (source) => {
+        const graph = projectFromPreset(engine, ruleset, "global-defence-chest");
+        const { node, alternative } = purchase(graph, sourceId, source.id);
+        const item = alternative.item;
+        const queries = createCraftingItemQuery(engine);
+        const record = queries.record(item);
+        const eligible = craftingPresetCohorts(engine, ruleset).filter(
+            (cohort) => cohortPriceCoverage(cohort, record, node.output).covered,
+        );
+        expect(eligible).toHaveLength(1);
+        const cohort = eligible[0]!;
+        expect(item).toMatchObject({
+            baseId: "Metadata/Items/Armours/BodyArmours/BodyStrDexInt2",
+            level: source.level,
+            rarity: "rare",
+            influences: [],
+            corrupted: false,
+            mirrored: false,
         });
-    for (const invalid of [
-        { ...record, item: { ...record.item, ilvl: source.level + 1 } },
-        { ...record, item: { ...record.item, rarity: "Magic" as const } },
-        { ...record, item: { ...record.item, corrupted: true } },
-        { ...record, item: { ...record.item, influences: { shaper: true } } },
-        { ...record, facts: { ...record.facts, prefixes: source.counts.prefixes + 1 } },
-        queries.record({ ...item, mods: item.mods.filter((mod) => mod.id !== wanted) }),
-    ])
-        expect(matchItem(invalid, cohort.query)).toBe("no-match");
-});
+        expect(item.mods.map((mod) => mod.id)).toEqual(source.mods);
+        expect(item.mods.every((mod) => !mod.crafted && !mod.fractured)).toBe(true);
+        expect(engine.counts(item)).toEqual(source.counts);
+        expect(engine.validateItem(item)).toEqual(item);
+        expect(craftingMarketItemIssue(engine, item)).toBeNull();
+        expect(alternative.price).toBeNull();
+        expect(matchItem(record, cohort.query)).toBe("match");
+        const filters = cohort.query.groups.flatMap((group) => group.filters);
+        for (const id of source.mods)
+            expect(filters).toContainEqual({
+                kind: "mod",
+                ids: [id],
+                side: engine.mod(id).generation_type,
+                fractured: false,
+                crafted: false,
+                count: { min: 1 },
+            });
+        for (const invalid of [
+            { ...record, item: { ...record.item, ilvl: source.level + 1 } },
+            { ...record, item: { ...record.item, rarity: "Magic" as const } },
+            { ...record, item: { ...record.item, corrupted: true } },
+            { ...record, item: { ...record.item, influences: { shaper: true } } },
+            { ...record, facts: { ...record.facts, prefixes: source.counts.prefixes + 1 } },
+            queries.record({ ...item, mods: item.mods.filter((mod) => mod.id !== wanted) }),
+        ])
+            expect(matchItem(invalid, cohort.query)).toBe("no-match");
+    },
+);
 
-it.each(
-    sources,
-)("$id pays for a discarded source and every Annulment before isolation", (source) => {
-    const graph = preparation(source);
-    const draws = [wanted, ...source.mods.filter((id) => id !== wanted)];
-    const trial = new CraftingGraphTrial(engine, graph, scriptedRandom(draws), {
-        entry: "defences",
-        classify: false,
-    });
-    while (!trial.done) trial.advance();
-    const result = trial.result();
-    expect(draws).toEqual([]);
-    expect(result).toMatchObject({
-        status: "returned",
-        error: null,
-        missingPrices: [],
-        cost: 22 + 3 * source.mods.length,
-        purchases: 2,
-        actions: source.mods.length,
-        spending: { [`purchase:${sourceId}:${source.id}`]: 2, [annul]: source.mods.length },
-    });
-    const original = purchase(graph, sourceId, source.id).alternative.item;
-    expect(result.item).toEqual({
-        ...original,
-        mods: original.mods.filter((mod) => mod.id === wanted),
-    });
-    expect(engine.counts(result.item!)).toEqual({ prefixes: 1, suffixes: 0 });
-});
+it.each(sources)(
+    "$id pays for a discarded source and every Annulment before isolation",
+    (source) => {
+        const graph = preparation(source);
+        const draws = [wanted, ...source.mods.filter((id) => id !== wanted)];
+        const trial = new CraftingGraphTrial(engine, graph, scriptedRandom(draws), {
+            entry: "defences",
+            classify: false,
+        });
+        while (!trial.done) trial.advance();
+        const result = trial.result();
+        expect(draws).toEqual([]);
+        expect(result).toMatchObject({
+            status: "returned",
+            error: null,
+            missingPrices: [],
+            cost: 22 + 3 * source.mods.length,
+            purchases: 2,
+            actions: source.mods.length,
+            spending: { [`purchase:${sourceId}:${source.id}`]: 2, [annul]: source.mods.length },
+        });
+        const original = purchase(graph, sourceId, source.id).alternative.item;
+        expect(result.item).toEqual({
+            ...original,
+            mods: original.mods.filter((mod) => mod.id === wanted),
+        });
+        expect(engine.counts(result.item!)).toEqual({ prefixes: 1, suffixes: 0 });
+    },
+);
 
 it.each(
     sources.flatMap((source) =>
@@ -196,67 +198,77 @@ it.each(
     sources.flatMap((source) =>
         [previousRuleset, ruleset].map((revision) => ({ source, revision })),
     ),
-)("retained $revision.revision isolates $source.id and transfers it to the original level 86 target", async ({
-    source,
-    revision,
-}) => {
-    const retained = await retainedRevision(revision);
-    const graph = preparation(source, undefined, revision);
-    graph.seed = 42;
-    graph.iterations = 16;
-    graph.maxSteps = 100000;
-    const isolated = structuredClone(graph);
-    isolated.entry = "defences";
-    isolated.outcomes = [
-        {
-            ...isolated.outcomes[0]!,
-            query: graph.nodes.find((node) => node.id === isolateId)!.output,
-        },
-    ];
-    const simulate = (input: CraftingGraph) => {
-        const simulation = retained.runtime.createSimulation(retained.catalog, input, {
-            estimateIterations: 1,
-            workLimit: 100000,
+)(
+    "retained $revision.revision isolates $source.id and transfers it to the original level 86 target",
+    async ({ source, revision }) => {
+        const retained = await retainedRevision(revision);
+        const graph = preparation(source, undefined, revision);
+        graph.seed = 42;
+        graph.iterations = 16;
+        graph.maxSteps = 100000;
+        const isolated = structuredClone(graph);
+        isolated.entry = "defences";
+        isolated.outcomes = [
+            {
+                ...isolated.outcomes[0]!,
+                query: graph.nodes.find((node) => node.id === isolateId)!.output,
+            },
+        ];
+        const simulate = (input: CraftingGraph) => {
+            const simulation = retained.runtime.createSimulation(retained.catalog, input, {
+                estimateIterations: 1,
+                workLimit: 100000,
+            });
+            while (!simulation.done) simulation.runBatch(1000);
+            return simulation.result();
+        };
+        const result = simulate(isolated);
+        expect(result).toMatchObject({ complete: true, trials: 16, errors: {}, missingPrices: [] });
+        expect(result.samples.some((sample) => sample.purchases > 1)).toBe(true);
+        for (const sample of result.samples) {
+            expect(sample.success).toBe(true);
+            expect(sample.item!.level).toBe(source.level);
+            expect(sample.item!.mods.map((mod) => mod.id)).toEqual([wanted]);
+            expect(sample.purchases).toBe(sample.spending[`purchase:${sourceId}:${source.id}`]);
+            expect(sample.actions).toBe(sample.spending[annul]);
+            expect(sample.cost).toBe(11 * sample.purchases + 3 * sample.actions);
+        }
+        graph.iterations = 4;
+        purchase(graph, "es-base").alternative.price = quote(7);
+        graph.prices[transmute] = quote(2);
+        graph.prices[alteration] = quote(1);
+        graph.prices["service:recombine"] = quote(5);
+        const complete = simulate(graph);
+        expect(complete).toMatchObject({
+            complete: true,
+            trials: 4,
+            errors: {},
+            missingPrices: [],
         });
-        while (!simulation.done) simulation.runBatch(1000);
-        return simulation.result();
-    };
-    const result = simulate(isolated);
-    expect(result).toMatchObject({ complete: true, trials: 16, errors: {}, missingPrices: [] });
-    expect(result.samples.some((sample) => sample.purchases > 1)).toBe(true);
-    for (const sample of result.samples) {
-        expect(sample.success).toBe(true);
-        expect(sample.item!.level).toBe(source.level);
-        expect(sample.item!.mods.map((mod) => mod.id)).toEqual([wanted]);
-        expect(sample.purchases).toBe(sample.spending[`purchase:${sourceId}:${source.id}`]);
-        expect(sample.actions).toBe(sample.spending[annul]);
-        expect(sample.cost).toBe(11 * sample.purchases + 3 * sample.actions);
-    }
-    graph.iterations = 4;
-    purchase(graph, "es-base").alternative.price = quote(7);
-    graph.prices[transmute] = quote(2);
-    graph.prices[alteration] = quote(1);
-    graph.prices["service:recombine"] = quote(5);
-    const complete = simulate(graph);
-    expect(complete).toMatchObject({ complete: true, trials: 4, errors: {}, missingPrices: [] });
-    const queries = createCraftingItemQuery(engine);
-    for (const sample of complete.samples) {
-        expect(sample.success).toBe(true);
-        expect(sample.item!.level).toBe(86);
-        expect(queries.matches(sample.item!, graph.outcomes[0]!.query)).toBe("match");
-        const bases = sample.spending[`purchase:${sourceId}:${source.id}`]!;
-        const es = sample.spending["purchase:es-base:buy"]!;
-        const annuls = sample.spending[annul]!;
-        const recombinations = sample.spending["service:recombine"]!;
-        const transmutes = sample.spending[transmute]!;
-        const alterations = sample.spending[alteration] ?? 0;
-        expect(sample.purchases).toBe(bases + es);
-        expect(sample.actions).toBe(annuls + recombinations + transmutes + alterations);
-        expect(sample.cost).toBe(
-            11 * bases + 7 * es + 3 * annuls + 5 * recombinations + 2 * transmutes + alterations,
-        );
-    }
-});
+        const queries = createCraftingItemQuery(engine);
+        for (const sample of complete.samples) {
+            expect(sample.success).toBe(true);
+            expect(sample.item!.level).toBe(86);
+            expect(queries.matches(sample.item!, graph.outcomes[0]!.query)).toBe("match");
+            const bases = sample.spending[`purchase:${sourceId}:${source.id}`]!;
+            const es = sample.spending["purchase:es-base:buy"]!;
+            const annuls = sample.spending[annul]!;
+            const recombinations = sample.spending["service:recombine"]!;
+            const transmutes = sample.spending[transmute]!;
+            const alterations = sample.spending[alteration] ?? 0;
+            expect(sample.purchases).toBe(bases + es);
+            expect(sample.actions).toBe(annuls + recombinations + transmutes + alterations);
+            expect(sample.cost).toBe(
+                11 * bases +
+                    7 * es +
+                    3 * annuls +
+                    5 * recombinations +
+                    2 * transmutes +
+                    alterations,
+            );
+        }
+    },
+);
 
 it("preserves the original donor, r8 graph, pinned choices and unselected result", () => {
     const graph = projectFromPreset(engine, ruleset, "global-defence-chest");

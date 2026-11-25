@@ -133,72 +133,73 @@ describe("graph method editing", () => {
         );
     });
     for (const game of ["poe1", "poe2"] as const) {
-        it.each([
-            "valid",
-            "stale",
-            "invalid",
-        ] as const)(`${game} shares %s method edits through HTTP and MCP`, async (scenario) => {
-            const graph = conditionalTransmuteGraph(game);
-            const node = graph.nodes.find((entry) => entry.kind === "craft")!;
-            const method: CraftingMethod =
-                game === "poe1" ? fossil : { kind: "generate", id: "rare" };
-            const input = {
-                graph,
-                nodeId: node.id,
-                expectedMethod: scenario === "stale" ? method : node.method,
-                method: scenario === "invalid" ? { kind: "currency", id: "missing" } : method,
-            };
-            const context: OperationContext = {
-                db: createDbConnection("mysql://test:test@localhost/poe_test"),
-                loadCatalog: async () => {
-                    throw new Error("Unused recombinator catalog");
-                },
-                loadWorkbenchCatalog: async (game) => workbenchCatalog(game),
-                loadCraftingRulesets: async () => historyIndex,
-                loadCraftingRevision: retainedRevision,
-                origin: "https://poe.boats",
-                caller: null,
-            };
-            const response = await api.request(
-                "https://poe.boats/api/v1/crafting/graph/method",
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(input),
-                },
-                { runtime: async () => context },
-            );
-            const rpc = await handleMcpRequest(
-                new Request("https://poe.boats/mcp", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        accept: "application/json, text/event-stream",
+        it.each(["valid", "stale", "invalid"] as const)(
+            `${game} shares %s method edits through HTTP and MCP`,
+            async (scenario) => {
+                const graph = conditionalTransmuteGraph(game);
+                const node = graph.nodes.find((entry) => entry.kind === "craft")!;
+                const method: CraftingMethod =
+                    game === "poe1" ? fossil : { kind: "generate", id: "rare" };
+                const input = {
+                    graph,
+                    nodeId: node.id,
+                    expectedMethod: scenario === "stale" ? method : node.method,
+                    method: scenario === "invalid" ? { kind: "currency", id: "missing" } : method,
+                };
+                const context: OperationContext = {
+                    db: createDbConnection("mysql://test:test@localhost/poe_test"),
+                    loadCatalog: async () => {
+                        throw new Error("Unused recombinator catalog");
                     },
-                    body: JSON.stringify({
-                        jsonrpc: "2.0",
-                        id: 1,
-                        method: "tools/call",
-                        params: { name: "replace_crafting_graph_method", arguments: input },
+                    loadWorkbenchCatalog: async (game) => workbenchCatalog(game),
+                    loadCraftingRulesets: async () => historyIndex,
+                    loadCraftingRevision: retainedRevision,
+                    origin: "https://poe.boats",
+                    caller: null,
+                };
+                const response = await api.request(
+                    "https://poe.boats/api/v1/crafting/graph/method",
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(input),
+                    },
+                    { runtime: async () => context },
+                );
+                const rpc = await handleMcpRequest(
+                    new Request("https://poe.boats/mcp", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            accept: "application/json, text/event-stream",
+                        },
+                        body: JSON.stringify({
+                            jsonrpc: "2.0",
+                            id: 1,
+                            method: "tools/call",
+                            params: { name: "replace_crafting_graph_method", arguments: input },
+                        }),
                     }),
-                }),
-                async () => context,
-            );
-            const result = CallToolResultSchema.parse(
-                z.object({ result: z.unknown() }).parse(await rpc.json()).result,
-            );
-            if (scenario !== "valid") {
-                expect(response.status).toBe(400);
-                expect(result.isError).toBe(true);
-            } else {
-                expect(response.status, await response.clone().text()).toBe(200);
-                expect(result.isError).not.toBe(true);
-                const data = z.object({ graph: craftingGraphSchema }).parse(await response.json());
-                expect(result.structuredContent).toEqual(data);
-                expect(
-                    data.graph.nodes.find((entry: { id: string }) => entry.id === node.id),
-                ).toEqual({ ...node, method });
-            }
-        });
+                    async () => context,
+                );
+                const result = CallToolResultSchema.parse(
+                    z.object({ result: z.unknown() }).parse(await rpc.json()).result,
+                );
+                if (scenario !== "valid") {
+                    expect(response.status).toBe(400);
+                    expect(result.isError).toBe(true);
+                } else {
+                    expect(response.status, await response.clone().text()).toBe(200);
+                    expect(result.isError).not.toBe(true);
+                    const data = z
+                        .object({ graph: craftingGraphSchema })
+                        .parse(await response.json());
+                    expect(result.structuredContent).toEqual(data);
+                    expect(
+                        data.graph.nodes.find((entry: { id: string }) => entry.id === node.id),
+                    ).toEqual({ ...node, method });
+                }
+            },
+        );
     }
 });

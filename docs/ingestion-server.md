@@ -51,7 +51,7 @@ or restore equipment history. Apply the existing database migrations before depl
 
 ## Local prerequisites
 
-- Docker with Compose 2.24 or newer, Node 24.12 or newer, and the repository's Vite+ / pnpm setup.
+- Docker with Compose 2.24 or newer, Node 26.13 or newer, and the repository's Vite+ / pnpm setup.
 - Install dependencies with `vp install` from the repository root.
 - Complete the [1Password setup](../README.md#environment-configuration) for real public-stash access.
 - Allow at least 2 GB for each worker, plus MySQL and Docker/WSL overhead. The worker
@@ -193,7 +193,9 @@ copy rather than resetting the original worker's delivery state.
 For automatic deployment of the dev ingestion workers on a Linux host, see the
 [CI publication and host updater runbook](../deploy/ingest/README.md). It publishes
 images only after dev validation and receiver deployment, then replaces workers using
-their existing databases and verifies successful cycles on the receiver.
+their existing databases and verifies successful cycles on the receiver. To keep the public stash
+stream captured while that host is down, see its
+[capture fallback](../deploy/ingest/README.md#capture-fallback).
 
 For a Linux server targeting the deployed app, install Docker Engine/Compose using Docker's
 distribution instructions, clone a pinned repository revision, and supply the variables in

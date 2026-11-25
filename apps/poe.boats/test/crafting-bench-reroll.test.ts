@@ -20,29 +20,35 @@ function filled() {
 }
 
 describe("PoE 1 extracted bench modifier rerolls", () => {
-    it.each([
-        8, 9,
-    ])("applies action %i with its extracted cost and retains item state", (action) => {
-        const item = { ...filled(), quality: 20, memoryStrands: 100 };
-        const before = structuredClone(item);
-        const random = { ...first };
-        const pick = vi.spyOn(random, "pick");
-        const result = engine.apply(item, method(action), random);
-        const count = action === 8 ? 3 : 1;
-        expect(pick).toHaveBeenCalledTimes(count * 2);
-        for (let index = 0; index < count; index++)
-            expect(pick.mock.calls[index]![0]).toHaveLength(6 - index);
-        expect(result.item.mods).toHaveLength(6);
-        expect(result.item.mods.slice(0, 6 - count)).toEqual(item.mods.slice(count));
-        expect(result.item).toMatchObject({ rarity: "rare", quality: 20, memoryStrands: 100 });
-        expect(result.cost).toEqual(recipe(action).cost);
-        expect(result.cost).toMatchObject([{ name: "Chaos Orb", amount: action === 8 ? 3 : 8 }]);
-        expect(item).toEqual(before);
-        expect(engine.validateItem(JSON.parse(JSON.stringify(result.item)))).toEqual(result.item);
-        expect(
-            importCraftingItemText(engine, exportCraftingItemText(engine, result.item))[0]!.item,
-        ).toEqual(result.item);
-    });
+    it.each([8, 9])(
+        "applies action %i with its extracted cost and retains item state",
+        (action) => {
+            const item = { ...filled(), quality: 20, memoryStrands: 100 };
+            const before = structuredClone(item);
+            const random = { ...first };
+            const pick = vi.spyOn(random, "pick");
+            const result = engine.apply(item, method(action), random);
+            const count = action === 8 ? 3 : 1;
+            expect(pick).toHaveBeenCalledTimes(count * 2);
+            for (let index = 0; index < count; index++)
+                expect(pick.mock.calls[index]![0]).toHaveLength(6 - index);
+            expect(result.item.mods).toHaveLength(6);
+            expect(result.item.mods.slice(0, 6 - count)).toEqual(item.mods.slice(count));
+            expect(result.item).toMatchObject({ rarity: "rare", quality: 20, memoryStrands: 100 });
+            expect(result.cost).toEqual(recipe(action).cost);
+            expect(result.cost).toMatchObject([
+                { name: "Chaos Orb", amount: action === 8 ? 3 : 8 },
+            ]);
+            expect(item).toEqual(before);
+            expect(engine.validateItem(JSON.parse(JSON.stringify(result.item)))).toEqual(
+                result.item,
+            );
+            expect(
+                importCraftingItemText(engine, exportCraftingItemText(engine, result.item))[0]!
+                    .item,
+            ).toEqual(result.item);
+        },
+    );
 
     it("recalculates prefix protection between removals before adding replacements", () => {
         let item: CraftingItem = { ...engine.createItem(baseId), rarity: "rare" };
@@ -70,23 +76,24 @@ describe("PoE 1 extracted bench modifier rerolls", () => {
         expect(result.item.mods.every((entry) => !entry.crafted)).toBe(true);
     });
 
-    it.each([
-        8, 9,
-    ])("removes only eligible modifiers and pays for protected no-ops with action %i", (action) => {
-        const item = filled();
-        for (const entry of item.mods) entry.fractured = true;
-        const random = { ...first };
-        const pick = vi.spyOn(random, "pick");
-        const unchanged = engine.apply(item, method(action), random);
-        expect(unchanged.item).toEqual(item);
-        expect(unchanged.cost).toEqual(recipe(action).cost);
-        expect(pick).not.toHaveBeenCalled();
-        item.mods.at(-1)!.fractured = false;
-        const result = engine.apply(item, method(action), random);
-        expect(pick).toHaveBeenCalledTimes(2);
-        expect(result.item.mods.slice(0, 5)).toEqual(item.mods.slice(0, 5));
-        expect(result.item.mods).toHaveLength(6);
-    });
+    it.each([8, 9])(
+        "removes only eligible modifiers and pays for protected no-ops with action %i",
+        (action) => {
+            const item = filled();
+            for (const entry of item.mods) entry.fractured = true;
+            const random = { ...first };
+            const pick = vi.spyOn(random, "pick");
+            const unchanged = engine.apply(item, method(action), random);
+            expect(unchanged.item).toEqual(item);
+            expect(unchanged.cost).toEqual(recipe(action).cost);
+            expect(pick).not.toHaveBeenCalled();
+            item.mods.at(-1)!.fractured = false;
+            const result = engine.apply(item, method(action), random);
+            expect(pick).toHaveBeenCalledTimes(2);
+            expect(result.item.mods.slice(0, 5)).toEqual(item.mods.slice(0, 5));
+            expect(result.item.mods).toHaveLength(6);
+        },
+    );
 
     it("retains paid removal outcomes when no replacement can roll", () => {
         const blank: CraftingItem = { ...engine.createItem(baseId), rarity: "rare" };
@@ -102,37 +109,39 @@ describe("PoE 1 extracted bench modifier rerolls", () => {
         expect(result.cost).toEqual(recipe(8).cost);
     });
 
-    it.each([
-        "attack",
-        "caster",
-    ])("honors a surviving %s blocker for removal and replacement", (tag) => {
-        const base = Object.entries(catalog.bases).find(
-            ([, entry]) => entry.item_class === "Wand",
-        )![0];
-        let item: CraftingItem = { ...engine.createItem(base), rarity: "rare" };
-        const protectedMod = engine
-            .pool(item)
-            .find((entry) => entry.mod.implicit_tags.includes(tag))!.id;
-        item = engine.addStartingMod(item, protectedMod, first);
-        const blocker = catalog.crafting.bench.find(
-            (entry) =>
-                entry.mod &&
-                entry.itemClasses.includes("Wand") &&
-                engine
-                    .mod(entry.mod)
-                    .stats.some((stat) => stat.id === `item_generation_cannot_roll_${tag}_affixes`),
-        )!;
-        item = engine.apply(item, { kind: "bench", id: blocker.id }, first).item;
-        item.mods.at(-1)!.fractured = true;
-        item = engine.addStartingMod(item, engine.pool(item)[0]!.id, first);
-        const random = { ...first };
-        const pick = vi.spyOn(random, "pick");
-        const result = engine.apply(item, method(8), random);
-        expect(pick.mock.calls[0]![0]).toMatchObject([{ value: item.mods.at(-1) }]);
-        expect(pick).toHaveBeenCalledTimes(2);
-        expect(result.item.mods.slice(0, 2)).toEqual(item.mods.slice(0, 2));
-        expect(engine.mod(result.item.mods.at(-1)!.id).implicit_tags).not.toContain(tag);
-    });
+    it.each(["attack", "caster"])(
+        "honors a surviving %s blocker for removal and replacement",
+        (tag) => {
+            const base = Object.entries(catalog.bases).find(
+                ([, entry]) => entry.item_class === "Wand",
+            )![0];
+            let item: CraftingItem = { ...engine.createItem(base), rarity: "rare" };
+            const protectedMod = engine
+                .pool(item)
+                .find((entry) => entry.mod.implicit_tags.includes(tag))!.id;
+            item = engine.addStartingMod(item, protectedMod, first);
+            const blocker = catalog.crafting.bench.find(
+                (entry) =>
+                    entry.mod &&
+                    entry.itemClasses.includes("Wand") &&
+                    engine
+                        .mod(entry.mod)
+                        .stats.some(
+                            (stat) => stat.id === `item_generation_cannot_roll_${tag}_affixes`,
+                        ),
+            )!;
+            item = engine.apply(item, { kind: "bench", id: blocker.id }, first).item;
+            item.mods.at(-1)!.fractured = true;
+            item = engine.addStartingMod(item, engine.pool(item)[0]!.id, first);
+            const random = { ...first };
+            const pick = vi.spyOn(random, "pick");
+            const result = engine.apply(item, method(8), random);
+            expect(pick.mock.calls[0]![0]).toMatchObject([{ value: item.mods.at(-1) }]);
+            expect(pick).toHaveBeenCalledTimes(2);
+            expect(result.item.mods.slice(0, 2)).toEqual(item.mods.slice(0, 2));
+            expect(engine.mod(result.item.mods.at(-1)!.id).implicit_tags).not.toContain(tag);
+        },
+    );
 
     it.each([8, 9])("calculates action %i replacement odds, retries and spending", (action) => {
         const item = filled();

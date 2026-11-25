@@ -5,6 +5,7 @@
     "type": "module",
     "exports": {
         ".": "./src/index.ts",
+        "./capture-lease": "./src/capture-lease.ts",
         "./cohorts-poe1.json": "./data/cohorts-poe1.json",
         "./market-bases-poe1.json": "./data/market-bases-poe1.json",
         "./capture-poe1.json": "./data/capture-poe1.json",

@@ -156,29 +156,28 @@ describe("build-extracted Cluster Jewels", () => {
         Object.entries(catalog.crafting.clusterJewels!.bases).flatMap(([baseId, rule]) =>
             clusterSkills(catalog, { baseId }).map((skill) => ({ baseId, rule, skill })),
         ),
-    )("round trips $skill.id with known and unknown counts and English enchantments", ({
-        baseId,
-        rule,
-        skill,
-    }) => {
-        for (const nodes of [undefined, rule.minNodes]) {
-            const item = engine.validateItem({
-                ...engine.createItem(baseId),
-                cluster: { passive: skill.id, ...(nodes ? { nodes, jewelSockets: 0 } : {}) },
-            });
-            const text = exportCraftingItemText(engine, item);
-            expect(importCraftingItemText(engine, text)[0]!.item).toEqual(item);
-            const native = [
-                "Rarity: Normal",
-                engine.base(item).name,
-                "--------",
-                "Item Level: 86",
-                "--------",
-                ...clusterText(catalog, item).map((line) => `${line} (enchant)`),
-            ].join("\n");
-            expect(importCraftingItemText(engine, native)[0]!.item).toEqual(item);
-        }
-    });
+    )(
+        "round trips $skill.id with known and unknown counts and English enchantments",
+        ({ baseId, rule, skill }) => {
+            for (const nodes of [undefined, rule.minNodes]) {
+                const item = engine.validateItem({
+                    ...engine.createItem(baseId),
+                    cluster: { passive: skill.id, ...(nodes ? { nodes, jewelSockets: 0 } : {}) },
+                });
+                const text = exportCraftingItemText(engine, item);
+                expect(importCraftingItemText(engine, text)[0]!.item).toEqual(item);
+                const native = [
+                    "Rarity: Normal",
+                    engine.base(item).name,
+                    "--------",
+                    "Item Level: 86",
+                    "--------",
+                    ...clusterText(catalog, item).map((line) => `${line} (enchant)`),
+                ].join("\n");
+                expect(importCraftingItemText(engine, native)[0]!.item).toEqual(item);
+            }
+        },
+    );
 
     it("round trips notable modifiers alongside cluster enchants and rejects incomplete or conflicting text", () => {
         const item = engine.addStartingMod(

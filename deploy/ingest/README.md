@@ -112,6 +112,46 @@ in place. To go back, stop both services, restore the old file and start it: the
 from its database cursor, which is behind by whatever it had not yet read from the archive, and any
 pages it did not read stay only in the archive.
 
+### Capture fallback
+
+With `CAPTURE_LEASE_URL` in `config/pc.env`, `pc-capture` fetches only while it holds the capture
+lease, and a Cloudflare Container captures the stream while this host is away. When the host
+returns, `pc-capture` appends the Container's pages to its archive before it fetches again, so the
+`pc` worker reads one stream. See [`apps/capture-lease`](../../apps/capture-lease/README.md) for how
+the lease works and how to deploy its Worker.
+
+The Compose file mounts `secrets/pc_capture_lease_token`, so that file must exist before this
+Compose file is installed, even while the lease is off. Leave it empty until the Worker is deployed:
+
+```sh
+touch ~/poe-ingest/secrets/pc_capture_lease_token
+chmod 600 ~/poe-ingest/secrets/pc_capture_lease_token
+```
+
+To turn the fallback on:
+
+1. Deploy the Worker and check that `GET /status` answers.
+2. Write its `CAPTURE_LEASE_TOKEN` to the secret file from a machine that has it, for example
+   `printf %s "$TOKEN" | ssh <host> 'umask 077; cat > ~/poe-ingest/secrets/pc_capture_lease_token'`.
+3. Add `CAPTURE_LEASE_URL=https://<worker>` to `config/pc.env`.
+4. `docker compose -f ~/poe-ingest/compose.yaml up -d --no-deps pc-capture`.
+5. Check the capture log for `capture lease: holding`, and `GET /status` for `"holder": "home"` and a
+   cursor.
+
+From then on, `pc-capture` stops fetching once it has not reached the Worker for a minute, and
+`/server-status` shows a failed `stash` stage for it.
+
+To turn the fallback off, delete the Worker first (`vp exec wrangler delete` in
+`apps/capture-lease`) while this host holds the lease, so that nothing can start the Container.
+`pc-capture` stops fetching a minute later. Then remove `CAPTURE_LEASE_URL` and recreate
+`pc-capture`; it continues from its own cursor. Removing the URL first would leave the Worker
+waiting for renewals, and it would start the Container beside this host.
+
+While the host is away, the receiver gets no stash hours. When it returns, `pc-capture` imports the
+Container's segments and the `pc` worker processes them at their capture times, as after any
+backlog. Importing stops while four hours wait to be sealed, so the archive disk needs room for
+about four hours of raw pages, and sealing speed sets how fast a long outage is imported.
+
 Preserve the existing client ID, contact and version. The PC worker uses `POE_REALM=pc`
 and the second `POE_REALM=poe2`; each sets its current `INGEST_LEAGUE` and a unique
 `INGEST_WORKER_ID` such as `<host>-dev-pc-<league>`. Update these scopes deliberately when

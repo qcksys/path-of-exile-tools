@@ -12,42 +12,46 @@ const modifier = (influence: number) =>
         .find((entry) => catalog.crafting.modRules[entry.id]?.influence === influence)!;
 
 describe("influence modifier previews and starting-item setup", () => {
-    it.each([
-        0, 1, 2, 3, 4, 5,
-    ])("previews influence %s without changing the item or its natural pool", (influence) => {
-        const base = item();
-        const before = structuredClone(base);
-        const natural = engine.pool(base);
-        const pool = engine.influenceModifiers(base, influence);
-        expect(pool.length).toBeGreaterThan(natural.length);
-        expect(
-            pool.some((entry) => catalog.crafting.modRules[entry.id]?.influence === influence),
-        ).toBe(true);
-        expect(
-            pool.every(
-                (entry) =>
-                    catalog.crafting.modRules[entry.id]?.influence == null ||
-                    catalog.crafting.modRules[entry.id]?.influence === influence,
-            ),
-        ).toBe(true);
-        expect(pool).toEqual(engine.pool({ ...base, influences: [influence] }));
-        expect(engine.pool(base)).toEqual(natural);
-        expect(base).toEqual(before);
-        const added = engine.addStartingMod(
-            base,
-            modifier(influence).id,
-            seededRandom(2),
-            "influence",
-        );
-        expect(added.influences).toEqual([influence]);
-        expect(added.mods.map((entry) => entry.id)).toEqual([modifier(influence).id]);
-        expect(engine.validateItem(added)).toEqual(added);
-        const imported = importCraftingItemText(engine, exportCraftingItemText(engine, added))[0]!;
-        expect(imported.item.influences).toEqual([influence]);
-        expect(imported.item.mods.map((entry) => entry.id)).toEqual(
-            added.mods.map((entry) => entry.id),
-        );
-    });
+    it.each([0, 1, 2, 3, 4, 5])(
+        "previews influence %s without changing the item or its natural pool",
+        (influence) => {
+            const base = item();
+            const before = structuredClone(base);
+            const natural = engine.pool(base);
+            const pool = engine.influenceModifiers(base, influence);
+            expect(pool.length).toBeGreaterThan(natural.length);
+            expect(
+                pool.some((entry) => catalog.crafting.modRules[entry.id]?.influence === influence),
+            ).toBe(true);
+            expect(
+                pool.every(
+                    (entry) =>
+                        catalog.crafting.modRules[entry.id]?.influence == null ||
+                        catalog.crafting.modRules[entry.id]?.influence === influence,
+                ),
+            ).toBe(true);
+            expect(pool).toEqual(engine.pool({ ...base, influences: [influence] }));
+            expect(engine.pool(base)).toEqual(natural);
+            expect(base).toEqual(before);
+            const added = engine.addStartingMod(
+                base,
+                modifier(influence).id,
+                seededRandom(2),
+                "influence",
+            );
+            expect(added.influences).toEqual([influence]);
+            expect(added.mods.map((entry) => entry.id)).toEqual([modifier(influence).id]);
+            expect(engine.validateItem(added)).toEqual(added);
+            const imported = importCraftingItemText(
+                engine,
+                exportCraftingItemText(engine, added),
+            )[0]!;
+            expect(imported.item.influences).toEqual([influence]);
+            expect(imported.item.mods.map((entry) => entry.id)).toEqual(
+                added.mods.map((entry) => entry.id),
+            );
+        },
+    );
 
     it("uses all active influences for an active preview and ordinary plus one influence for an inactive preview", () => {
         const base = { ...item(), influences: [0, 1] };

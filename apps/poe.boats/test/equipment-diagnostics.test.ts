@@ -235,69 +235,74 @@ describe("bounded equipment diagnostics", () => {
         expect(output.fixtures.filter((fixture) => fixture.origin === "archive")).toHaveLength(8);
     });
 
-    it.each([
-        "live",
-        "archive",
-    ] as const)("preserves %s model-3 unknowns and full membership without identities or listing data", async (origin) => {
-        const diagnostics = create()!;
-        const raw = {
-            ...sourceItem(),
-            id: "private-item",
-            name: "private-name",
-            note: "private-note",
-            accountName: "private-account",
-            cursor: "private-cursor",
-            icon: "private-icon",
-            socketedItems: [{ id: "private-socketed" }],
-            extended: { prefixes: 1, suffixes: 0, note: "private-extended" },
-            sockets: [{ group: 0, attr: "S", item: "private-socket" }],
-            properties: [
-                { name: "Intangibility", type: 110, values: [["0%", 0]], note: "private-property" },
-                { name: "Quality", type: 6, values: [["+20%", 1]] },
-            ],
-            explicitMods: [
-                {
-                    description: "+10 to maximum Life",
-                    flags: { crafted: false, fractured: false },
-                    mods: [{ name: "Healthy", tier: "P1", level: 1, id: "private-metadata" }],
-                    note: "private-row",
-                },
-            ],
-        };
-        const result = classify(raw);
-        expect(result).toEqual({ matches: ["ordinary-0"], unknown: ["source-0"] });
-        const fixture = diagnostics.collect(raw, result, observedAt, origin)!;
-        expect(fixture).toMatchObject({
-            format: 1,
-            origin,
-            observedAt: observedAt.toISOString(),
-            hour: 1792897200,
-            realm: "pc",
-            league: "Allflame",
-            manifestRevision: "diagnostic-model3",
-            sourcePreparationModelFormat: 3,
-            modifierTextModelFormat: 5,
-        });
-        expect(classify(fixture.item)).toEqual(result);
-        expect(fixture.item).toMatchObject({
-            ilvl: 86,
-            itemLevel: 85,
-            frameType: 2,
-            frameTypeId: "rare",
-            name: "present",
-        });
-        expect(fixture.item.properties).toEqual(
-            raw.properties.map(({ name, type, values }) => ({ name, type, values })),
-        );
-        expect(raw.name).toBe("private-name");
-        fixture.item.note = "private-late-mutation";
-        await diagnostics.flush([fixture]);
-        const output = await saved();
-        expect(output.text).not.toContain("private-");
-        expect(output.fixtures[0]!.classification).toEqual(result);
-        expect(output.fixtures[0]!.itemSha256).toMatch(/^[a-f0-9]{64}$/);
-        expect(classify(output.fixtures[0]!.item)).toEqual(result);
-    });
+    it.each(["live", "archive"] as const)(
+        "preserves %s model-3 unknowns and full membership without identities or listing data",
+        async (origin) => {
+            const diagnostics = create()!;
+            const raw = {
+                ...sourceItem(),
+                id: "private-item",
+                name: "private-name",
+                note: "private-note",
+                accountName: "private-account",
+                cursor: "private-cursor",
+                icon: "private-icon",
+                socketedItems: [{ id: "private-socketed" }],
+                extended: { prefixes: 1, suffixes: 0, note: "private-extended" },
+                sockets: [{ group: 0, attr: "S", item: "private-socket" }],
+                properties: [
+                    {
+                        name: "Intangibility",
+                        type: 110,
+                        values: [["0%", 0]],
+                        note: "private-property",
+                    },
+                    { name: "Quality", type: 6, values: [["+20%", 1]] },
+                ],
+                explicitMods: [
+                    {
+                        description: "+10 to maximum Life",
+                        flags: { crafted: false, fractured: false },
+                        mods: [{ name: "Healthy", tier: "P1", level: 1, id: "private-metadata" }],
+                        note: "private-row",
+                    },
+                ],
+            };
+            const result = classify(raw);
+            expect(result).toEqual({ matches: ["ordinary-0"], unknown: ["source-0"] });
+            const fixture = diagnostics.collect(raw, result, observedAt, origin)!;
+            expect(fixture).toMatchObject({
+                format: 1,
+                origin,
+                observedAt: observedAt.toISOString(),
+                hour: 1792897200,
+                realm: "pc",
+                league: "Allflame",
+                manifestRevision: "diagnostic-model3",
+                sourcePreparationModelFormat: 3,
+                modifierTextModelFormat: 5,
+            });
+            expect(classify(fixture.item)).toEqual(result);
+            expect(fixture.item).toMatchObject({
+                ilvl: 86,
+                itemLevel: 85,
+                frameType: 2,
+                frameTypeId: "rare",
+                name: "present",
+            });
+            expect(fixture.item.properties).toEqual(
+                raw.properties.map(({ name, type, values }) => ({ name, type, values })),
+            );
+            expect(raw.name).toBe("private-name");
+            fixture.item.note = "private-late-mutation";
+            await diagnostics.flush([fixture]);
+            const output = await saved();
+            expect(output.text).not.toContain("private-");
+            expect(output.fixtures[0]!.classification).toEqual(result);
+            expect(output.fixtures[0]!.itemSha256).toMatch(/^[a-f0-9]{64}$/);
+            expect(classify(output.fixtures[0]!.item)).toEqual(result);
+        },
+    );
 
     it("rejects unfamiliar active key names and unsupported flag shapes without leaking them", () => {
         const diagnostics = create()!;
@@ -351,24 +356,29 @@ describe("bounded equipment diagnostics", () => {
         expect(diagnostics.collect(malformed, classify(malformed), observedAt)).toBeNull();
     });
 
-    it.each([
-        "live",
-        "archive",
-    ] as const)("requires full %s matches and unknown equality, not only the requested unknown target", (origin) => {
-        const diagnostics = create()!;
-        const raw = sourceItem();
-        expect(
-            diagnostics.collect(raw, { matches: [], unknown: ["source-0"] }, observedAt, origin),
-        ).toBeNull();
-        expect(
-            diagnostics.collect(
-                { ...raw, ilvl: 87 },
-                { matches: ["ordinary-0"], unknown: ["source-0", "unrelated"] },
-                observedAt,
-                origin,
-            ),
-        ).toBeNull();
-    });
+    it.each(["live", "archive"] as const)(
+        "requires full %s matches and unknown equality, not only the requested unknown target",
+        (origin) => {
+            const diagnostics = create()!;
+            const raw = sourceItem();
+            expect(
+                diagnostics.collect(
+                    raw,
+                    { matches: [], unknown: ["source-0"] },
+                    observedAt,
+                    origin,
+                ),
+            ).toBeNull();
+            expect(
+                diagnostics.collect(
+                    { ...raw, ilvl: 87 },
+                    { matches: ["ordinary-0"], unknown: ["source-0", "unrelated"] },
+                    observedAt,
+                    origin,
+                ),
+            ).toBeNull();
+        },
+    );
 
     it("shares live and archive deduplication and group caps, preserving the first committed provenance", async () => {
         const diagnostics = create()!;

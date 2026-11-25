@@ -2,9 +2,17 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
+import type { z } from "zod";
 import { checkRequestOrigin, MAX_OPERATION_BODY_BYTES, operationError } from "~/operations/http";
 import type { OperationContext } from "~/operations/operation";
 import { operations } from "~/operations/registry.server";
+
+/**
+ * A tool's schemas must be objects at the root, but Zod writes a root schema with an `id` as a
+ * `$ref` into `$defs`, and a clone follows its parent there. The same definition, without a parent,
+ * validates the same way and has no metadata.
+ */
+const atRoot = <T extends z.ZodObject>(schema: T) => schema.clone(schema.def);
 
 export function createMcpServer(context: OperationContext) {
     const server = new McpServer({ name: "poe-boats", version: "1.0.0" });
@@ -14,8 +22,8 @@ export function createMcpServer(context: OperationContext) {
             operation.name,
             {
                 description: operation.description,
-                inputSchema: operation.input,
-                outputSchema: operation.output,
+                inputSchema: atRoot(operation.input),
+                outputSchema: atRoot(operation.output),
                 annotations: {
                     readOnlyHint: operation.readOnly,
                     destructiveHint: !operation.readOnly,

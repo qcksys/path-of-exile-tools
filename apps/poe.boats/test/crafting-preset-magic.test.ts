@@ -30,64 +30,66 @@ const selected = singleModifiers.map(([preset, ids]): [CraftingPresetId, string[
 ]);
 const quote = { amount: 10, currency: "chaos", source: "manual", confidence: null } as const;
 
-it.each(
-    singleModifiers,
-)("%s offers Magic donors with identical immediate outcomes", (preset, ids) => {
-    const graph = projectFromPreset(engine, ruleset, preset);
-    const purchases = graph.nodes.filter((node) => node.kind === "acquire");
-    expect(
-        purchases
-            .filter((node) =>
-                node.alternatives.some((alternative) => alternative.id === "buy-magic"),
-            )
-            .map((node) => node.id),
-    ).toEqual([
-        ...(preset === "rarity-helmet" ? ["donor-0-0"] : []),
-        ...selected.find(([id]) => id === preset)![1],
-    ]);
-    const queries = createCraftingItemQuery(engine);
-    for (const node of purchases) {
-        const rare = node.alternatives[0]!;
-        if (rare.kind !== "purchase") throw new Error("Expected purchase");
-        expect(rare.id).toBe("buy");
-        expect(node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
-        if (!ids.includes(node.id)) {
-            continue;
-        }
-        const magic = node.alternatives[1]!;
-        if (magic.kind !== "purchase") throw new Error("Expected Magic purchase");
-        expect(magic).toMatchObject({ id: "buy-magic", price: null });
-        expect(magic.item).toEqual({ ...rare.item, rarity: "magic" });
-        expect(engine.validateItem(magic.item)).toEqual(magic.item);
-        expect(queries.matches(magic.item, node.output)).toBe("match");
-        expect(magic.item.mods).toHaveLength(1);
-        expect(engine.pool({ ...magic.item, mods: [] }).map((entry) => entry.id)).toContain(
-            magic.item.mods[0]!.id,
-        );
-        const consumers = graph.nodes.filter(
-            (entry) =>
-                entry.kind === "craft" && entry.inputs.some((input) => input.source === node.id),
-        );
-        expect(consumers.length).toBeGreaterThan(0);
-        for (const consumer of consumers) {
-            if (consumer.kind !== "craft") throw new Error("Expected craft");
-            expect(consumer.method.kind).toBe("recombine");
-            const inputs = consumer.inputs.map(
-                (input) => purchases.find((entry) => entry.id === input.source)!,
+it.each(singleModifiers)(
+    "%s offers Magic donors with identical immediate outcomes",
+    (preset, ids) => {
+        const graph = projectFromPreset(engine, ruleset, preset);
+        const purchases = graph.nodes.filter((node) => node.kind === "acquire");
+        expect(
+            purchases
+                .filter((node) =>
+                    node.alternatives.some((alternative) => alternative.id === "buy-magic"),
+                )
+                .map((node) => node.id),
+        ).toEqual([
+            ...(preset === "rarity-helmet" ? ["donor-0-0"] : []),
+            ...selected.find(([id]) => id === preset)![1],
+        ]);
+        const queries = createCraftingItemQuery(engine);
+        for (const node of purchases) {
+            const rare = node.alternatives[0]!;
+            if (rare.kind !== "purchase") throw new Error("Expected purchase");
+            expect(rare.id).toBe("buy");
+            expect(node.choice).toEqual({ mode: "pinned", alternativeId: "buy" });
+            if (!ids.includes(node.id)) {
+                continue;
+            }
+            const magic = node.alternatives[1]!;
+            if (magic.kind !== "purchase") throw new Error("Expected Magic purchase");
+            expect(magic).toMatchObject({ id: "buy-magic", price: null });
+            expect(magic.item).toEqual({ ...rare.item, rarity: "magic" });
+            expect(engine.validateItem(magic.item)).toEqual(magic.item);
+            expect(queries.matches(magic.item, node.output)).toBe("match");
+            expect(magic.item.mods).toHaveLength(1);
+            expect(engine.pool({ ...magic.item, mods: [] }).map((entry) => entry.id)).toContain(
+                magic.item.mods[0]!.id,
             );
-            expect(inputs.every(Boolean)).toBe(true);
-            const [left, right] = inputs.map((input) => input.alternatives[0]!);
-            if (left!.kind !== "purchase" || right!.kind !== "purchase")
-                throw new Error("Expected donors");
-            const expected = recombinationOutcomes(engine, left!.item, right!.item);
-            for (const a of inputs[0]!.alternatives)
-                for (const b of inputs[1]!.alternatives) {
-                    if (a.kind !== "purchase" || b.kind !== "purchase") continue;
-                    expect(recombinationOutcomes(engine, a.item, b.item)).toEqual(expected);
-                }
+            const consumers = graph.nodes.filter(
+                (entry) =>
+                    entry.kind === "craft" &&
+                    entry.inputs.some((input) => input.source === node.id),
+            );
+            expect(consumers.length).toBeGreaterThan(0);
+            for (const consumer of consumers) {
+                if (consumer.kind !== "craft") throw new Error("Expected craft");
+                expect(consumer.method.kind).toBe("recombine");
+                const inputs = consumer.inputs.map(
+                    (input) => purchases.find((entry) => entry.id === input.source)!,
+                );
+                expect(inputs.every(Boolean)).toBe(true);
+                const [left, right] = inputs.map((input) => input.alternatives[0]!);
+                if (left!.kind !== "purchase" || right!.kind !== "purchase")
+                    throw new Error("Expected donors");
+                const expected = recombinationOutcomes(engine, left!.item, right!.item);
+                for (const a of inputs[0]!.alternatives)
+                    for (const b of inputs[1]!.alternatives) {
+                        if (a.kind !== "purchase" || b.kind !== "purchase") continue;
+                        expect(recombinationOutcomes(engine, a.item, b.item)).toEqual(expected);
+                    }
+            }
         }
-    }
-});
+    },
+);
 
 it.each(recoveryDonors)("%s/%s preserves every recovery donor outcome as Magic", (preset, id) => {
     const graph = projectFromPreset(engine, ruleset, preset);
@@ -118,43 +120,46 @@ it.each(recoveryDonors)("%s/%s preserves every recovery donor outcome as Magic",
     }
 });
 
-it.each(
-    selected,
-)("%s keeps full graph results equivalent and selects only priced alternatives", (preset, ids) => {
-    const graph = projectFromPreset(engine, ruleset, preset);
-    graph.iterations = 8;
-    graph.prices["service:recombine"] = quote;
-    for (const node of graph.nodes) {
-        if (node.kind !== "acquire") continue;
-        if (ids.includes(node.id)) node.choice = { mode: "automatic" };
-        for (const alternative of node.alternatives)
-            if (
-                alternative.kind === "purchase" &&
-                (!ids.includes(node.id) || alternative.id === "buy-magic")
-            )
-                alternative.price = quote;
-    }
-    const legacy = structuredClone(graph);
-    for (const node of legacy.nodes) {
-        if (node.kind !== "acquire") continue;
-        node.choice = { mode: "pinned", alternativeId: "buy" };
-        node.alternatives = node.alternatives.filter((alternative) => alternative.id === "buy");
-        if (node.alternatives[0]!.kind === "purchase") node.alternatives[0]!.price = quote;
-    }
-    const options = { estimateIterations: 1, workLimit: 100_000 };
-    const magic = calculateCraftingGraph(catalog, graph, options);
-    expect(magic.errors).toEqual({});
-    expect(magic.missingPrices).toEqual([]);
-    expect(magic.meanCost).toBeGreaterThan(0);
-    expect(magic.probability).toBe(1);
-    const rareTrial = runGraphTrial(legacy, seededRandom(42));
-    const magicTrial = runGraphTrial(graph, seededRandom(42));
-    expect(magicTrial.success).toBe(true);
-    expect(magicTrial.cost).toBe(rareTrial.cost);
-    expect(magicTrial.item).toEqual(rareTrial.item);
-    expect(magicTrial.visits).toEqual(rareTrial.visits);
-    for (const id of ids) expect(magic.acquisitions[id]?.selectedId).toBe("buy-magic");
-});
+it.each(selected)(
+    "%s keeps full graph results equivalent and selects only priced alternatives",
+    (preset, ids) => {
+        const graph = projectFromPreset(engine, ruleset, preset);
+        graph.iterations = 8;
+        graph.prices["service:recombine"] = quote;
+        for (const node of graph.nodes) {
+            if (node.kind !== "acquire") continue;
+            if (ids.includes(node.id)) node.choice = { mode: "automatic" };
+            for (const alternative of node.alternatives)
+                if (
+                    alternative.kind === "purchase" &&
+                    (!ids.includes(node.id) || alternative.id === "buy-magic")
+                )
+                    alternative.price = quote;
+        }
+        const legacy = structuredClone(graph);
+        for (const node of legacy.nodes) {
+            if (node.kind !== "acquire") continue;
+            node.choice = { mode: "pinned", alternativeId: "buy" };
+            node.alternatives = node.alternatives.filter((alternative) => alternative.id === "buy");
+            if (node.alternatives[0]!.kind === "purchase") node.alternatives[0]!.price = quote;
+        }
+        const options = { estimateIterations: 1, workLimit: 100_000 };
+        const magic = calculateCraftingGraph(catalog, graph, options);
+        expect(magic.errors).toEqual({});
+        expect(magic.missingPrices).toEqual([]);
+        expect(magic.meanCost).toBeGreaterThan(0);
+        expect(magic.probability).toBe(1);
+        const rareTrial = runGraphTrial(legacy, seededRandom(42));
+        const magicTrial = runGraphTrial(graph, seededRandom(42));
+        expect(magicTrial.success).toBe(true);
+        expect(magicTrial.cost).toBe(rareTrial.cost);
+        expect(magicTrial.item).toEqual(rareTrial.item);
+        expect(magicTrial.visits).toEqual(rareTrial.visits);
+        for (const id of ids) expect(magic.acquisitions[id]?.selectedId).toBe("buy-magic");
+    },
+    // The bow and shield graphs take 3-7 s on a desktop, near the 5 s default.
+    30_000,
+);
 
 it("preserves the initial Rare preview and refuses unknown prices when switched to automatic", () => {
     const graph = projectFromPreset(engine, ruleset, "physical-bow");

@@ -73,13 +73,10 @@ describe("sources", () => {
             await source.close();
         }
     });
-    it.each([
-        "../out",
-        "/out",
-        "C:/out",
-        "a/../../out",
-        "a\\..\\out",
-    ])("rejects unsafe path %s", (path) => expect(() => assetPath("data", path)).toThrow());
+    it.each(["../out", "/out", "C:/out", "a/../../out", "a\\..\\out"])(
+        "rejects unsafe path %s",
+        (path) => expect(() => assetPath("data", path)).toThrow(),
+    );
     it("validates game-specific patches and rejects unknown config keys", () => {
         expect(configSchema.safeParse({ poe1: { patch: "4.5.5.4" } }).success).toBe(false);
         expect(

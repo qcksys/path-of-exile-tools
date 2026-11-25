@@ -50,39 +50,39 @@ function prepared(itemClass = "Ring") {
 }
 
 describe("PoE 2 Essence of the Breach", () => {
-    it.each([
-        "Ring",
-        "Amulet",
-    ])("replaces a modifier on a %s using extracted restrictions and values", (itemClass) => {
-        const item = prepared(itemClass);
-        item.mods[1]!.fractured = true;
-        const original = structuredClone(item);
-        expect(engine.essenceSupported(essence.id)).toBe(true);
-        expect(engine.recipePool(item, "essence").some((entry) => entry.id === mod)).toBe(true);
-        expect(availableOmens(catalog, method)).toHaveLength(2);
-        const result = engine.apply(item, directional, seededRandom(1));
-        expect(item).toEqual(original);
-        expect(result.item.mods).toContainEqual(item.mods[1]);
-        expect(result.item.mods.find((entry) => entry.id === mod)).toMatchObject({
-            values: catalog.mods[mod]!.stats.map((stat) => stat.max),
-            crafted: true,
-            fractured: false,
-        });
-        expect(result.item.rarity).toBe("rare");
-        expect(result.item.implicits).toEqual(item.implicits);
-        expect(catalystLimit(catalog, result.item)).toBe(40);
-        expect(result.cost.map((entry) => [entry.id, entry.amount])).toEqual([
-            [method.id, 1],
-            [directional.omens[0], 1],
-        ]);
-        const manual = engine.addStartingMod(
-            { ...item, mods: [] },
-            mod,
-            seededRandom(1),
-            "essence",
-        );
-        expect(manual.mods[0]!.crafted).toBe(true);
-    });
+    it.each(["Ring", "Amulet"])(
+        "replaces a modifier on a %s using extracted restrictions and values",
+        (itemClass) => {
+            const item = prepared(itemClass);
+            item.mods[1]!.fractured = true;
+            const original = structuredClone(item);
+            expect(engine.essenceSupported(essence.id)).toBe(true);
+            expect(engine.recipePool(item, "essence").some((entry) => entry.id === mod)).toBe(true);
+            expect(availableOmens(catalog, method)).toHaveLength(2);
+            const result = engine.apply(item, directional, seededRandom(1));
+            expect(item).toEqual(original);
+            expect(result.item.mods).toContainEqual(item.mods[1]);
+            expect(result.item.mods.find((entry) => entry.id === mod)).toMatchObject({
+                values: catalog.mods[mod]!.stats.map((stat) => stat.max),
+                crafted: true,
+                fractured: false,
+            });
+            expect(result.item.rarity).toBe("rare");
+            expect(result.item.implicits).toEqual(item.implicits);
+            expect(catalystLimit(catalog, result.item)).toBe(40);
+            expect(result.cost.map((entry) => [entry.id, entry.amount])).toEqual([
+                [method.id, 1],
+                [directional.omens[0], 1],
+            ]);
+            const manual = engine.addStartingMod(
+                { ...item, mods: [] },
+                mod,
+                seededRandom(1),
+                "essence",
+            );
+            expect(manual.mods[0]!.crafted).toBe(true);
+        },
+    );
 
     it("rejects invalid starting states before consuming randomness", () => {
         const item = prepared();

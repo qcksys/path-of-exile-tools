@@ -70,34 +70,39 @@ const model = marketModifierTextModel(engine, new Set(samples.map((sample) => sa
 const resolve = compileModifierTextModel(model);
 const legacy = compileModifierTextModel({ ...model, format: 2 });
 
-it.each(
-    samples,
-)("resolves captured Magic name and description evidence for $typeLine", (sample) => {
-    const record = normalizeApiItem("poe1", "stash", {
-        name: "",
-        typeLine: sample.typeLine,
-        baseType: sample.baseType,
-        ilvl: 86,
-        rarity: "Magic",
-        identified: true,
-        influences: { shaper: true },
-        explicitMods: sample.descriptions.map((description) => ({ description })),
-        implicitMods: sample.implicit.map((description) => ({ description })),
-        extended: sample.extended,
-    });
-    const resolved = resolve(record);
-    expect(model.format).toBe(5);
-    expect([resolved.facts.prefixes, resolved.facts.suffixes]).toEqual(sample.counts);
-    expect(resolved.facts.modifiers.map((mod) => mod.id).sort()).toEqual([...sample.ids].sort());
-    expect(resolved.item).toBe(record.item);
-    expect(resolved.facts.modifiersComplete).toBe(false);
-    const previous = legacy(record);
-    if (sample.typeLine.startsWith("Unyielding") || sample.typeLine.startsWith("Priest's")) {
-        expect([previous.facts.prefixes, previous.facts.suffixes]).toEqual(sample.counts);
-        expect(previous.facts.modifiers).toHaveLength(sample.ids.length);
-        expect(previous.facts.modifiers).toEqual(expect.arrayContaining(resolved.facts.modifiers));
-    } else expect(previous.facts).not.toEqual(resolved.facts);
-});
+it.each(samples)(
+    "resolves captured Magic name and description evidence for $typeLine",
+    (sample) => {
+        const record = normalizeApiItem("poe1", "stash", {
+            name: "",
+            typeLine: sample.typeLine,
+            baseType: sample.baseType,
+            ilvl: 86,
+            rarity: "Magic",
+            identified: true,
+            influences: { shaper: true },
+            explicitMods: sample.descriptions.map((description) => ({ description })),
+            implicitMods: sample.implicit.map((description) => ({ description })),
+            extended: sample.extended,
+        });
+        const resolved = resolve(record);
+        expect(model.format).toBe(5);
+        expect([resolved.facts.prefixes, resolved.facts.suffixes]).toEqual(sample.counts);
+        expect(resolved.facts.modifiers.map((mod) => mod.id).sort()).toEqual(
+            [...sample.ids].sort(),
+        );
+        expect(resolved.item).toBe(record.item);
+        expect(resolved.facts.modifiersComplete).toBe(false);
+        const previous = legacy(record);
+        if (sample.typeLine.startsWith("Unyielding") || sample.typeLine.startsWith("Priest's")) {
+            expect([previous.facts.prefixes, previous.facts.suffixes]).toEqual(sample.counts);
+            expect(previous.facts.modifiers).toHaveLength(sample.ids.length);
+            expect(previous.facts.modifiers).toEqual(
+                expect.arrayContaining(resolved.facts.modifiers),
+            );
+        } else expect(previous.facts).not.toEqual(resolved.facts);
+    },
+);
 
 it("retains unsupported invisible and blank-name definitions instead of excluding their origins", () => {
     for (const id of [

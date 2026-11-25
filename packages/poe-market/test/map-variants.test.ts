@@ -196,9 +196,12 @@ describe("map variants", () => {
             ["memory", "citadel"],
         ],
         [[], []],
-    ] as const)("reads the influences of a map with implicits %j as %j", (implicits, influences) => {
-        expect(mapInfluences(implicits)).toEqual(influences);
-    });
+    ] as const)(
+        "reads the influences of a map with implicits %j as %j",
+        (implicits, influences) => {
+            expect(mapInfluences(implicits)).toEqual(influences);
+        },
+    );
 
     it.each([
         "Unidentified · Delirium 0%",

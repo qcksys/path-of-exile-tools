@@ -95,29 +95,30 @@ describe("PoE 2 Ancient Infuser tablet corruption", () => {
         }
     });
 
-    it.each([
-        "normal",
-        "magic",
-        "rare",
-    ] as const)("adds one affix to a full %s tablet while preserving its rarity and existing rolls", (rarity) => {
-        const item = prepared(rarity);
-        const before = structuredClone(item);
-        const result = engine.apply(item, method, force("modifier")).item;
-        expect(result.rarity).toBe(rarity);
-        expect(result.corrupted).toBe(true);
-        expect(result.mods).toHaveLength(item.mods.length + 1);
-        expect(result.mods.slice(0, item.mods.length)).toEqual(item.mods);
-        expect(result.implicits).toEqual(item.implicits);
-        expect(engine.validateItem(result)).toEqual(result);
-        expect(() => engine.validateItem({ ...result, corrupted: false })).toThrow("affix limits");
-        expect(item).toEqual(before);
-        const text = exportCraftingItemText(engine, result);
-        expect(
-            importCraftingItemText(engine, text).some(
-                (entry) => exportCraftingItemText(engine, entry.item) === text,
-            ),
-        ).toBe(true);
-    });
+    it.each(["normal", "magic", "rare"] as const)(
+        "adds one affix to a full %s tablet while preserving its rarity and existing rolls",
+        (rarity) => {
+            const item = prepared(rarity);
+            const before = structuredClone(item);
+            const result = engine.apply(item, method, force("modifier")).item;
+            expect(result.rarity).toBe(rarity);
+            expect(result.corrupted).toBe(true);
+            expect(result.mods).toHaveLength(item.mods.length + 1);
+            expect(result.mods.slice(0, item.mods.length)).toEqual(item.mods);
+            expect(result.implicits).toEqual(item.implicits);
+            expect(engine.validateItem(result)).toEqual(result);
+            expect(() => engine.validateItem({ ...result, corrupted: false })).toThrow(
+                "affix limits",
+            );
+            expect(item).toEqual(before);
+            const text = exportCraftingItemText(engine, result);
+            expect(
+                importCraftingItemText(engine, text).some(
+                    (entry) => exportCraftingItemText(engine, entry.item) === text,
+                ),
+            ).toBe(true);
+        },
+    );
 
     it("adds ten uses to each extracted native implicit and preserves their text and JSON", () => {
         for (const id of tablets) {

@@ -38,3 +38,4 @@ dist-ssr
 .agents/generated/
 .agents/agents.json.*.bak
 .agents/plugin-data/
+.vitest/

@@ -46,27 +46,29 @@ function marked(side = "prefix", full = false, level = 86, fractured = false) {
 }
 
 describe("PoE 2 Essence of the Abyss", () => {
-    it.each([
-        "prefix",
-        "suffix",
-    ])("retains a replaced %s Mark when the bone floor leaves no reveal choices", (side) => {
-        const sceptre = Object.entries(catalog.bases).find(
-            ([, entry]) => entry.name === "Rattling Sceptre",
-        )![0];
-        const item = engine.addStartingMod(
-            engine.createItem(sceptre, 1),
-            markId(side),
-            seededRandom(1),
-            "essence",
-        );
-        const high = currency("AbyssalBenchTicketWeaponHigh");
-        const result = engine.apply(item, high, seededRandom(1));
-        expect(result.item.reveal).toMatchObject({ mark: markId(side), choices: [] });
-        expect(engine.mod(result.item.reveal!.mod).generation_type).toBe(side);
-        expect(engine.revealPool(result.item)).toEqual([]);
-        expect(result.cost).toEqual(engine.costs(high));
-        expect(engine.validateItem(JSON.parse(JSON.stringify(result.item)))).toEqual(result.item);
-    });
+    it.each(["prefix", "suffix"])(
+        "retains a replaced %s Mark when the bone floor leaves no reveal choices",
+        (side) => {
+            const sceptre = Object.entries(catalog.bases).find(
+                ([, entry]) => entry.name === "Rattling Sceptre",
+            )![0];
+            const item = engine.addStartingMod(
+                engine.createItem(sceptre, 1),
+                markId(side),
+                seededRandom(1),
+                "essence",
+            );
+            const high = currency("AbyssalBenchTicketWeaponHigh");
+            const result = engine.apply(item, high, seededRandom(1));
+            expect(result.item.reveal).toMatchObject({ mark: markId(side), choices: [] });
+            expect(engine.mod(result.item.reveal!.mod).generation_type).toBe(side);
+            expect(engine.revealPool(result.item)).toEqual([]);
+            expect(result.cost).toEqual(engine.costs(high));
+            expect(engine.validateItem(JSON.parse(JSON.stringify(result.item)))).toEqual(
+                result.item,
+            );
+        },
+    );
     it("uses the extracted class rules, weighted Marks and keyword definition", () => {
         expect(engine.essenceSupported(essence.id)).toBe(true);
         expect(poe1.essenceSupported(essence.id)).toBe(false);
@@ -131,112 +133,119 @@ describe("PoE 2 Essence of the Abyss", () => {
         ["suffix", false, true],
         ["prefix", true, true],
         ["suffix", true, true],
-    ] as const)("replaces only the %s Mark (full: %s, fractured: %s), preserving all other rolls and item properties", (side, full, fractured) => {
-        const item = { ...marked(side, full, 86, fractured), quality: 20 };
-        const before = structuredClone(item);
-        const opposite = omen(
-            side === "prefix" ? "OmenOnAbyssAddSuffixes" : "OmenOnAbyssAddPrefixes",
-        );
-        const result = engine.apply(item, { ...bone, omens: [opposite] }, seededRandom(42));
-        expect(item).toEqual(before);
-        expect(result.item.mods).toHaveLength(item.mods.length);
-        expect(result.item.mods[0]!.id).toBe(side === "prefix" ? "VeiledPrefix" : "VeiledSuffix");
-        expect(result.item.mods[0]).toMatchObject({ fractured: false, crafted: false });
-        expect(result.item.mods.slice(1)).toEqual(item.mods.slice(1));
-        expect(result.item.implicits).toEqual(item.implicits);
-        expect(result.item.quality).toBe(20);
-        expect(result.item.reveal).toMatchObject({
-            source: bone.id,
-            mark: markId(side),
-            choices: [],
-            omens: [],
-        });
-        expect(result.cost.map((entry) => entry.id)).toEqual([bone.id]);
-        expect(engine.validateItem(JSON.parse(JSON.stringify(result.item)))).toEqual(result.item);
-        const target = engine.validateTarget({
-            groups: item.mods.slice(1).map((entry) => ({ mods: [entry.id] })),
-            unrevealedCount: { min: 1, max: 1 },
-        });
-        expect(
-            calculateExact(engine, item, { ...bone, omens: [opposite] }, target).probability,
-        ).toBe(1);
-    });
-
-    it.each([
-        false,
-        true,
-    ])("combines the modeled item-level floor with the extracted bone floor (fractured: %s)", (fractured) => {
-        for (const level of [1, 49, 86, 100]) {
-            const item = marked("prefix", false, level, fractured);
-            const result = engine.apply(item, bone, seededRandom(1)).item;
-            const unmarked = { ...result, reveal: { ...result.reveal!, mark: undefined } };
-            expect(engine.revealMinimumLevel(result)).toBe(Math.floor(level * 0.4));
-            expect(engine.revealPool(result)).toEqual(
-                engine
-                    .revealPool(unmarked)
-                    .filter((entry) => entry.mod.required_level >= Math.floor(level * 0.4)),
+    ] as const)(
+        "replaces only the %s Mark (full: %s, fractured: %s), preserving all other rolls and item properties",
+        (side, full, fractured) => {
+            const item = { ...marked(side, full, 86, fractured), quality: 20 };
+            const before = structuredClone(item);
+            const opposite = omen(
+                side === "prefix" ? "OmenOnAbyssAddSuffixes" : "OmenOnAbyssAddPrefixes",
             );
-            expect(engine.revealPool(result).length).toBeGreaterThan(0);
-        }
-        const ancient = engine.apply(
-            marked("prefix", false, 86, fractured),
-            currency("AbyssalBenchTicketJewelleryHigh"),
-            seededRandom(1),
-        ).item;
-        expect(engine.revealMinimumLevel(ancient)).toBe(40);
-        expect(engine.revealPool(ancient).every((entry) => entry.mod.required_level >= 40)).toBe(
-            true,
-        );
-    });
-
-    it.each([
-        false,
-        true,
-    ])("keeps the floor and Lich guarantee through Echoes, then frees the crafted slot (fractured: %s)", (fractured) => {
-        const lich = omen("OmenOnAbyssGuarenteeLichTypeMod1");
-        const echoes = omen("OmenOnAbyssRerollOptions");
-        const hidden = engine.apply(
-            marked("suffix", false, 86, fractured),
-            { ...bone, omens: [lich, omen("OmenOnAbyssAddPrefixes")] },
-            seededRandom(2),
-        ).item;
-        expect(hidden.reveal!.omens).toEqual([lich]);
-        const prepared = engine.prepareReveal(
-            hidden,
-            { kind: "reveal", preferred: [], omens: [echoes] },
-            seededRandom(42),
-        );
-        expect(prepared.cost.map((entry) => entry.id)).toEqual([echoes]);
-        const rerolled = engine.rerollReveal(prepared.item, seededRandom(43));
-        for (const item of [prepared.item, rerolled]) {
-            expect(item.reveal!.mark).toBe(markId("suffix"));
-            expect(item.reveal!.choices.every((id) => engine.mod(id).required_level >= 34)).toBe(
-                true,
+            const result = engine.apply(item, { ...bone, omens: [opposite] }, seededRandom(42));
+            expect(item).toEqual(before);
+            expect(result.item.mods).toHaveLength(item.mods.length);
+            expect(result.item.mods[0]!.id).toBe(
+                side === "prefix" ? "VeiledPrefix" : "VeiledSuffix",
             );
+            expect(result.item.mods[0]).toMatchObject({ fractured: false, crafted: false });
+            expect(result.item.mods.slice(1)).toEqual(item.mods.slice(1));
+            expect(result.item.implicits).toEqual(item.implicits);
+            expect(result.item.quality).toBe(20);
+            expect(result.item.reveal).toMatchObject({
+                source: bone.id,
+                mark: markId(side),
+                choices: [],
+                omens: [],
+            });
+            expect(result.cost.map((entry) => entry.id)).toEqual([bone.id]);
+            expect(engine.validateItem(JSON.parse(JSON.stringify(result.item)))).toEqual(
+                result.item,
+            );
+            const target = engine.validateTarget({
+                groups: item.mods.slice(1).map((entry) => ({ mods: [entry.id] })),
+                unrevealedCount: { min: 1, max: 1 },
+            });
             expect(
-                item.reveal!.choices.some((id) =>
-                    engine.mod(id).implicit_tags.includes("ulaman_mod"),
-                ),
+                calculateExact(engine, item, { ...bone, omens: [opposite] }, target).probability,
+            ).toBe(1);
+        },
+    );
+
+    it.each([false, true])(
+        "combines the modeled item-level floor with the extracted bone floor (fractured: %s)",
+        (fractured) => {
+            for (const level of [1, 49, 86, 100]) {
+                const item = marked("prefix", false, level, fractured);
+                const result = engine.apply(item, bone, seededRandom(1)).item;
+                const unmarked = { ...result, reveal: { ...result.reveal!, mark: undefined } };
+                expect(engine.revealMinimumLevel(result)).toBe(Math.floor(level * 0.4));
+                expect(engine.revealPool(result)).toEqual(
+                    engine
+                        .revealPool(unmarked)
+                        .filter((entry) => entry.mod.required_level >= Math.floor(level * 0.4)),
+                );
+                expect(engine.revealPool(result).length).toBeGreaterThan(0);
+            }
+            const ancient = engine.apply(
+                marked("prefix", false, 86, fractured),
+                currency("AbyssalBenchTicketJewelleryHigh"),
+                seededRandom(1),
+            ).item;
+            expect(engine.revealMinimumLevel(ancient)).toBe(40);
+            expect(
+                engine.revealPool(ancient).every((entry) => entry.mod.required_level >= 40),
             ).toBe(true);
-            expect(engine.validateItem(JSON.parse(JSON.stringify(item)))).toEqual(item);
-        }
-        const result = engine.chooseRevealed(
-            rerolled,
-            rerolled.reveal!.choices[0]!,
-            seededRandom(2),
-        );
-        expect(result.reveal).toBeUndefined();
-        expect(result.mods.some((entry) => entry.crafted)).toBe(false);
-        expect(result.mods.some((entry) => entry.fractured)).toBe(false);
-        expect(result.mods.some((entry) => engine.isDesecrated(entry))).toBe(true);
-        expect(
-            engine
-                .apply(result, method, seededRandom(1))
-                .item.mods.some((entry) => engine.isAbyssalMark(entry.id)),
-        ).toBe(true);
-        const text = exportCraftingItemText(engine, result);
-        expect(importCraftingItemText(engine, text)[0]!.item.mods).toEqual(result.mods);
-    });
+        },
+    );
+
+    it.each([false, true])(
+        "keeps the floor and Lich guarantee through Echoes, then frees the crafted slot (fractured: %s)",
+        (fractured) => {
+            const lich = omen("OmenOnAbyssGuarenteeLichTypeMod1");
+            const echoes = omen("OmenOnAbyssRerollOptions");
+            const hidden = engine.apply(
+                marked("suffix", false, 86, fractured),
+                { ...bone, omens: [lich, omen("OmenOnAbyssAddPrefixes")] },
+                seededRandom(2),
+            ).item;
+            expect(hidden.reveal!.omens).toEqual([lich]);
+            const prepared = engine.prepareReveal(
+                hidden,
+                { kind: "reveal", preferred: [], omens: [echoes] },
+                seededRandom(42),
+            );
+            expect(prepared.cost.map((entry) => entry.id)).toEqual([echoes]);
+            const rerolled = engine.rerollReveal(prepared.item, seededRandom(43));
+            for (const item of [prepared.item, rerolled]) {
+                expect(item.reveal!.mark).toBe(markId("suffix"));
+                expect(
+                    item.reveal!.choices.every((id) => engine.mod(id).required_level >= 34),
+                ).toBe(true);
+                expect(
+                    item.reveal!.choices.some((id) =>
+                        engine.mod(id).implicit_tags.includes("ulaman_mod"),
+                    ),
+                ).toBe(true);
+                expect(engine.validateItem(JSON.parse(JSON.stringify(item)))).toEqual(item);
+            }
+            const result = engine.chooseRevealed(
+                rerolled,
+                rerolled.reveal!.choices[0]!,
+                seededRandom(2),
+            );
+            expect(result.reveal).toBeUndefined();
+            expect(result.mods.some((entry) => entry.crafted)).toBe(false);
+            expect(result.mods.some((entry) => entry.fractured)).toBe(false);
+            expect(result.mods.some((entry) => engine.isDesecrated(entry))).toBe(true);
+            expect(
+                engine
+                    .apply(result, method, seededRandom(1))
+                    .item.mods.some((entry) => engine.isAbyssalMark(entry.id)),
+            ).toBe(true);
+            const text = exportCraftingItemText(engine, result);
+            expect(importCraftingItemText(engine, text)[0]!.item.mods).toEqual(result.mods);
+        },
+    );
 
     it("preserves an unrelated fracture while replacing an unfractured Mark", () => {
         const item = marked("suffix", true);

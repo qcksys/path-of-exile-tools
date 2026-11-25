@@ -64,65 +64,64 @@ const force = (outcome: string) => {
 };
 
 describe("build-extracted native sockets", () => {
-    it.each(bases)("creates $name with its native socket and uses $itemClass augment effects", ({
-        base,
-        itemClass,
-        core,
-    }) => {
-        const item = engine.createItem(base, 1);
-        expect(catalog.bases[base]!.initialSockets).toBe(1);
-        expect(initialSockets(catalog, item)).toBe(1);
-        expect(item.sockets).toBe(1);
-        expect(socketLimit(catalog, item)).toBe(1);
-        expect(socketableItemClass(catalog, item)).toBe(itemClass);
-        const entry = catalog.crafting.augments.find((entry) => entry.id === id(core))!;
-        expect(availableAugments(catalog, item)).toContainEqual(entry);
-        const rule = augmentRule(catalog, item, entry)!;
-        expect(rule.scope).toBe("classes");
-        expect(rule.itemClasses).toContain(itemClass);
-        const result = engine.apply(item, { kind: "augment", id: entry.id }, seededRandom(1));
-        expect(result.item).toEqual({ ...item, augments: [entry.id] });
-        expect(result.cost).toEqual([{ id: entry.id, name: entry.name, amount: 1 }]);
-        for (const stat of rule.stats)
-            expect(socketedStats(catalog, result.item).get(stat.id)).toBe(stat.min);
-        const replacement = engine.apply(
-            result.item,
-            { kind: "augment", id: id("RuneFire"), replace: 0 },
-            seededRandom(1),
-        ).item;
-        expect(replacement.augments).toEqual([id("RuneFire")]);
-        expect(engine.statTotals(replacement).get("base_fire_damage_resistance_%")).toBe(14);
-        expect(
-            importCraftingItemText(engine, exportCraftingItemText(engine, result.item)).map(
-                (entry) => entry.item,
-            ),
-        ).toContainEqual(result.item);
-    });
+    it.each(bases)(
+        "creates $name with its native socket and uses $itemClass augment effects",
+        ({ base, itemClass, core }) => {
+            const item = engine.createItem(base, 1);
+            expect(catalog.bases[base]!.initialSockets).toBe(1);
+            expect(initialSockets(catalog, item)).toBe(1);
+            expect(item.sockets).toBe(1);
+            expect(socketLimit(catalog, item)).toBe(1);
+            expect(socketableItemClass(catalog, item)).toBe(itemClass);
+            const entry = catalog.crafting.augments.find((entry) => entry.id === id(core))!;
+            expect(availableAugments(catalog, item)).toContainEqual(entry);
+            const rule = augmentRule(catalog, item, entry)!;
+            expect(rule.scope).toBe("classes");
+            expect(rule.itemClasses).toContain(itemClass);
+            const result = engine.apply(item, { kind: "augment", id: entry.id }, seededRandom(1));
+            expect(result.item).toEqual({ ...item, augments: [entry.id] });
+            expect(result.cost).toEqual([{ id: entry.id, name: entry.name, amount: 1 }]);
+            for (const stat of rule.stats)
+                expect(socketedStats(catalog, result.item).get(stat.id)).toBe(stat.min);
+            const replacement = engine.apply(
+                result.item,
+                { kind: "augment", id: id("RuneFire"), replace: 0 },
+                seededRandom(1),
+            ).item;
+            expect(replacement.augments).toEqual([id("RuneFire")]);
+            expect(engine.statTotals(replacement).get("base_fire_damage_resistance_%")).toBe(14);
+            expect(
+                importCraftingItemText(engine, exportCraftingItemText(engine, result.item)).map(
+                    (entry) => entry.item,
+                ),
+            ).toContainEqual(result.item);
+        },
+    );
 
-    it.each(bases)("caps corruption sockets on $name at its extracted inventory area", ({
-        base,
-        corruptedSockets,
-    }) => {
-        const item = engine.createItem(base);
-        expect(() => engine.apply(item, artificer, seededRandom(1))).toThrow("maximum number");
-        const result = engine.apply(item, vaal, force("socket")).item;
-        expect(result).toEqual({ ...item, corrupted: true, sockets: corruptedSockets });
-        expect(retainedSocketLimit(catalog, result)).toBe(corruptedSockets);
-        expect(() => engine.validateItem({ ...result, sockets: corruptedSockets + 1 })).toThrow(
-            "Socket count",
-        );
-        expect(
-            calculateExact(
-                engine,
-                item,
-                vaal,
-                engine.validateTarget({
-                    groups: [],
-                    sockets: { min: corruptedSockets + 1, max: 7 },
-                }),
-            ).probability,
-        ).toBe(0);
-    });
+    it.each(bases)(
+        "caps corruption sockets on $name at its extracted inventory area",
+        ({ base, corruptedSockets }) => {
+            const item = engine.createItem(base);
+            expect(() => engine.apply(item, artificer, seededRandom(1))).toThrow("maximum number");
+            const result = engine.apply(item, vaal, force("socket")).item;
+            expect(result).toEqual({ ...item, corrupted: true, sockets: corruptedSockets });
+            expect(retainedSocketLimit(catalog, result)).toBe(corruptedSockets);
+            expect(() => engine.validateItem({ ...result, sockets: corruptedSockets + 1 })).toThrow(
+                "Socket count",
+            );
+            expect(
+                calculateExact(
+                    engine,
+                    item,
+                    vaal,
+                    engine.validateTarget({
+                        groups: [],
+                        sockets: { min: corruptedSockets + 1, max: 7 },
+                    }),
+                ).probability,
+            ).toBe(0);
+        },
+    );
 
     it("loads three-socket bases from the initial-count field or their explicit base implicit", () => {
         const special = Object.keys(catalog.bases).filter(

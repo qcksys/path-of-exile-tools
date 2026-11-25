@@ -16,29 +16,34 @@ describe("multi-input crafting graph", () => {
     it.each([
         ["left", firstMod, 52],
         ["right", secondMod, 42],
-    ] as const)("recovers the %s donor without rebuying it or cloning an input", (_port, mod, expectedCost) => {
-        const graph = graphFixture();
-        const original = structuredClone(graph);
-        const result = runGraphTrial(graph, selectedOutcomes([mod], [firstMod, secondMod]));
-        expect(result).toMatchObject({
-            status: "terminal",
-            outcomeId: "goal",
-            success: true,
-            actions: 2,
-            purchases: 3,
-            consumedItems: 4,
-            cost: expectedCost,
-            missingPrices: [],
-        });
-        const crafts = result.trace.filter((entry) => entry.inputs.length);
-        expect(crafts).toHaveLength(2);
-        expect(crafts[1]!.inputs).toContain(crafts[0]!.outputs[0]);
-        const consumed = crafts.flatMap((entry) => entry.inputs);
-        expect(new Set(consumed).size).toBe(consumed.length);
-        expect(result.spending["service:recombine"]).toBe(2);
-        expect(Object.keys(result.spending).some((key) => key.startsWith("donor:"))).toBe(false);
-        expect(graph).toEqual(original);
-    });
+    ] as const)(
+        "recovers the %s donor without rebuying it or cloning an input",
+        (_port, mod, expectedCost) => {
+            const graph = graphFixture();
+            const original = structuredClone(graph);
+            const result = runGraphTrial(graph, selectedOutcomes([mod], [firstMod, secondMod]));
+            expect(result).toMatchObject({
+                status: "terminal",
+                outcomeId: "goal",
+                success: true,
+                actions: 2,
+                purchases: 3,
+                consumedItems: 4,
+                cost: expectedCost,
+                missingPrices: [],
+            });
+            const crafts = result.trace.filter((entry) => entry.inputs.length);
+            expect(crafts).toHaveLength(2);
+            expect(crafts[1]!.inputs).toContain(crafts[0]!.outputs[0]);
+            const consumed = crafts.flatMap((entry) => entry.inputs);
+            expect(new Set(consumed).size).toBe(consumed.length);
+            expect(result.spending["service:recombine"]).toBe(2);
+            expect(Object.keys(result.spending).some((key) => key.startsWith("donor:"))).toBe(
+                false,
+            );
+            expect(graph).toEqual(original);
+        },
+    );
 
     it("pays for two physical items when two ports refer to the same purchase source", () => {
         const graph = graphFixture();

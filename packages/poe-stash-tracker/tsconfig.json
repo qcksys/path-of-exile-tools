@@ -13,7 +13,7 @@
         "noFallthroughCasesInSwitch": true,
         "noUncheckedIndexedAccess": true,
         "noImplicitOverride": true,
-        "baseUrl": ".",
+        "types": ["node"],
         "paths": {
             "#src/*": ["./src/*"]
         }
