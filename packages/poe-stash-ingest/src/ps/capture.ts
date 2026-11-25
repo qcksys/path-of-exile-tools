@@ -32,11 +32,12 @@ import { failureMessage } from "#src/shared/watch.ts";
 const STATE_FILE = "capture-state.json";
 const STATE_POLL_MS = 5000;
 // At busy hours every page is cut off at the API's size limit, so the request rate sets how far
-// capture falls behind. psapi's Ip rule allows 2 hits per 1 s; the test that tripped it at one
-// request per 1.1 s shared the IP with other clients. The rate-limit headers can only slow this.
+// capture falls behind. Until the first response's rate-limit headers arrive, requests are this
+// far apart; from then on the headers set the pace.
 const REQUEST_SPACING_MS = 1500;
-// The share of any rate-limit rule's hits capture may spend is 1 / RULE_HEADROOM.
-const RULE_HEADROOM = 1.5;
+// The share of each rate-limit rule's hits capture aims to spend. psapi's Ip rule allows 2 hits per
+// 1 s, so this is a request every 556 ms while no other client on the IP uses it.
+const RULE_TARGET = 0.9;
 const HEAD_POLL_MS = 60_000;
 const LEASE_POLL_MS = 1000;
 const MAINTENANCE_INTERVAL_MS = 60_000;
@@ -45,16 +46,25 @@ const MAX_ERROR_DELAY_MS = 60_000;
 const RATE_LIMIT_DELAY_SECONDS = 60;
 
 /**
- * The shortest request spacing the latest rate-limit headers allow: two thirds of any rule's hits,
- * and a whole period once a rule is full, since other clients on the same IP count against it too.
+ * The request spacing that keeps capture at RULE_TARGET of every rule in the latest rate-limit
+ * headers, received at `respondedAt`. Hits beyond capture's own requests in a rule's period are
+ * another client's on the same IP: they come off capture's share, and once such a rule is full
+ * capture waits out its period.
  */
-export function rateLimitSpacingMs(info: RateLimitInfo | undefined) {
+export function rateLimitSpacingMs(
+    info: RateLimitInfo | undefined,
+    ownRequests: readonly number[] = [],
+    respondedAt = Date.now(),
+) {
     let ms = 0;
     for (const rule of info?.rules ?? []) {
         if (rule.maxHits <= 0) continue;
         const periodMs = rule.periodSeconds * 1000;
-        ms = Math.max(ms, (periodMs * RULE_HEADROOM) / rule.maxHits);
-        if (rule.currentHits >= rule.maxHits) ms = Math.max(ms, periodMs);
+        const own = ownRequests.filter((at) => at > respondedAt - periodMs).length;
+        const others = Math.max(0, rule.currentHits - own);
+        const share = rule.maxHits * RULE_TARGET - others;
+        ms = Math.max(ms, share > 0 ? periodMs / share : periodMs);
+        if (others > 0 && rule.currentHits >= rule.maxHits) ms = Math.max(ms, periodMs);
     }
     return Math.ceil(ms);
 }
@@ -215,6 +225,9 @@ export async function runCapture(
     let pages = 0;
     let failures = 0;
     let requestedAt = 0;
+    let respondedAt = 0;
+    // When capture's recent requests started, to tell its own hits from other clients'.
+    const ownRequests: number[] = [];
     let loggedRules = "";
     while (!opts.signal.aborted) {
         if (lease) {
@@ -239,17 +252,25 @@ export async function runCapture(
             console.log(`psapi rate limits: ${rules}`);
             loggedRules = rules;
         }
-        await pause(requestedAt + Math.max(spacing, rateLimitSpacingMs(limits)) - Date.now());
+        const periods = (limits?.rules ?? []).map((rule) => rule.periodSeconds * 1000);
+        const horizon = respondedAt - Math.max(60_000, ...periods);
+        while (ownRequests.length > 0 && (ownRequests[0] ?? 0) <= horizon) ownRequests.shift();
+        const wait = limits?.rules.length
+            ? rateLimitSpacingMs(limits, ownRequests, respondedAt)
+            : spacing;
+        await pause(requestedAt + wait - Date.now());
         if (opts.signal.aborted) break;
         // The lease may have lapsed during a long rate-limit wait.
         if (lease && !lease.holding()) continue;
         requestedAt = Date.now();
+        ownRequests.push(requestedAt);
         let delay = 0;
         try {
             const page = await client.public.stashTabs(
                 cursor ? { realm: opts.realm, id: cursor } : { realm: opts.realm },
             );
             const capturedAt = Date.now();
+            respondedAt = capturedAt;
             await store({ capturedAt, cursor, page });
             lease?.synced(page.next_change_id);
             const caughtUp = cursor !== undefined && page.next_change_id === cursor;
@@ -273,6 +294,7 @@ export async function runCapture(
                 recovered || pages === 1,
             );
         } catch (error) {
+            respondedAt = Date.now();
             failures++;
             delay = isRateLimited(error)
                 ? (error.rateLimit.retryAfterSeconds ?? RATE_LIMIT_DELAY_SECONDS) * 1000

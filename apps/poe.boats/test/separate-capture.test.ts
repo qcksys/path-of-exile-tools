@@ -392,12 +392,22 @@ const rule = (maxHits: number, periodSeconds: number, currentHits = 1): RateLimi
     currentRestrictionSeconds: 0,
 });
 
-it("spends at most two thirds of the strictest rate-limit rule, and waits out a full one", () => {
+it("spends 90% of the strictest rate-limit rule, less other clients' hits", () => {
+    const now = 100_000;
+    const own = [now - 300];
     expect(rateLimitSpacingMs(undefined)).toBe(0);
-    expect(rateLimitSpacingMs({ rules: [rule(2, 1)] })).toBe(750);
-    expect(rateLimitSpacingMs({ rules: [rule(2, 1), rule(45, 60)] })).toBe(2000);
-    // Another client on the same IP used the rest of the window.
-    expect(rateLimitSpacingMs({ rules: [rule(2, 1, 2)] })).toBe(1000);
+    // 2 hits per second at 90% is a request every 556 ms.
+    expect(rateLimitSpacingMs({ rules: [rule(2, 1)] }, own, now)).toBe(556);
+    expect(rateLimitSpacingMs({ rules: [rule(2, 1), rule(45, 60)] }, own, now)).toBe(1482);
+    // Capture's own two requests fill the window without slowing it to a request per period.
+    expect(rateLimitSpacingMs({ rules: [rule(2, 1, 2)] }, [now - 800, now - 300], now)).toBe(556);
+    // Only one of the two hits is capture's: another client on the IP has the other.
+    expect(rateLimitSpacingMs({ rules: [rule(2, 1, 2)] }, own, now)).toBe(1250);
+    // A request older than the rule's period no longer counts as capture's.
+    expect(rateLimitSpacingMs({ rules: [rule(2, 1, 2)] }, [now - 1500], now)).toBe(1000);
+    // 20 of the 30 hits in the minute are another client's; capture keeps to the remaining 20.5.
+    const minute = Array.from({ length: 10 }, (_, i) => now - 1000 - i * 5000);
+    expect(rateLimitSpacingMs({ rules: [rule(45, 60, 30)] }, minute, now)).toBe(2927);
 });
 
 it("spaces requests as the rate-limit headers allow, and logs each new set of rules", async () => {
@@ -410,8 +420,9 @@ it("spaces requests as the rate-limit headers allow, and logs each new set of ru
     const lines = log.mock.calls.map(([line]) => line);
     log.mockRestore();
     const [first = 0, second = 0, third = 0] = run.startedAt;
-    expect(second - first).toBeGreaterThanOrEqual(99);
-    expect(third - second).toBeGreaterThanOrEqual(124);
+    // 15 hits per second at 90% is 75 ms apart; then 60 per 5 s at 90% is 93 ms.
+    expect(second - first).toBeGreaterThanOrEqual(74);
+    expect(third - second).toBeGreaterThanOrEqual(92);
     expect(lines).toEqual([
         "psapi rate limits: ip 15:1:60",
         "psapi rate limits: ip 15:1:60, ip 60:5:60",
