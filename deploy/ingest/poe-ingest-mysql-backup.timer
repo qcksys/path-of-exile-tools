@@ -1,0 +1,10 @@
+[Unit]
+Description=Back up the dev receiver's MySQL database every night
+
+[Timer]
+OnCalendar=*-*-* 18:30:00 UTC
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

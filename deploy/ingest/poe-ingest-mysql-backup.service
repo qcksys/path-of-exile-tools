@@ -1,0 +1,9 @@
+[Unit]
+Description=Back up the dev receiver's MySQL database to the backup disk and B2
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/poe-ingest
+ExecStart=/usr/bin/python3 %h/poe-ingest/backup_mysql.py
+TimeoutStartSec=3h
+UMask=0077
