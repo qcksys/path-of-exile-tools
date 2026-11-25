@@ -13,7 +13,7 @@ import { quote, runGraphTrial } from "./crafting-graph-fixtures";
 import { historyIndex, retainedRevision } from "./crafting-history-fixtures";
 
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r19",
+    (entry) => entry.game === "poe1" && entry.revision === "r20",
 )!;
 const donors: [CraftingPresetId, string[]][] = [
     ["life-block-shield", ["block", "max-res", "recovery"]],

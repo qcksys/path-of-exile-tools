@@ -2,10 +2,10 @@
     {
         "game": "poe1",
         "era": "3.30",
-        "revision": "r19",
+        "revision": "r20",
         "patchPrefix": "3.30",
         "label": "PoE 1 3.30",
-        "notes": "Publishes the shared implementation changes made since r18, with no change to PoE 1 crafting mechanics or its catalog. Item queries stop at the first failed condition of an all-of group, and modifier text resolution steps only through the candidates of a side that is not yet full; both return the same results as before. Projects on the 3.29 era keep r17 and its catalog.",
+        "notes": "Catalog extracted from client 3.30.0.4.3. The catalog adds and removes no bases or modifiers: 53 Veiled jewel modifiers gain the unveiled_mod tag, and 9 map modifiers that add worlds (Mirage, Beyond, Sentinel, Delirium Mirror and Wildwood) cannot roll on infected maps. Two currency items are added, Originator's Exalted Orb and Primordial Exalted Orb; crafting does not offer either. Crafting mechanics are unchanged; the engine is rebuilt from the same crafting code with a newer version of its schema validation library. Projects on the 3.29 era keep r17 and its catalog.",
         "availability": {
             "kinds": [
                 "generate",
@@ -27,10 +27,10 @@
     {
         "game": "poe2",
         "era": "client-4.5",
-        "revision": "r19",
+        "revision": "r20",
         "patchPrefix": "0.5",
         "label": "PoE 2 (client 4.5)",
-        "notes": "Catalog extracted from client 0.5.5.9. GGG renumbered the PoE 2 client from 4.5.5.x to 0.5.5.x and no longer serves 4.5.5.4, so this era continues under its original name. The catalog adds and removes no bases or modifiers: 61 Precursor Tower tablet modifiers each gain a zero-valued stat (an additional core league level for Abyss, Breach, Delirium, Expedition, Incursion or Ritual, or a powerful map boss), and the powerful map boss stat becomes scalable. Crafting mechanics are unchanged. Also publishes the shared implementation changes made since r18. Revisions r1 through r18 retain their original immutable engines, catalogs and behavior; equipment prices remain manual.",
+        "notes": "Catalog extracted from client 0.5.5.10. Only the client build and source hashes change; the bases, modifiers and crafting mechanics are the same as r19's. The engine is rebuilt from the same crafting code with a newer version of its schema validation library. Revisions r1 through r19 retain their original immutable engines, catalogs and behavior; equipment prices remain manual.",
         "availability": {
             "kinds": [
                 "genesis",

@@ -503,7 +503,7 @@ describe("transport parity", () => {
         "preserves r16 %s extended base sources over HTTP and MCP",
         async (presetId) => {
             const ruleset = historyIndex.revisions.find(
-                (entry) => entry.game === "poe1" && entry.revision === "r19",
+                (entry) => entry.game === "poe1" && entry.revision === "r20",
             )!;
             const input = { game: "poe1", ruleset: rulesetReference(ruleset), presetId };
             const expected = projectFromPreset(fixtureEngine, ruleset, presetId);

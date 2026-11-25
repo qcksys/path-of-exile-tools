@@ -268,6 +268,7 @@ export function projectFromPreset(
             "crafting-graph-17",
             "crafting-graph-18",
             "crafting-graph-19",
+            "crafting-graph-20",
         ].includes(ruleset.engine);
         ({ entry, target } = spicySushiPreset(
             { engine, base, buy, craft, currency },
@@ -282,6 +283,7 @@ export function projectFromPreset(
                 "crafting-graph-17",
                 "crafting-graph-18",
                 "crafting-graph-19",
+                "crafting-graph-20",
             ].includes(ruleset.engine) &&
             presetId === "sushi-rf-helmet"
         ) {
@@ -600,6 +602,7 @@ export function projectFromPreset(
                 "crafting-graph-17",
                 "crafting-graph-18",
                 "crafting-graph-19",
+                "crafting-graph-20",
             ].includes(ruleset.engine)
         ) {
             const donor = nodes.find((node) => node.id === "donor-0-0");
@@ -1205,6 +1208,7 @@ export function projectFromPreset(
             "crafting-graph-17",
             "crafting-graph-18",
             "crafting-graph-19",
+            "crafting-graph-20",
         ].includes(ruleset.engine) &&
         (presetId === "life-block-shield" || presetId === "es-block-shield")
     ) {
@@ -1216,6 +1220,7 @@ export function projectFromPreset(
                 "crafting-graph-17",
                 "crafting-graph-18",
                 "crafting-graph-19",
+                "crafting-graph-20",
             ].includes(ruleset.engine) && presetId === "life-block-shield"
                 ? [{ id: "shield-make-heat", targets: ["block-make-base", "max-res-make-base"] }]
                 : []),
@@ -1281,6 +1286,7 @@ export function projectFromPreset(
             "crafting-graph-17",
             "crafting-graph-18",
             "crafting-graph-19",
+            "crafting-graph-20",
         ].includes(ruleset.engine)
     ) {
         const sourceIds = [
@@ -1293,6 +1299,7 @@ export function projectFromPreset(
                 "crafting-graph-17",
                 "crafting-graph-18",
                 "crafting-graph-19",
+                "crafting-graph-20",
             ].includes(ruleset.engine)
                 ? (extendedScouringSources[presetId] ?? [])
                 : []),
@@ -1303,6 +1310,7 @@ export function projectFromPreset(
                 "crafting-graph-17",
                 "crafting-graph-18",
                 "crafting-graph-19",
+                "crafting-graph-20",
             ].includes(ruleset.engine)
                 ? (rfScouringSources[presetId] ?? [])
                 : []),
@@ -1312,6 +1320,7 @@ export function projectFromPreset(
                 "crafting-graph-17",
                 "crafting-graph-18",
                 "crafting-graph-19",
+                "crafting-graph-20",
             ].includes(ruleset.engine) && presetId === "energy-shield-chest"
                 ? ["donor-0-make-base"]
                 : []),
@@ -1368,6 +1377,7 @@ export function projectFromPreset(
                     "crafting-graph-17",
                     "crafting-graph-18",
                     "crafting-graph-19",
+                    "crafting-graph-20",
                 ].includes(ruleset.engine) &&
                 rfScouringSources[presetId]?.includes(id)
             ) {

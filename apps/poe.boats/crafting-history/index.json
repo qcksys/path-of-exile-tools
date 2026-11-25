@@ -1425,6 +1425,81 @@
                 "disabled": [],
                 "allflame": false
             }
+        },
+        {
+            "era": "3.30",
+            "revision": "r20",
+            "engine": "crafting-graph-20",
+            "patch": "3.30.0.4.3",
+            "manifestSha256": "e2a4f36ef5c51c810f70d5ee9236acfeeb0e0e21dd77a13af65901a0e6910374",
+            "craftingSha256": "dde9c5bce0b8b347487f56964e03af48b27fc1fb5d43ef196b96fa778719e325",
+            "format": 1,
+            "game": "poe1",
+            "label": "PoE 1 3.30",
+            "notes": "Catalog extracted from client 3.30.0.4.3. The catalog adds and removes no bases or modifiers: 53 Veiled jewel modifiers gain the unveiled_mod tag, and 9 map modifiers that add worlds (Mirage, Beyond, Sentinel, Delirium Mirror and Wildwood) cannot roll on infected maps. Two currency items are added, Originator's Exalted Orb and Primordial Exalted Orb; crafting does not offer either. Crafting mechanics are unchanged; the engine is rebuilt from the same crafting code with a newer version of its schema validation library. Projects on the 3.29 era keep r17 and its catalog.",
+            "publishedAt": "2026-11-25T12:45:06.038Z",
+            "catalog": {
+                "sha256": "abdea517305abe6a0a05b5a261c8db61cd974e69258f09043408ced134a6bb62",
+                "bytes": 17095332
+            },
+            "implementation": {
+                "sha256": "f4d73090277d7a5251b0a3bf8ca810e7acf321f4c3b08e305be9c38e21b1f5b2",
+                "bytes": 564444
+            },
+            "availability": {
+                "kinds": [
+                    "generate",
+                    "recombine",
+                    "currency",
+                    "essence",
+                    "bench",
+                    "locus",
+                    "anoint",
+                    "fossils",
+                    "harvest",
+                    "beast",
+                    "reveal"
+                ],
+                "disabled": [],
+                "allflame": true
+            }
+        },
+        {
+            "era": "client-4.5",
+            "revision": "r20",
+            "engine": "crafting-graph-20",
+            "patch": "0.5.5.10",
+            "manifestSha256": "24deac3b8e112da43068b0f882c3319be98cee61caa104427700575dd0facb7d",
+            "craftingSha256": "6964c71286ec53ba246d999c2af50a2e5cb5abb860dec5d5ee675f6b34b889ea",
+            "format": 1,
+            "game": "poe2",
+            "label": "PoE 2 (client 4.5)",
+            "notes": "Catalog extracted from client 0.5.5.10. Only the client build and source hashes change; the bases, modifiers and crafting mechanics are the same as r19's. The engine is rebuilt from the same crafting code with a newer version of its schema validation library. Revisions r1 through r19 retain their original immutable engines, catalogs and behavior; equipment prices remain manual.",
+            "publishedAt": "2026-11-25T12:45:06.463Z",
+            "catalog": {
+                "sha256": "5962baafbb01dfd6344af25f4be5d7538a808fdf32f68033279bd677a7c6d6c6",
+                "bytes": 7952976
+            },
+            "implementation": {
+                "sha256": "f4d73090277d7a5251b0a3bf8ca810e7acf321f4c3b08e305be9c38e21b1f5b2",
+                "bytes": 564444
+            },
+            "availability": {
+                "kinds": [
+                    "genesis",
+                    "generate",
+                    "socket_jewel",
+                    "remove_jewel",
+                    "currency",
+                    "essence",
+                    "augment",
+                    "upgrade_augment",
+                    "anoint",
+                    "reveal"
+                ],
+                "disabled": [],
+                "allflame": false
+            }
         }
     ],
     "latest": [
@@ -1436,12 +1511,12 @@
         {
             "game": "poe1",
             "era": "3.30",
-            "revision": "r19"
+            "revision": "r20"
         },
         {
             "game": "poe2",
             "era": "client-4.5",
-            "revision": "r19"
+            "revision": "r20"
         }
     ]
 }

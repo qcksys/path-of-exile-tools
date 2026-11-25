@@ -1,11 +1,11 @@
 {
   "format": 1,
   "game": "poe2",
-  "patch": "0.5.5.9",
+  "patch": "0.5.5.10",
   "source": {
     "basesSha256": "0ba95a560d56f97f562886242c8c20e9691bc7e624e673b27f9e816a7b470da9",
     "modsSha256": "36c1931463c685a704cababa640a44946fca9a08a3444954e0cd0bc6a42fc390",
-    "schemaSha256": "25e17f0463e56a4ed0dcc13a841aeb811012debb23daa9111053aa8157bd7b60",
+    "schemaSha256": "5d598f4c57fae1ae3d92be9046fe3f7702ee77180eb6c1e2e518efc79d29c137",
     "tables": {
       "Data/Balance/BaseItemTypes.datc64": "4773e9295ef988a709bcbd1b8274b9e90d1d23d01a9fa0f437cb2c2494860be7",
       "Data/Balance/Mods.datc64": "7c8af1924e35ef40a261afcbfd6ff4d1a61b738d1c73389afc0bbf6c4a63ab0b",

@@ -1,13 +1,13 @@
 {
   "format": 1,
   "game": "poe1",
-  "version": "3.30.0-build.2.2",
-  "client_build": "3.30.0.2.2",
-  "source_manifest_sha256": "aeebc2b977b505df2f16492aba8c41def57614d80c15daa59703f0f76130ee9c",
-  "dat_schema_sha256": "25e17f0463e56a4ed0dcc13a841aeb811012debb23daa9111053aa8157bd7b60",
-  "extractor_sha256": "2a6f3013a28578ef64ab14fe41bbe28832f738faac98b7d31bcf8dc5ab1d0a8c",
+  "version": "3.30.0-build.4.3",
+  "client_build": "3.30.0.4.3",
+  "source_manifest_sha256": "b7ac9432debe0f3a5cb6145e25e112eacf3b36095eca9a979b7245589b09704b",
+  "dat_schema_sha256": "5d598f4c57fae1ae3d92be9046fe3f7702ee77180eb6c1e2e518efc79d29c137",
+  "extractor_sha256": "b852ab5d2b5f11d65959df055329c1e53dbfb7e8fc19efd79622dd06ba4bd578",
   "zod_schema_sha256": "a02f8ec2a774de489b1c9990bedea17e8e9a82d9edceff56d3fb68a676d28a60",
-  "crafting_data_sha256": "4be4d153e7273e3b35abb47a4b41035c3fa52bf18bea5bade98822691126363e",
+  "crafting_data_sha256": "dde9c5bce0b8b347487f56964e03af48b27fc1fb5d43ef196b96fa778719e325",
   "weight_provenance": "client-extracted; PoE 2 values are not Craft of Exile empirical weights",
   "files": {
     "Metadata/Items/Amulets/AbstractAmulet.json": {
@@ -446,8 +446,8 @@
       "schema": "json-schema/item_metadata.schema.json"
     },
     "base_items.json": {
-      "sha256": "5fdec2ba6f5124ca1abd7bd2bbe1acb6e1aec7e70a3740a03722f1157e140c05",
-      "bytes": 8468643,
+      "sha256": "aaaf5d3048c1a7dcbb984e1fd9f673812bba60f322d032f2a5db752260dd8217",
+      "bytes": 8471917,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/AbyssJewel.json": {
@@ -556,8 +556,8 @@
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/DivinationCard.json": {
-      "sha256": "c305599d2d9d8c8a7d6368662fb30812fc943d5953386a5d7a0e8467c157a815",
-      "bytes": 730137,
+      "sha256": "6c4cdd06aff4e2f72bfa6cf48cc371c681444098d05038695c9f7316d612140b",
+      "bytes": 730135,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/ExpeditionLogbook.json": {
@@ -816,8 +816,8 @@
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/StackableCurrency.json": {
-      "sha256": "e66eaa96200e7d169eb6bf1498f5d2dac7d02393ef5734ab14a2129eb42886b9",
-      "bytes": 1670400,
+      "sha256": "630980a921d42317d945d64563f9eb8ecc8dc131a8e4a2f1edc76eca5b200b1e",
+      "bytes": 1673676,
       "schema": "json-schema/base_items.schema.json"
     },
     "base_items/Staff.json": {
@@ -896,23 +896,23 @@
       "schema": "json-schema/item_classes.schema.json"
     },
     "mods.json": {
-      "sha256": "7e9f57aa95a6eb8f0b8c9adb947869ae5b7f39999727e8f076be3f5d691606d9",
-      "bytes": 36125420,
+      "sha256": "e1dd955e52dd8bfd6cff247d6f5236206cb976f95053a017af78dea83c7e6ab6",
+      "bytes": 36139810,
       "schema": "json-schema/mods.schema.json"
     },
     "stats.json": {
-      "sha256": "d4517ab1372173c46bd7f2b955457b1cf5ed69b84d88db0e5a665d736b627aaa",
-      "bytes": 4424485,
+      "sha256": "091c609c6551c1f08104299eab30a300ac30f12f931013c6f8bdf0d22bbad0ae",
+      "bytes": 4428551,
       "schema": "json-schema/stats.schema.json"
     },
     "tag_details.json": {
-      "sha256": "02c5871118a3213c74ff88719ca9dc6f77fe13fdc54e2d5b15f77f01273f1657",
-      "bytes": 66727,
+      "sha256": "7e50af3827e6e5ec6de738563e3fc62462285502822908b23dca81c0ec224b4c",
+      "bytes": 66897,
       "schema": "json-schema/tag_details.schema.json"
     },
     "tags.json": {
-      "sha256": "aefcb3b96ab371a0b556f25d83433d65a00aeba0754f34dc837263574b66f857",
-      "bytes": 33368,
+      "sha256": "15dd68593d87fb025bdbe23e18c396fc300f1416d75ba3a31fc303aca261f717",
+      "bytes": 33472,
       "schema": "json-schema/tags.schema.json"
     }
   }

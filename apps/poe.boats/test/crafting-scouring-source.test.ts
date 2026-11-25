@@ -37,7 +37,7 @@ const prior = historyIndex.revisions.find(
     (entry) => entry.game === "poe1" && entry.revision === "r11",
 )!;
 const ruleset = historyIndex.revisions.find(
-    (entry) => entry.game === "poe1" && entry.revision === "r19",
+    (entry) => entry.game === "poe1" && entry.revision === "r20",
 )!;
 const scopes = [
     "Heat-attuned Tower Shield",
