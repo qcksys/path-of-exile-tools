@@ -220,6 +220,55 @@ second, so a host crash can lose the last second. Market rows can be delivered a
 workers' archives; accounts and saved sets cannot, so back them up with `mysqldump` if the
 environment holds any that matter.
 
+### Backups
+
+`backup_mysql.py`, run nightly by `poe-ingest-mysql-backup.timer`:
+
+1. Dumps the `poeboats` schema with MySQL Shell (`util.dumpSchemas`, zstd chunks, one consistent
+   snapshot while the workers keep writing) into `backups/mysql/<YYYYMMDDTHHMMSSZ>/`. A dump
+   without MySQL Shell's `@.done.json` is deleted and the run fails.
+2. Copies the dump with rclone to the PC worker's B2 bucket under `mysql/<name>`, with the worker's
+   B2 key. That key needs `writeFiles`, `listFiles` and `deleteFiles` on the bucket, with no name
+   prefix restriction.
+3. Keeps the newest 7 dumps on the backup disk, and deletes B2 dumps older than 30 days.
+
+There is no binary log, so a restore returns the database to the last dump. Create
+`backups/mysql` owned by UID 1000 with mode 700 on the mounted archive disk, then install
+`backup_mysql.py` and `test-mysql-restore.sh` beside `update.py`, and the two unit files with the
+updater's:
+
+```sh
+systemctl --user daemon-reload
+systemctl --user enable --now poe-ingest-mysql-backup.timer
+systemctl --user start poe-ingest-mysql-backup.service   # a first backup now
+journalctl --user -u poe-ingest-mysql-backup.service -n 20 --no-pager
+```
+
+To check that a dump restores, run `test-mysql-restore.sh <name>` from `~/poe-ingest`. It loads
+the dump into a throwaway container beside the live one (with its data in
+`data/mysql-restore-test`, deleted afterwards) and compares every table's row count with the
+counts MySQL Shell recorded in the dump's `@.done.json`. A 0.7 GB dump of the dev data took about
+five minutes.
+
+To restore the live database, stop the workers and the updater timer, then:
+
+```sh
+cd ~/poe-ingest
+docker exec poe-ingest-dev-mysql-1 sh -c 'MYSQL_PWD="$(cat /run/secrets/mysql_root_password)" \
+  mysql -uroot -h127.0.0.1 -e "drop database poeboats; set global local_infile = 1"'
+docker run --rm -i --network poe-ingest-dev_default --user 1000:1000 --env HOME=/tmp \
+  -v "$PWD/backups/mysql:/dump:ro" mysql:8.4 \
+  mysqlsh --uri mysql://root@mysql:3306 --passwords-from-stdin --js \
+  --execute 'util.loadDump("/dump/<name>", {threads: 4, progressFile: ""})' \
+  < secrets/mysql_root_password
+docker exec poe-ingest-dev-mysql-1 sh -c 'MYSQL_PWD="$(cat /run/secrets/mysql_root_password)" \
+  mysql -uroot -h127.0.0.1 -e "set global local_infile = 0"'
+```
+
+The dump recreates the schema; the `poeboats` user's grants survive the drop. `progressFile: ""`
+stops MySQL Shell writing its progress file into the read-only dump folder. A dump held only in
+B2 comes back first with `rclone copy b2:<bucket>/mysql/<name>` into `backups/mysql/<name>`.
+
 To copy a database in, stop the workers and the updater timer first, so nothing writes to the old
 database during the copy. Create the schema with the app's migrations, then load the data alone
 (`mysqldump --no-create-info`) from the old database. Compare row counts before switching the
