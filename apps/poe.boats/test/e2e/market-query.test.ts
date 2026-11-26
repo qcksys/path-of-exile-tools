@@ -2636,6 +2636,8 @@ it("prices boss drops from the latest eligible merchant hour and exact item stat
         ask("Dying Sun", 10, { corrupted: true }),
         ask("Dying Sun", 1, { league: "OtherBossRota" }),
         ask("Dying Sun", 1, { tab: "other" }),
+        ask("Cortex", 100, { baseType: "Map (Tier 16)", corrupted: true }),
+        ask("Replica Cortex", 1, { baseType: "Map (Tier 16)", corrupted: true }),
         ask("Sublime Vision", 80, { itemKey: "unid:Vision", identified: false }),
         ask("Sublime Vision", 2),
         ask("Voidstorm", 4, {
@@ -2652,17 +2654,21 @@ it("prices boss drops from the latest eligible merchant hour and exact item stat
         ask("Unidentified Watcher's Eye (2-mod)", 500),
     ]);
     const quotes = await findBossStashQuotes(db as unknown as TDatabase, league, [
+        ["Cortex", 1, "map-entry"],
         ["Dying Sun", 2],
         ["Sublime Vision", 2, "unidentified"],
         ["Voidstorm Support", 10, "gem"],
         ["Voidwalker", 32],
         ["Unidentified Watcher's Eye (2-mod)", 40, "unpriced"],
     ]);
-    expect(Object.fromEntries(quotes)).toEqual({
-        "Dying Sun": { source: "stash", unitChaos: 90, hour },
-        "Unidentified Sublime Vision": { source: "stash", unitChaos: 80, hour },
-        "Voidstorm Support": { source: "stash", unitChaos: 4, hour },
-    });
+    expect(quotes).toEqual(
+        new Map([
+            ["Cortex", { source: "stash", unitChaos: 100, hour }],
+            ["Dying Sun", { source: "stash", unitChaos: 90, hour }],
+            ["Unidentified Sublime Vision", { source: "stash", unitChaos: 80, hour }],
+            ["Voidstorm Support", { source: "stash", unitChaos: 4, hour }],
+        ]),
+    );
 });
 
 it("values a solo Shaper rota from both captured markets in the same league", async () => {

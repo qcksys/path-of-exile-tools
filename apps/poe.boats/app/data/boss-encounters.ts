@@ -5,7 +5,7 @@ export const BOSS_RATES = { source: "https://xddbsns.com/boss-profit.html", capt
 export type BossItem = readonly [
     name: string,
     amount: number,
-    market?: "gem" | "unidentified" | "unpriced",
+    market?: "gem" | "map-entry" | "unidentified" | "unpriced",
 ];
 
 export interface BossEncounter {
@@ -183,7 +183,7 @@ export const BOSS_ENCOUNTERS = {
     cortex: {
         name: "Cortex",
         entries: [
-            ["Cortex", 1],
+            ["Cortex", 1, "map-entry"],
         ],
         drops: [
             ["Offering to the Serpent", 45],
