@@ -40,7 +40,7 @@ function showPage(market = data) {
 describe("arbitrage page", () => {
     it("displays recipe quantities, estimates and trade links", () => {
         showPage();
-        expect(screen.getByText("1 opportunities")).toBeTruthy();
+        expect(screen.getByText("1 opportunity")).toBeTruthy();
         expect(screen.getByRole("link", { name: "3 × Clear Oil → 1 × Sepia Oil" })).toBeTruthy();
         expect(screen.getByText(byText("2 chaos"))).toBeTruthy();
         expect(screen.getByRole("link", { name: "Buy Clear Oil" }).getAttribute("href")).toContain(
@@ -68,6 +68,7 @@ describe("arbitrage page", () => {
         );
         expect(screen.getByText("2 priced recipes")).toBeTruthy();
         expect(screen.queryByText("Check the filters")).toBeNull();
+        expect(screen.getByRole("button", { name: "Filters (1)" })).toBeTruthy();
     });
 
     it("does not show invalid calculations", () => {
@@ -81,12 +82,20 @@ describe("arbitrage page", () => {
         showPage({ ...data, snapshot: { ...data.snapshot!, quotes: {} } });
         expect(screen.getByText("No fully priced recipes")).toBeTruthy();
         expect(screen.getByText("0 recipes priced · 2 missing prices")).toBeTruthy();
+        expect(
+            screen.getByRole("region", { name: "Arbitrage results" }).querySelector("time"),
+        ).toBeNull();
     });
 
     it("keeps the league controls available when the provider fails", () => {
         showPage({ ...data, snapshot: null, error: "Please retry shortly." });
         expect(screen.getByText("Market data unavailable")).toBeTruthy();
         expect(screen.getByRole("button", { name: "Load prices" })).toBeTruthy();
+        const sections = within(screen.getByRole("navigation", { name: "Arbitrage sections" }));
+        expect(sections.queryByRole("link", { name: "Opportunities" })).toBeNull();
+        expect(sections.getByRole("link", { name: "Item recipes" }).getAttribute("href")).toBe(
+            "#item-recipes",
+        );
     });
 });
 

@@ -1,6 +1,65 @@
 import { expect, test } from "@playwright/test";
 import { selectValue } from "./control-helpers";
 
+test("arbitrage keeps recipe returns visible and links to each calculator", async ({
+    page,
+}, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/1/arbitrage?league=Exchange+One");
+    const results = page.getByRole("region", { name: "Arbitrage results" });
+    await expect(results.getByRole("heading")).toBeInViewport();
+    await expect(results.locator("time")).toBeVisible();
+    const buffer = page.getByLabel("Price buffer (%)", { exact: true });
+    const filters = page.getByRole("button", { name: "Filters", exact: true });
+    await expect(buffer).toBeHidden();
+    await filters.click();
+    await buffer.fill("1");
+    await page.getByRole("button", { name: "Filters (1)", exact: true }).click();
+    await expect(buffer).toBeHidden();
+
+    const recipe = page.getByRole("link", { name: "3 × Scroll of Wisdom → 1 × Portal Scroll" });
+    const row = results.getByRole("row").filter({ has: recipe });
+    const details = row.getByRole("button", { name: /Details for/ });
+    const trade = row.getByRole("link", { name: "Buy Scroll of Wisdom" });
+    for (const width of [390, 768]) {
+        await page.setViewportSize({ width, height: 844 });
+        await row.scrollIntoViewIfNeeded();
+        await expect(recipe).toBeInViewport({ ratio: 1 });
+        await expect(row.getByText("Profit", { exact: true })).toBeInViewport({ ratio: 1 });
+        await expect(row.getByText(/%$/)).toBeInViewport({ ratio: 1 });
+        await expect(trade).toBeHidden();
+        await details.click();
+        await expect(trade).toBeVisible();
+        await expect(row.getByText("Buy inputs")).toBeVisible();
+        await expect(row.getByText("Sell output")).toBeVisible();
+        await expect(row.getByRole("link", { name: "Check Portal Scroll listings" })).toBeVisible();
+        await details.click();
+        await expect(trade).toBeHidden();
+        if (width === 390)
+            await row.screenshot({ path: testInfo.outputPath("arbitrage-recipe.png") });
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: testInfo.outputPath("arbitrage-mobile.png") });
+    const sections = page.getByRole("navigation", { name: "Arbitrage sections" });
+    for (const [name, title] of [
+        ["Item recipes", "3-for-1 and 5-for-1 item recipes"],
+        ["Cluster Jewel rerolls", "5-for-1 Cluster Jewel rerolls"],
+    ] as const) {
+        await sections.getByRole("link", { name, exact: true }).click();
+        await expect(page.getByText(title, { exact: true })).toBeInViewport({ ratio: 1 });
+    }
+    await sections.getByRole("link", { name: "Opportunities" }).click();
+    await expect(results.getByRole("heading")).toBeInViewport();
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(details).toBeHidden();
+    await expect(trade).toBeInViewport({ ratio: 1 });
+    await expect(buffer).toBeVisible();
+    await expect(results.getByRole("columnheader", { name: "Profit" })).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: testInfo.outputPath("arbitrage-desktop.png") });
+});
+
 test("groups categories and applies filtering and price ordering across market pages", async ({
     page,
 }, testInfo) => {

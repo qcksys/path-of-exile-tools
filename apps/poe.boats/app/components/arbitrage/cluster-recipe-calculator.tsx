@@ -68,7 +68,7 @@ export function ClusterRecipeCalculator({ data }: { data: ClusterRecipeMarketDat
         );
 
     return (
-        <Card>
+        <Card id="cluster-jewel-rerolls" className="scroll-mt-20">
             <CardHeader>
                 <CardTitle>5-for-1 Cluster Jewel rerolls</CardTitle>
                 <CardDescription>

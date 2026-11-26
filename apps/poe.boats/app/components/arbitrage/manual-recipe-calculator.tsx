@@ -52,7 +52,7 @@ export function ManualRecipeCalculator() {
     );
 
     return (
-        <Card>
+        <Card id="item-recipes" className="scroll-mt-20">
             <CardHeader>
                 <CardTitle>3-for-1 and 5-for-1 item recipes</CardTitle>
                 <CardDescription>
