@@ -32,6 +32,7 @@ export function useCraftingCloud(
     const user = session.data?.user;
     const userId = user?.id;
     const [status, setStatus] = useState<Status>("loading");
+    const [preference, setPreference] = useState<"local" | "cloud">();
     const [message, setMessage] = useState("");
     const [remote, setRemote] = useState<CraftingCloudState>();
     const [attempt, setAttempt] = useState(0);
@@ -46,6 +47,7 @@ export function useCraftingCloud(
     useEffect(() => {
         pending.current?.abort();
         setRemote(undefined);
+        setPreference(undefined);
         setMessage("");
         setStatus(userId ? "loading" : session.isPending ? "loading" : "signedOut");
         return () => pending.current?.abort();
@@ -59,7 +61,10 @@ export function useCraftingCloud(
                 return;
             }
             busy.current = true;
-            setStatus("syncing");
+            const changingPreference = action === "local" || action === "cloud";
+            if (changingPreference) setPreference(action);
+            else setStatus("syncing");
+            let preferenceSaved = false;
             const controller = new AbortController();
             pending.current = controller;
             const valid = () => !controller.signal.aborted && currentUser.current === userId;
@@ -93,6 +98,9 @@ export function useCraftingCloud(
                     ),
                 );
                 if (!valid()) return;
+                preferenceSaved = changingPreference;
+                setPreference(undefined);
+                setStatus("syncing");
                 setRemote(next);
                 setMessage("");
                 if (next.defaultStorage !== "cloud") {
@@ -156,7 +164,7 @@ export function useCraftingCloud(
                 if (currentHash !== saved.fingerprint) queued.current = true;
             } catch (error) {
                 if (valid()) {
-                    setStatus("error");
+                    if (!changingPreference || preferenceSaved) setStatus("error");
                     setMessage(
                         error instanceof Error
                             ? error.message
@@ -164,6 +172,7 @@ export function useCraftingCloud(
                     );
                 }
             } finally {
+                if (valid()) setPreference(undefined);
                 busy.current = false;
                 if (queued.current && !controller.signal.aborted) {
                     queued.current = false;
@@ -192,5 +201,18 @@ export function useCraftingCloud(
             window.removeEventListener("focus", refresh);
         };
     }, [session.refetch]);
-    return { user, status, message, remote, run, checkpoint: checkpoint.current };
+    return {
+        user,
+        status:
+            preference === "local"
+                ? ("local" as const)
+                : preference === "cloud"
+                  ? ("syncing" as const)
+                  : status,
+        preference,
+        message,
+        remote,
+        run,
+        checkpoint: checkpoint.current,
+    };
 }

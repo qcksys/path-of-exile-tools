@@ -1,6 +1,7 @@
 import { Outlet, useParams, useSearchParams } from "react-router";
 import { MarketCategoryNav, MarketPageContent } from "~/components/market-category-nav";
 import { MarketDisplayProvider } from "~/components/market-exchange";
+import { usePendingSearchParams } from "~/hooks/use-pending-search-params";
 import { POE2_EXCHANGE_CATEGORIES, type Poe2ExchangeCategory } from "~/lib/market-categories";
 import type { SiteHandle } from "~/routes/layouts/site";
 import {
@@ -16,9 +17,10 @@ export const handle = { section: "Season market", sectionBadge: "PoE 2" } satisf
 
 export default function Poe2Market() {
     const [searchParams] = useSearchParams();
+    const pending = usePendingSearchParams();
     const { category } = useParams();
     const parsed = poe2MarketFiltersSchema.safeParse({
-        ...Object.fromEntries(searchParams),
+        ...Object.fromEntries(pending ?? searchParams),
         ...(category ? { category } : {}),
     });
     const filters = parsed.success ? parsed.data : poe2MarketFiltersSchema.parse({});

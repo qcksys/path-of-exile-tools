@@ -1,87 +1,34 @@
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { useIdolSets } from "~/hooks/use-idol-sets";
+import { useStorageState } from "~/hooks/use-storage-state";
 import { loadStorage, saveStorage } from "~/lib/storage";
 import { newPlannerSet } from "~/operations/planner";
-import type { IdolSet } from "~/schemas/idol-set";
-import { STORAGE_VERSION } from "~/schemas/storage";
+import { createEmptyStorage, type StorageData } from "~/schemas/storage";
 
-const DEFAULT_SET_NAME = "Set 1";
+function loadPlanner(): StorageData {
+    const data = loadStorage();
+    if (!data.sets.length) {
+        const set = newPlannerSet("Set 1", "default");
+        return { ...data, sets: [set], activeSetId: set.id };
+    }
+    for (const set of data.sets) {
+        const counts = new Map<string, number>();
+        for (const { inventoryIdolId } of set.placements)
+            counts.set(inventoryIdolId, (counts.get(inventoryIdolId) ?? 0) + 1);
+        for (const item of set.inventory) item.usageCount = counts.get(item.id) ?? 0;
+    }
+    return data;
+}
+
+function savePlanner(planner: StorageData) {
+    const result = saveStorage(planner);
+    if (!result.success) throw new Error(result.error);
+}
 
 export function usePlannerState() {
-    const [sets, setSets] = useState<IdolSet[]>([]);
-    const [activeSetId, setActiveSetId] = useState<string | null>(null);
-    const [isHydrated, setIsHydrated] = useState(false);
-
-    useEffect(() => {
-        const data = loadStorage();
-        setSets(data.sets);
-        setActiveSetId(data.activeSetId);
-
-        if (data.sets.length === 0) {
-            const defaultSet = newPlannerSet(DEFAULT_SET_NAME, "default");
-            setSets([defaultSet]);
-            setActiveSetId(defaultSet.id);
-        }
-
-        setIsHydrated(true);
-    }, []);
-
-    useEffect(() => {
-        if (!isHydrated) return;
-
-        const result = saveStorage({
-            version: STORAGE_VERSION,
-            sets,
-            activeSetId,
-        });
-
-        if (!result.success) {
-            toast.error("Failed to save changes", {
-                description: result.error,
-            });
-        }
-    }, [sets, activeSetId, isHydrated]);
-
-    const setsHook = useIdolSets(sets, setSets, activeSetId, setActiveSetId);
-
-    // Update usage counts when placements change
-    useEffect(() => {
-        if (!isHydrated || !setsHook.activeSet) return;
-
-        const activeSet = setsHook.activeSet;
-        const placementIdolIds = activeSet.placements.map((p) => p.inventoryIdolId);
-
-        // Build count map
-        const countMap = new Map<string, number>();
-        for (const id of placementIdolIds) {
-            countMap.set(id, (countMap.get(id) ?? 0) + 1);
-        }
-
-        // Update inventory items with usage counts
-        const needsUpdate = activeSet.inventory.some(
-            (item) => item.usageCount !== (countMap.get(item.id) ?? 0),
-        );
-
-        if (needsUpdate) {
-            setSets((prev) =>
-                prev.map((s) =>
-                    s.id === activeSet.id
-                        ? {
-                              ...s,
-                              inventory: s.inventory.map((item) => ({
-                                  ...item,
-                                  usageCount: countMap.get(item.id) ?? 0,
-                              })),
-                          }
-                        : s,
-                ),
-            );
-        }
-    }, [isHydrated, setsHook.activeSet]);
-
-    return {
-        isHydrated,
-        sets: setsHook,
-    };
+    const [planner, setPlanner, isHydrated] = useStorageState(
+        loadPlanner,
+        savePlanner,
+        createEmptyStorage(),
+    );
+    return { isHydrated, sets: useIdolSets(planner, setPlanner) };
 }

@@ -267,6 +267,70 @@ for (const game of ["poe1", "poe2"] as const) {
     });
 }
 
+test("publishing and revoking shares show the requested change immediately and recover independently", async ({
+    page,
+}) => {
+    const bundle = await bundleFor("poe1");
+    const model = await fixture(page, bundle);
+    await page.goto("/1/crafting/projects");
+    const cloud = page.getByRole("region", { name: "Cloud crafting storage" });
+    await cloud.getByRole("button", { name: "Enable private cloud sync" }).click();
+    await expect(cloud).toContainText("Private cloud drafts are up to date");
+    const preference = Promise.withResolvers<void>();
+    await page.route(
+        "**/cloud/preference",
+        async (route) => {
+            await preference.promise;
+            await route.fulfill({ status: 503, json: {} });
+        },
+        { times: 1 },
+    );
+    await cloud.getByRole("button", { name: "Use local storage" }).click();
+    await expect(cloud).toContainText("Local storage selected");
+    preference.resolve();
+    await expect(cloud).toContainText("Private cloud drafts are up to date");
+    expect(model.remote.defaultStorage).toBe("cloud");
+    await cloud.getByText("Share an item plan or build", { exact: true }).click();
+    const publish = cloud.getByRole("button", { name: "Publish share link" });
+    const links = cloud.getByRole("link", { name: /^Frozen/ });
+    const create = Promise.withResolvers<void>();
+    await page.route(
+        "**/shares/create",
+        async (route) => {
+            await create.promise;
+            await route.fulfill({ status: 503, json: {} });
+        },
+        { times: 1 },
+    );
+    await publish.click();
+    await expect(cloud.getByText(/Publishing…/)).toBeVisible();
+    await expect(links).toHaveCount(0);
+    create.resolve();
+    await expect(cloud.getByRole("alert")).toBeVisible();
+    await expect(cloud.getByText(/Publishing…/)).toHaveCount(0);
+    await publish.click();
+    await expect(links).toHaveCount(1);
+    await publish.click();
+    await expect(links).toHaveCount(2);
+    const first = await links.first().getAttribute("href");
+    const revoke = Promise.withResolvers<void>();
+    await page.route("**/shares/revoke", async (route) => {
+        if (!first?.endsWith(route.request().postDataJSON().id)) return route.fallback();
+        await revoke.promise;
+        await route.fulfill({ status: 503, json: {} });
+    });
+    const buttons = cloud.getByRole("button", { name: "Revoke" });
+    await buttons.first().click();
+    await expect(links).toHaveCount(1);
+    await buttons.click();
+    await expect(links).toHaveCount(0);
+    await expect.poll(() => model.shares.size).toBe(1);
+    revoke.resolve();
+    await expect(links).toHaveCount(1);
+    await expect(links).toHaveAttribute("href", first!);
+    await expect(cloud.getByRole("alert")).toBeVisible();
+});
+
 test("cloud conflicts keep both versions and an outage preserves local edits", async ({ page }) => {
     const bundle = await bundleFor("poe1");
     const model = await fixture(page, bundle, bundle);

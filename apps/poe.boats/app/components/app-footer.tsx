@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { useTranslations } from "~/i18n";
 
 export function AppFooter({ source }: { source?: string } = {}) {
@@ -23,18 +24,18 @@ export function AppFooter({ source }: { source?: string } = {}) {
                         </>
                     )}
                 </p>
-                <a
-                    href="/integrations"
+                <Link
+                    to="/integrations"
                     className="ml-4 text-sm text-muted-foreground underline-offset-4 hover:underline"
                 >
                     API &amp; MCP
-                </a>
-                <a
-                    href="/server-status"
+                </Link>
+                <Link
+                    to="/server-status"
                     className="ml-4 text-sm text-muted-foreground underline-offset-4 hover:underline"
                 >
                     Server status
-                </a>
+                </Link>
             </div>
             <p className="container mx-auto mt-2 px-4 text-center text-muted-foreground text-sm">
                 {t("footer.disclaimer")}

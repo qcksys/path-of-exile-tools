@@ -3,25 +3,22 @@ import { toast } from "sonner";
 import type { Position } from "~/lib/grid-utils";
 import { canPlaceInSet, editPlanner, type PlannerCommand } from "~/operations/planner";
 import type { IdolInstance } from "~/schemas/idol";
-import type { IdolSet } from "~/schemas/idol-set";
 import type { ImportSource, InventoryIdol } from "~/schemas/inventory";
-import { STORAGE_VERSION, type StorageData } from "~/schemas/storage";
+import type { StorageData } from "~/schemas/storage";
 
 export function useIdolSets(
-    sets: IdolSet[],
-    setSets: React.Dispatch<React.SetStateAction<IdolSet[]>>,
-    activeSetId: string | null,
-    setActiveSetId: React.Dispatch<React.SetStateAction<string | null>>,
+    planner: StorageData,
+    setPlanner: React.Dispatch<React.SetStateAction<StorageData>>,
 ) {
-    const state = useRef<StorageData>({ version: STORAGE_VERSION, sets, activeSetId });
-    state.current = { version: STORAGE_VERSION, sets, activeSetId };
+    const { sets, activeSetId } = planner;
+    const state = useRef(planner);
+    state.current = planner;
     const run = useCallback(
         (command: PlannerCommand, quiet = false) => {
             try {
                 const result = editPlanner({ state: state.current, command });
                 state.current = result.state;
-                setSets(result.state.sets);
-                setActiveSetId(result.state.activeSetId);
+                setPlanner(result.state);
                 return result.ids;
             } catch (error) {
                 if (!quiet)
@@ -31,7 +28,7 @@ export function useIdolSets(
                 return null;
             }
         },
-        [setSets, setActiveSetId],
+        [setPlanner],
     );
     const activeSet = sets.find((set) => set.id === activeSetId) ?? null;
     const addIdols = (idols: IdolInstance[], source: ImportSource) =>

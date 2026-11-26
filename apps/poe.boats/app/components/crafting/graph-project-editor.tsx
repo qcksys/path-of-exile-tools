@@ -61,6 +61,9 @@ export function GraphProjectEditor({
     const [selected, setSelected] = useState(graph.entry);
     const [fullWidth, setFullWidth] = useState(true);
     const [addingInput, setAddingInput] = useState(false);
+    const [adopting, setAdopting] = useState<CraftingRuleset>();
+    const adoption = useRef<AbortController | null>(null);
+    useEffect(() => () => adoption.current?.abort(), []);
     const [error, setError] = useState("");
     const [busy, setBusy] = useState(false);
     const [refreshTick, setRefreshTick] = useState(0);
@@ -275,9 +278,16 @@ export function GraphProjectEditor({
         setSelected(id);
     }
     async function adopt(target: CraftingRuleset) {
+        if (adoption.current) return;
+        const controller = new AbortController();
+        adoption.current = controller;
+        const started = project.revision;
+        setAdopting(target);
+        setError("");
         try {
             const response = await fetch("/api/v1/crafting/rulesets/adopt", {
                 method: "POST",
+                signal: controller.signal,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ graph, era: target.era, revision: target.revision }),
             });
@@ -290,9 +300,15 @@ export function GraphProjectEditor({
                 );
             if (!data || typeof data !== "object" || !("graph" in data))
                 throw new Error("The revision returned no project.");
+            if (controller.signal.aborted) return;
+            if (revision.current !== started)
+                throw new Error("The project changed. Apply the version again.");
             update(craftingGraphSchema.parse(data.graph));
         } catch (error) {
-            fail(error);
+            if (!controller.signal.aborted) fail(error);
+        } finally {
+            adoption.current = null;
+            if (!controller.signal.aborted) setAdopting(undefined);
         }
     }
     return (
@@ -343,11 +359,17 @@ export function GraphProjectEditor({
                 </div>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                <span>
-                    {ruleset.label} · {ruleset.revision} · draft revision {project.revision}
+                <span role="status">
+                    {(adopting ?? ruleset).label} · {(adopting ?? ruleset).revision} ·{" "}
+                    {adopting ? "Validating…" : `draft revision ${project.revision}`}
                 </span>
                 {latest && (
-                    <Button size="sm" variant="outline" onClick={() => void adopt(latest)}>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={Boolean(adopting)}
+                        onClick={() => void adopt(latest)}
+                    >
                         Correction available · adopt {latest.revision}
                     </Button>
                 )}
@@ -357,7 +379,7 @@ export function GraphProjectEditor({
             <details className="text-xs text-muted-foreground">
                 <summary className="cursor-pointer">Crafting version</summary>
                 <form
-                    key={`${ruleset.era}:${ruleset.revision}`}
+                    key={`${ruleset.era}:${ruleset.revision}:${Boolean(adopting)}`}
                     className="mt-2 flex flex-wrap items-end gap-2"
                     onSubmit={(event) => {
                         event.preventDefault();
@@ -375,7 +397,8 @@ export function GraphProjectEditor({
                         <FormSelect
                             name="revision"
                             className={graphControl}
-                            defaultValue={`${ruleset.era}:${ruleset.revision}`}
+                            disabled={Boolean(adopting)}
+                            defaultValue={`${(adopting ?? ruleset).era}:${(adopting ?? ruleset).revision}`}
                         >
                             {index.revisions
                                 .filter((entry) => entry.game === graph.game)
@@ -389,7 +412,7 @@ export function GraphProjectEditor({
                                 ))}
                         </FormSelect>
                     </Label>
-                    <Button type="submit" variant="outline" size="sm">
+                    <Button type="submit" variant="outline" size="sm" disabled={Boolean(adopting)}>
                         Apply selected version
                     </Button>
                     <p className="w-full">

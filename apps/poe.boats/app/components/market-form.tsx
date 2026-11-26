@@ -12,23 +12,37 @@ import { Button } from "~/components/ui/button";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { usePendingSearchParams } from "~/hooks/use-pending-search-params";
 import { MARKET_PERIODS, MARKET_REALMS } from "~/schemas/market";
 
 const APPLY_DELAY_MS = 400;
 
-/** Submits a filter form shortly after a control changes, so several quick changes load once. */
+/** Submit after the controls commit their hidden inputs. Only typing needs a debounce. */
 function useMarketFormApply() {
     const submit = useSubmit();
+    const { pathname } = useLocation();
+    const destination = useNavigation().location?.pathname;
     const form = useRef<HTMLFormElement>(null);
     const pending = useRef<ReturnType<typeof setTimeout>>(undefined);
-    const apply = useCallback(() => {
-        clearTimeout(pending.current);
-        pending.current = setTimeout(() => {
-            if (form.current) submit(form.current);
-        }, APPLY_DELAY_MS);
-    }, [submit]);
-    useEffect(() => () => clearTimeout(pending.current), []);
-    return { form, apply };
+    const schedule = useCallback(
+        (delay: number) => {
+            clearTimeout(pending.current);
+            pending.current = setTimeout(() => {
+                if (form.current) void submit(form.current, { preventScrollReset: true });
+            }, delay);
+        },
+        [submit],
+    );
+    useEffect(() => {
+        if (destination && destination !== pathname) clearTimeout(pending.current);
+    }, [pathname, destination]);
+    useEffect(() => () => clearTimeout(pending.current), [pathname]);
+    return {
+        form,
+        apply: () => schedule(0),
+        searchChanged: () => schedule(APPLY_DELAY_MS),
+        cancel: () => clearTimeout(pending.current),
+    };
 }
 
 /** Pass entries where values look like integers: objects list integer keys before "". */
@@ -179,8 +193,10 @@ function MarketFormStatus() {
  */
 export function MarketDetailFilters(scope: MarketScope & { days: string }) {
     const { pathname } = useLocation();
-    const [params] = useSearchParams();
-    const { form, apply } = useMarketFormApply();
+    const [committed] = useSearchParams();
+    const pending = usePendingSearchParams();
+    const params = pending ?? committed;
+    const { form, apply, cancel } = useMarketFormApply();
     const controls = new Set([
         "league",
         "days",
@@ -192,6 +208,7 @@ export function MarketDetailFilters(scope: MarketScope & { days: string }) {
             ref={form}
             method="get"
             action={pathname}
+            onSubmit={cancel}
             className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4"
         >
             {[...params]
@@ -199,7 +216,20 @@ export function MarketDetailFilters(scope: MarketScope & { days: string }) {
                 .map(([name, value]) => (
                     <Input key={name} type="hidden" name={name} value={value} />
                 ))}
-            <MarketScopeControls {...scope} onChange={apply} />
+            <MarketScopeControls
+                {...scope}
+                league={pending?.get("league") ?? scope.league}
+                days={pending?.get("days") ?? scope.days}
+                currency={
+                    scope.currency === undefined
+                        ? undefined
+                        : (pending?.get("currency") ?? scope.currency)
+                }
+                realm={
+                    scope.realm === undefined ? undefined : (pending?.get("realm") ?? scope.realm)
+                }
+                onChange={apply}
+            />
             <MarketFormStatus />
         </Form>
     );
@@ -228,19 +258,25 @@ export function MarketListForm({
     controls?: (apply: () => void) => ReactNode;
     children?: (apply: () => void) => ReactNode;
 }) {
-    const { form, apply } = useMarketFormApply();
+    const { form, apply, searchChanged, cancel } = useMarketFormApply();
     // The search box keeps what the user is typing while their earlier text loads;
     // it only follows the URL (e.g. a table column filter) when it isn't focused.
     const search = useRef<HTMLInputElement>(null);
     const [text, setText] = useState(q);
+    const lastQuery = useRef(q);
     useEffect(() => {
-        if (document.activeElement !== search.current) setText(q);
+        const previous = lastQuery.current;
+        lastQuery.current = q;
+        setText((draft) =>
+            document.activeElement !== search.current || draft === previous ? q : draft,
+        );
     }, [q]);
     return (
         <Form
             ref={form}
             method="get"
             action={action}
+            onSubmit={cancel}
             className="space-y-4 rounded-xl border border-border bg-card p-4"
         >
             {Object.entries(hidden ?? {}).map(([name, value]) =>
@@ -261,7 +297,7 @@ export function MarketListForm({
                         value={text}
                         onChange={(event) => {
                             setText(event.target.value);
-                            apply();
+                            searchChanged();
                         }}
                         placeholder={placeholder}
                         maxLength={100}

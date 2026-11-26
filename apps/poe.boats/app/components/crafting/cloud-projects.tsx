@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { z } from "zod";
+import { CopyButton } from "~/components/copy-button";
 import { Button } from "~/components/ui/button";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Label } from "~/components/ui/label";
@@ -26,9 +27,33 @@ export function CloudCraftingProjects({
 }) {
     const version = useMemo(() => JSON.stringify(workspaceBundle(state)), [state]);
     const cloud = useCraftingCloud(store, version, ready);
+    return (
+        <CloudControls
+            key={cloud.user?.id ?? ""}
+            cloud={cloud}
+            store={store}
+            state={state}
+            game={game}
+        />
+    );
+}
+
+function CloudControls({
+    cloud,
+    store,
+    state,
+    game,
+}: {
+    cloud: ReturnType<typeof useCraftingCloud>;
+    store: CraftingWorkspaceStore;
+    state: CraftingWorkspace;
+    game: "poe1" | "poe2";
+}) {
     const [shares, setShares] = useState<CraftingShareInfo[]>([]);
     const [error, setError] = useState("");
-    const [publishing, setPublishing] = useState(false);
+    const [publishing, setPublishing] = useState("");
+    const [revoking, setRevoking] = useState<string[]>([]);
+    const changedShares = useRef(new Set<string>());
     const [selected, setSelected] = useState("");
     const [mode, setMode] = useState<"frozen" | "live">("frozen");
     const targets = [
@@ -45,16 +70,19 @@ export function CloudCraftingProjects({
     ];
     const target = targets.find((entry) => `${entry.kind}:${entry.id}` === selected) ?? targets[0];
     const accountId = cloud.user?.id;
-    const currentAccount = useRef(accountId);
-    currentAccount.current = accountId;
+    const requests = useRef<AbortController | null>(null);
     useEffect(() => {
-        setShares([]);
-        setError("");
         if (!accountId) return;
         const controller = new AbortController();
+        requests.current = controller;
         void craftingCloudRequest("/shares/list", undefined, controller.signal)
             .then((result) => {
-                if (!controller.signal.aborted) setShares(shareListSchema.parse(result).shares);
+                if (controller.signal.aborted) return;
+                const listed = shareListSchema.parse(result).shares;
+                setShares((current) => [
+                    ...current,
+                    ...listed.filter((entry) => !changedShares.current.has(entry.id)),
+                ]);
             })
             .catch((error) => {
                 if (!controller.signal.aborted) setError(error.message);
@@ -62,8 +90,17 @@ export function CloudCraftingProjects({
         return () => controller.abort();
     }, [accountId]);
     async function publish() {
-        if (!target || !cloud.remote || !cloud.user || cloud.status !== "synced") return;
-        setPublishing(true);
+        const signal = requests.current?.signal;
+        if (
+            !signal ||
+            publishing ||
+            !target ||
+            !cloud.remote ||
+            !cloud.user ||
+            cloud.status !== "synced"
+        )
+            return;
+        setPublishing(`${mode === "frozen" ? "Frozen" : "Live"} · ${target.name}`);
         setError("");
         try {
             if (
@@ -71,31 +108,44 @@ export function CloudCraftingProjects({
                 cloud.checkpoint?.fingerprint
             )
                 throw new Error("Wait for the latest edits to finish syncing before sharing.");
-            if (currentAccount.current !== accountId) return;
+            if (signal.aborted) return;
             const share = craftingShareInfoSchema.parse(
-                await craftingCloudRequest("/shares/create", {
-                    target: { kind: target.kind, id: target.id },
-                    mode,
-                    expectedRevision: cloud.remote.revision,
-                }),
+                await craftingCloudRequest(
+                    "/shares/create",
+                    {
+                        target: { kind: target.kind, id: target.id },
+                        mode,
+                        expectedRevision: cloud.remote.revision,
+                    },
+                    signal,
+                ),
             );
-            if (currentAccount.current === accountId) setShares((current) => [share, ...current]);
+            if (signal.aborted) return;
+            changedShares.current.add(share.id);
+            setShares((current) => [share, ...current.filter((entry) => entry.id !== share.id)]);
         } catch (error) {
-            if (currentAccount.current === accountId)
+            if (!signal.aborted)
                 setError(error instanceof Error ? error.message : "Sharing failed.");
         } finally {
-            setPublishing(false);
+            if (!signal.aborted) setPublishing("");
         }
     }
     async function revoke(id: string) {
+        const signal = requests.current?.signal;
+        if (!signal || revoking.includes(id)) return;
+        setRevoking((current) => [...current, id]);
         setError("");
         try {
-            await craftingCloudRequest("/shares/revoke", { id });
-            if (currentAccount.current === accountId)
-                setShares((current) => current.filter((entry) => entry.id !== id));
+            await craftingCloudRequest("/shares/revoke", { id }, signal);
+            if (signal.aborted) return;
+            changedShares.current.add(id);
+            setShares((current) => current.filter((entry) => entry.id !== id));
         } catch (error) {
-            if (currentAccount.current === accountId)
+            if (!signal.aborted)
                 setError(error instanceof Error ? error.message : "Revocation failed.");
+        } finally {
+            if (!signal.aborted)
+                setRevoking((current) => current.filter((pending) => pending !== id));
         }
     }
     const statusText = {
@@ -132,7 +182,7 @@ export function CloudCraftingProjects({
                 )}
             </div>
             {cloud.message && (
-                <p role={cloud.status === "error" ? "alert" : undefined}>{cloud.message}</p>
+                <p role={cloud.status === "error" ? "alert" : "status"}>{cloud.message}</p>
             )}
             {cloud.user && (
                 <>
@@ -152,7 +202,11 @@ export function CloudCraftingProjects({
                             </Button>
                         )}
                         {(cloud.status === "local" || cloud.status === "choice") && (
-                            <Button size="sm" onClick={() => void cloud.run("cloud")}>
+                            <Button
+                                size="sm"
+                                disabled={Boolean(cloud.preference)}
+                                onClick={() => void cloud.run("cloud")}
+                            >
                                 Enable private cloud sync
                             </Button>
                         )}
@@ -170,7 +224,7 @@ export function CloudCraftingProjects({
                         <Button
                             size="sm"
                             variant="outline"
-                            disabled={cloud.status === "syncing"}
+                            disabled={cloud.status === "syncing" || Boolean(cloud.preference)}
                             onClick={() => void cloud.run()}
                         >
                             Refresh cloud status
@@ -233,7 +287,9 @@ export function CloudCraftingProjects({
                             <Button
                                 className="self-end"
                                 size="sm"
-                                disabled={publishing || cloud.status !== "synced" || !target}
+                                disabled={
+                                    Boolean(publishing) || cloud.status !== "synced" || !target
+                                }
                                 onClick={() => void publish()}
                             >
                                 Publish share link
@@ -250,48 +306,52 @@ export function CloudCraftingProjects({
                             </p>
                         )}
                         <ul className="mt-3 space-y-2">
-                            {shares.map((share) => (
-                                <li
-                                    key={share.id}
-                                    className="flex flex-wrap items-center gap-3 border-t border-border pt-2"
-                                >
-                                    <Link
-                                        className="min-w-0 flex-1 truncate underline"
-                                        to={`/crafting/share/${share.id}`}
-                                    >
-                                        {share.mode === "frozen" ? "Frozen" : "Live"} ·{" "}
-                                        {targets.find(
-                                            (entry) =>
-                                                entry.kind === share.target.kind &&
-                                                entry.id === share.target.id,
-                                        )?.name ?? share.target.kind}
-                                    </Link>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() =>
-                                            void navigator.clipboard
-                                                .writeText(
-                                                    `${location.origin}/crafting/share/${share.id}`,
-                                                )
-                                                .catch(() =>
-                                                    setError(
-                                                        "Copy failed. Open the link and copy its address.",
-                                                    ),
-                                                )
-                                        }
-                                    >
-                                        Copy link
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => void revoke(share.id)}
-                                    >
-                                        Revoke
-                                    </Button>
+                            {publishing && (
+                                <li className="border-t border-border pt-2" role="status">
+                                    {publishing} · Publishing…
                                 </li>
-                            ))}
+                            )}
+                            {shares
+                                .filter((share) => !revoking.includes(share.id))
+                                .map((share) => (
+                                    <li
+                                        key={share.id}
+                                        className="flex flex-wrap items-center gap-3 border-t border-border pt-2"
+                                    >
+                                        <Link
+                                            className="min-w-0 flex-1 truncate underline"
+                                            to={`/crafting/share/${share.id}`}
+                                        >
+                                            {share.mode === "frozen" ? "Frozen" : "Live"} ·{" "}
+                                            {targets.find(
+                                                (entry) =>
+                                                    entry.kind === share.target.kind &&
+                                                    entry.id === share.target.id,
+                                            )?.name ?? share.target.kind}
+                                        </Link>
+                                        <CopyButton
+                                            size="sm"
+                                            variant="outline"
+                                            getText={() =>
+                                                `${location.origin}/crafting/share/${share.id}`
+                                            }
+                                            onCopyError={() =>
+                                                setError(
+                                                    "Copy failed. Open the link and copy its address.",
+                                                )
+                                            }
+                                        >
+                                            Copy link
+                                        </CopyButton>
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => void revoke(share.id)}
+                                        >
+                                            Revoke
+                                        </Button>
+                                    </li>
+                                ))}
                         </ul>
                     </details>
                 </>

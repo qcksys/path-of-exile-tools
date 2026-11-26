@@ -30,6 +30,7 @@ import {
     TableRow,
 } from "~/components/ui/table";
 import { RECIPE_CATEGORY_LABELS } from "~/data/vendor-recipes";
+import { usePendingSearchParams } from "~/hooks/use-pending-search-params";
 import { findArbitrage } from "~/lib/arbitrage";
 import {
     ArbitrageOptionsSchema,
@@ -48,6 +49,8 @@ export function ArbitragePage({
 }) {
     const { game, leagues, league, recipes, snapshot, error } = data;
     const navigation = useNavigation();
+    const pending = usePendingSearchParams();
+    const selectedLeague = pending?.get("league") ?? league;
     const [options, setOptions] = useState(DEFAULT_ARBITRAGE_OPTIONS);
     const [buffer, setBuffer] = useState("0");
     const [minimumProfit, setMinimumProfit] = useState("0");
@@ -149,14 +152,15 @@ export function ArbitragePage({
                             <Input
                                 type="hidden"
                                 name="clusterIlvl"
-                                value={clusterRecipe.itemLevel}
+                                value={pending?.get("clusterIlvl") ?? clusterRecipe.itemLevel}
                             />
                         ) : null}
                         <Field className="min-w-0 max-w-sm flex-1">
                             <FieldLabel htmlFor="league">League</FieldLabel>
                             <Select
                                 name="league"
-                                defaultValue={league || null}
+                                key={selectedLeague}
+                                defaultValue={selectedLeague || null}
                                 items={leagues.map((name) => ({ value: name, label: name }))}
                             >
                                 <SelectTrigger id="league" className="w-full">

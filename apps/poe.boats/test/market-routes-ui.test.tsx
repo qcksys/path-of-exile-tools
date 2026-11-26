@@ -3,6 +3,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import {
     createRoutesStub,
+    type MiddlewareFunction,
     RouterContextProvider,
     type ShouldRevalidateFunctionArgs,
     useLoaderData,
@@ -12,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test"
 import { dbContext } from "~/context";
 import { createDbConnection } from "~/db/client";
 import { getMarketData, getMarketExchangeItem } from "~/db/queries/market.queries";
+import { recoverBrowseNavigation } from "~/lib/browse-navigation";
 import Market from "~/routes/market";
 import { loader as baseLoader } from "~/routes/market/base";
 import MarketExchangeItem, { loader as exchangeLoader } from "~/routes/market/exchange";
@@ -52,10 +54,14 @@ afterEach(() => {
     vi.clearAllMocks();
 });
 
-function showMarket(path = "/1/market/armour?league=Allflame&order=name-asc&page=2") {
+function showMarket(
+    path = "/1/market/armour?league=Allflame&order=name-asc&page=2",
+    recover = false,
+) {
     const Routes = createRoutesStub([
         {
             path: "/1/market",
+            middleware: recover ? [recoverBrowseNavigation as MiddlewareFunction] : [],
             Component: () => (
                 <>
                     <Market />
@@ -842,6 +848,9 @@ describe("a map's variant table", () => {
             ),
         );
         expect(rows(variants)).toHaveLength(4);
+        await waitFor(() =>
+            expect(screen.getByLabelText("Current URL").textContent).toContain("mapDelirium=0"),
+        );
         const url = screen.getByLabelText("Current URL").textContent;
         expect(url).toContain("mapMods=8");
         expect(url).toContain("mapDelirium=0");
@@ -893,7 +902,9 @@ describe("a map's variant table", () => {
         );
         toggle("Corrupted: excluded");
         await waitFor(() => expect(within(variants).queryByRole("status")).toBeNull());
-        expect(screen.getByLabelText("Current URL").textContent).not.toContain("corruption=");
+        await waitFor(() =>
+            expect(screen.getByLabelText("Current URL").textContent).not.toContain("corruption="),
+        );
     });
 
     it("applies filters already set on the map list", async () => {
@@ -1197,6 +1208,34 @@ it("keeps an empty detail route navigable", async () => {
         await screen.findByText("No observations for this variant in the selected period."),
     ).toBeTruthy();
     expect(screen.getByRole("link", { name: /Back to markets/ })).toBeTruthy();
+});
+
+it("shows successive sorts before data arrives and restores the loaded table when the latest request fails", async () => {
+    const path = "/1/market/armour?league=Allflame&order=name-asc&page=2";
+    window.history.replaceState(null, "", path);
+    try {
+        showMarket(path, true);
+        const table = await screen.findByRole("table", { name: "Unique armour markets" });
+        const sales = within(table).getByRole("button", { name: "Likely sales" });
+        const sort = () => sales.closest("th")?.getAttribute("aria-sort");
+        const first = Promise.withResolvers<ReturnType<typeof marketFixture>>();
+        const second = Promise.withResolvers<ReturnType<typeof marketFixture>>();
+        vi.mocked(getMarketData)
+            .mockImplementationOnce(() => first.promise)
+            .mockImplementationOnce(() => second.promise);
+        fireEvent.click(sales);
+        await waitFor(() => expect(sort()).toBe("descending"));
+        fireEvent.click(sales);
+        await waitFor(() => expect(sort()).toBe("ascending"));
+        second.reject(new Error("Offline"));
+        await waitFor(() => expect(sort()).toBe("none"));
+        first.reject(new Error("Superseded"));
+        expect(screen.getByText("Page 2")).toBeTruthy();
+        expect(screen.getByLabelText("Current URL").textContent).toBe(path);
+        expect(getMarketData).toHaveBeenCalledTimes(3);
+    } finally {
+        window.history.replaceState(null, "", "/");
+    }
 });
 
 it("sorts and filters the market list from its table headers through the URL", async () => {

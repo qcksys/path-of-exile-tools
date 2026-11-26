@@ -55,14 +55,5 @@ export function useLocale(): SupportedLocale {
     return useTranslation().i18n.language as SupportedLocale;
 }
 
-export function useI18n() {
-    const { t, i18n: inst } = useTranslation();
-    return {
-        t,
-        locale: inst.language as SupportedLocale,
-        setLocale: (next: SupportedLocale) => inst.changeLanguage(next),
-    };
-}
-
 export type { SupportedLocale };
 export { DEFAULT_LOCALE, SUPPORTED_LOCALES };

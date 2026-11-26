@@ -1,6 +1,30 @@
 import { expect, test } from "@playwright/test";
 import { selectValue } from "./control-helpers";
 
+test("a failed market sort restores the URL, rows and selected order", async ({ page }) => {
+    await page.goto("/1/market/armour?league=Allflame&order=name-asc");
+    const table = page.getByRole("table", { name: "Unique armour markets" });
+    const sales = table.getByRole("columnheader", { name: "Likely sales" });
+    const firstItem = table.getByRole("row").nth(1).getByRole("link").first();
+    const itemUrl = await firstItem.getAttribute("href");
+    const url = page.url();
+    const delayed = Promise.withResolvers<void>();
+    await page.route("**/*.data?**", async (route) => {
+        await delayed.promise;
+        await route.abort("failed");
+    });
+    await sales.getByRole("button").click();
+    await expect(sales).toHaveAttribute("aria-sort", "descending");
+    await expect(firstItem).toHaveAttribute("href", itemUrl!);
+    delayed.resolve();
+    await expect(
+        page.getByText("Could not load the requested results. Showing your previous selection."),
+    ).toBeVisible();
+    await expect(sales).toHaveAttribute("aria-sort", "none");
+    await expect(firstItem).toHaveAttribute("href", itemUrl!);
+    await expect(page).toHaveURL(url);
+});
+
 test("arbitrage keeps recipe returns visible and links to each calculator", async ({
     page,
 }, testInfo) => {

@@ -28,6 +28,7 @@ import { MarketModValues } from "~/components/market-mod-values";
 import { RouteError } from "~/components/route-error";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
+import { usePendingSearchParams } from "~/hooks/use-pending-search-params";
 import { forbiddenJewelGroup } from "~/lib/forbidden-jewels";
 import { marketItemArtUrl } from "~/lib/item-presentation";
 import { formatTime } from "~/lib/local-time";
@@ -39,6 +40,7 @@ import type { MarketPriceRates } from "~/lib/market-price-currencies";
 import {
     MARKET_ITEM_VIEW_PARAMS,
     type MarketFilters,
+    marketFiltersSchema,
     marketItemViewFilters,
     marketLink,
     parseMarketFilters,
@@ -531,16 +533,18 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
         priceTrend,
     } = loaderData;
     const [searchParams, setSearchParams] = useSearchParams();
+    const pending = usePendingSearchParams();
+    const viewParams = pending ?? searchParams;
     const filters = useMemo(
-        () => ({ ...loaderData.filters, ...marketItemViewFilters(searchParams) }),
-        [loaderData.filters, searchParams],
+        () => ({ ...loaderData.filters, ...marketItemViewFilters(viewParams) }),
+        [loaderData.filters, viewParams],
     );
     // setSearchParams reads the rendered params, which would lose a toggle made before the last
     // one's navigation lands.
-    const latestParams = useRef(searchParams);
+    const latestParams = useRef(viewParams);
     useEffect(() => {
-        latestParams.current = searchParams;
-    }, [searchParams]);
+        latestParams.current = viewParams;
+    }, [viewParams]);
     const setViewFilter = useCallback(
         (name: string, value: string) => {
             const next = new URLSearchParams(latestParams.current);
@@ -555,15 +559,21 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
     const selected = history.at(-1);
     const game = filters.realm === "poe2" ? "poe2" : "poe1";
     const prices = useMemo(() => ({ chaosRates, rates: priceRates }), [chaosRates, priceRates]);
+    const selection = useMemo(() => {
+        const parsed =
+            pending &&
+            marketFiltersSchema.safeParse({ ...Object.fromEntries(pending), item: filters.item });
+        return parsed?.success ? parsed.data : filters;
+    }, [pending, filters]);
     const isCurrent = useCallback(
         (variant: VariantRow) =>
-            variant.itemKey === filters.item &&
-            String(variant.identified) === filters.identified &&
-            String(variant.corrupted) === filters.corrupted &&
-            variant.signatureKind === filters.kind &&
-            variant.signatureValue === filters.value &&
-            (variant.links === null ? undefined : String(variant.links)) === filters.links,
-        [filters],
+            variant.itemKey === selection.item &&
+            String(variant.identified) === selection.identified &&
+            String(variant.corrupted) === selection.corrupted &&
+            variant.signatureKind === selection.kind &&
+            variant.signatureValue === selection.value &&
+            (variant.links === null ? undefined : String(variant.links)) === selection.links,
+        [selection],
     );
     const label = useCallback(
         (variant: VariantRow) =>
