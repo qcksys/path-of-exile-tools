@@ -41,6 +41,10 @@ it.each(["pc", "poe2"] as const)(
             "market.history_markets": 1,
             "market.recent_snapshots": 1,
             "market.daily_rows": 0,
+            "market.anchor_cache": "bypass",
+            "market.price_cache": "bypass",
+            "market.price_input_cached_markets": 0,
+            "market.price_input_read_markets": 1,
         });
         const phases = recorder.spans.filter((span) => span.parent === "market.exchange_item");
         expect(phases.map((span) => span.name)).toEqual(

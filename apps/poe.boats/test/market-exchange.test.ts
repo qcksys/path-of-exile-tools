@@ -146,6 +146,31 @@ it("prefers the direct quote over conversion, matching crafting exchange pricing
     expect(rows.find((row) => row.itemId === wisdom)?.price).toBe(0.02);
 });
 
+it("returns only requested rows while pricing them through other traded items", () => {
+    const snapshots = [
+        snapshot(teardrop, 2, taintedExalted, 4),
+        snapshot(taintedExalted, 1, chaos, 30),
+    ];
+    const days = [daily(teardrop, 2, taintedExalted, 3), daily(taintedExalted, 1, chaos, 25)];
+    const listed = [teardrop, wisdom];
+    const all = marketExchangeRows(snapshots, days, hour, describe, listed);
+    const projected = marketExchangeRows(
+        snapshots,
+        days,
+        hour,
+        describe,
+        listed,
+        0,
+        "chaos",
+        "listed",
+    );
+    expect(projected).toEqual(all.filter((row) => listed.includes(row.itemId)));
+    expect(projected.map((row) => [row.itemId, row.price, row.via?.itemId])).toEqual([
+        [teardrop, 60, taintedExalted],
+        [wisdom, null, undefined],
+    ]);
+});
+
 it("falls back to the newest traded day's volume-weighted price when the latest hour has none", () => {
     const rows = marketExchangeRows(
         [snapshot(divine, 10, chaos, 2000), snapshot(wisdom, 0, chaos, 0)],

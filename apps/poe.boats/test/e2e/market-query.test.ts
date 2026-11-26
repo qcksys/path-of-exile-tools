@@ -455,10 +455,13 @@ it("reads an item's variants through each market's hours", async () => {
         marketFiltersSchema.parse({ league: "Current", item: "Item 3" }),
         "history",
     );
-    const query = statements.find((entry) => entry.sql.includes("any_value("))!;
+    const query = statements.find((entry) => entry.sql.includes("variant_period"))!;
     const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
     expect(plan).toContainEqual(
         expect.objectContaining({ table: marketHours, key: "stash_market_hour_market_idx" }),
+    );
+    expect(plan).toContainEqual(
+        expect.objectContaining({ table: marketHours, type: "eq_ref", key: "PRIMARY" }),
     );
 });
 
@@ -994,6 +997,56 @@ it("lists every variant of an item with more than a hundred", async () => {
         [0, hour - 3600, 1, chaos(1, 10)],
         [6, hour, 2, chaos(2, 50)],
     ]);
+});
+
+it("prices two thousand map variants at their own latest hours with one indexed join", async () => {
+    const item = "Map (Tier 16)";
+    const league = "Map Variants";
+    const map = (index: number, at: number, listingCount: number) =>
+        observation({
+            league,
+            hour: at,
+            itemKey: item,
+            frameType: 1,
+            signatureKind: "map",
+            signatureValue: `Band ${index}`,
+            listingCount,
+            likelySales: 1,
+        });
+    for (let start = 0; start < 2000; start += 200) {
+        await insertMarket(
+            Array.from({ length: 200 }, (_, offset) => {
+                const index = start + offset;
+                return [
+                    map(index, hour - 7200, 1),
+                    map(index, hour - (index % 2) * 3600, index + 2),
+                ];
+            }).flat(),
+        );
+    }
+    statements.length = 0;
+    const { variants } = await getMarketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({ league, item, kind: "map", value: "Band 1" }),
+        "history",
+    );
+    expect(variants).toHaveLength(2000);
+    expect(
+        variants.every((variant) => {
+            const index = Number(variant.signatureValue.slice("Band ".length));
+            return (
+                variant.latestHour === hour - (index % 2) * 3600 &&
+                variant.listingCount === index + 2 &&
+                variant.periodSales === 2
+            );
+        }),
+    ).toBe(true);
+    const query = statements.find((entry) => entry.sql.includes("variant_period"))!;
+    expect(query.params.length).toBeLessThan(25);
+    const [plan] = await connection.query<RowDataPacket[]>(`EXPLAIN ${query.sql}`, query.params);
+    expect(plan).toContainEqual(
+        expect.objectContaining({ table: marketHours, type: "eq_ref", key: "PRIMARY" }),
+    );
 });
 
 it("lists Forbidden jewels in their own category, apart from other jewels", async () => {
@@ -1717,9 +1770,9 @@ it("keeps item history independent of browsing filters and skips the list query 
     expect(result.variants).toEqual([
         expect.objectContaining({ itemKey: "Item 0", identified: true, corrupted: false }),
     ]);
-    // Includes the variants' latest rows, which price each variant, and the ended leagues.
-    expect(statements).toHaveLength(8);
-    expect(statements.filter(({ sql: query }) => /\binner\s+join\b/i.test(query))).toEqual([]);
+    expect(statements).toHaveLength(7);
+    expect(statements.some(({ sql: query }) => query.includes("variant_period"))).toBe(true);
+    expect(statements.some(({ sql: query }) => query.includes("market_daily"))).toBe(false);
     expect(
         statements.filter(({ sql: query }) =>
             query.includes(getTableName(tStashCurrencyHourly.poe1)),
