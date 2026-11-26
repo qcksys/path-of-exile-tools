@@ -1936,7 +1936,6 @@ it("prices exchange-traded items from the exchange and leaves out their stash li
         // Without trades in the latest completed hour, the newest traded day prices the pair.
         snapshot(`${wisdomId}|${chaosId}`, hour, { [wisdomId]: 0, [chaosId]: 0 }),
         snapshot(`${wisdomId}|${chaosId}`, hour - 7200, { [wisdomId]: 500, [chaosId]: 1 }),
-        snapshot(`${wisdomId}|${chaosId}`, hour - 86400, { [wisdomId]: 1000, [chaosId]: 2 }),
         snapshot(`${wisdomId}|${chaosId}`, hour - 90000, { [wisdomId]: 1, [chaosId]: 1 }),
         // Listed but untraded items still come from the exchange, without a price.
         snapshot(`${portalId}|${chaosId}`, hour, { [portalId]: 0, [chaosId]: 0 }),
@@ -2517,6 +2516,7 @@ it("prices requested exchange items as the list does, bridging through divine an
     await upsertStashCurrencyHourly(db as unknown as TDatabase, [
         snapshot(`${divineId}|${chaosId}`, hour, { [divineId]: 10, [chaosId]: 2000 }),
         snapshot(`${scarabId}|${divineId}`, hour, { [scarabId]: 10, [divineId]: 1 }),
+        snapshot(`${wisdomId}|${chaosId}`, hour - 86400, { [wisdomId]: 1000, [chaosId]: 2 }),
         snapshot(`${wisdomId}|${chaosId}`, hour, { [wisdomId]: 0, [chaosId]: 0 }),
         snapshot(`${wisdomId}|${chaosId}`, hour - 7200, { [wisdomId]: 500, [chaosId]: 1 }),
         snapshot(`${portalId}|${chaosId}`, hour, { [portalId]: 0, [chaosId]: 0 }),
