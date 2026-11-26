@@ -64,6 +64,20 @@ await upsertStashCurrencyHourly(
         })),
     ),
 );
+const portal = "Metadata/Items/Currency/CurrencyPortal";
+await upsertStashCurrencyHourly(db as unknown as TDatabase, [
+    {
+        realm: "pc",
+        league: "Exchange One",
+        marketId: `${portal}|${chaos}`,
+        hour: latestHour,
+        volumeTraded: { [portal]: 100, [chaos]: 100 },
+        lowestRatio: null,
+        highestRatio: null,
+        lowestStock: null,
+        highestStock: null,
+    },
+]);
 await refreshStashRollups(db as unknown as TDatabase);
 await connection.end();
 process.env.PLAYWRIGHT_MARKET_DATABASE_URL = container.getConnectionUri();

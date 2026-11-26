@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Form, Link, useNavigation } from "react-router";
 import { ClusterRecipeCalculator } from "~/components/arbitrage/cluster-recipe-calculator";
 import { ManualRecipeCalculator } from "~/components/arbitrage/manual-recipe-calculator";
+import { OpportunityRow } from "~/components/arbitrage/opportunity-row";
 import { RecipeItems } from "~/components/arbitrage/recipe-items";
 import { CurrencyLabel } from "~/components/currency-label";
 import { LocalTime } from "~/components/local-time";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
-import { Badge } from "~/components/ui/badge";
 import { Button, buttonVariants } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -25,13 +25,12 @@ import {
     Table,
     TableBody,
     TableCaption,
-    TableCell,
     TableHead,
     TableHeader,
     TableRow,
 } from "~/components/ui/table";
 import { RECIPE_CATEGORY_LABELS } from "~/data/vendor-recipes";
-import { buildRecipeTradeUrl, findArbitrage } from "~/lib/arbitrage";
+import { findArbitrage } from "~/lib/arbitrage";
 import {
     ArbitrageOptionsSchema,
     DEFAULT_ARBITRAGE_OPTIONS,
@@ -39,8 +38,6 @@ import {
 } from "~/schemas/arbitrage";
 import type { ArbitrageMarketData } from "~/services/arbitrage.server";
 import type { ClusterRecipeMarketData } from "~/services/cluster-recipe.server";
-
-const formatNumber = new Intl.NumberFormat("en", { maximumSignificantDigits: 4 });
 
 export function ArbitragePage({
     data,
@@ -54,6 +51,7 @@ export function ArbitragePage({
     const [options, setOptions] = useState(DEFAULT_ARBITRAGE_OPTIONS);
     const [buffer, setBuffer] = useState("0");
     const [minimumProfit, setMinimumProfit] = useState("0");
+    const [filtersOpen, setFiltersOpen] = useState(false);
     const parsed = ArbitrageOptionsSchema.safeParse({
         ...options,
         buffer: buffer.trim() ? Number(buffer) : Number.NaN,
@@ -80,11 +78,14 @@ export function ArbitragePage({
             Number(minimumProfit) < 0);
     const currencyGame = game === "1" ? "poe1" : "poe2";
     const currencyLabel = <CurrencyLabel currency={currency} game={currencyGame} />;
-    const value = (amount: number) => (
-        <>
-            {formatNumber.format(amount)} {currencyLabel}
-        </>
-    );
+    const changedFilters = [
+        options.category !== DEFAULT_ARBITRAGE_OPTIONS.category,
+        invalidBuffer || Number(buffer) !== DEFAULT_ARBITRAGE_OPTIONS.buffer,
+        !options.showUnprofitable &&
+            (invalidMinimum || Number(minimumProfit) !== DEFAULT_ARBITRAGE_OPTIONS.minimumProfit),
+        options.sort !== DEFAULT_ARBITRAGE_OPTIONS.sort,
+        options.showUnprofitable,
+    ].filter(Boolean).length;
 
     return (
         <main
@@ -110,9 +111,33 @@ export function ArbitragePage({
                 </Link>
             </div>
 
+            {game === "1" ? (
+                <nav
+                    aria-label="Arbitrage sections"
+                    className="flex flex-wrap gap-x-5 gap-y-2 text-sm underline underline-offset-4"
+                >
+                    {results ? <a href="#opportunities">Opportunities</a> : null}
+                    <a href="#item-recipes">Item recipes</a>
+                    {clusterRecipe ? (
+                        <a href="#cluster-jewel-rerolls">Cluster Jewel rerolls</a>
+                    ) : null}
+                </nav>
+            ) : null}
             <Card>
                 <CardHeader>
-                    <CardTitle>Market and filters</CardTitle>
+                    <div className="flex items-center justify-between gap-2">
+                        <CardTitle>Market and filters</CardTitle>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="sm:hidden"
+                            aria-controls="arbitrage-filters"
+                            aria-expanded={filtersOpen}
+                            onClick={() => setFiltersOpen(!filtersOpen)}
+                        >
+                            Filters{changedFilters > 0 ? ` (${changedFilters})` : ""}
+                        </Button>
+                    </div>
                     <CardDescription>
                         PC trade leagues · Prices from the currency exchange · All values in{" "}
                         {currencyLabel}
@@ -127,7 +152,7 @@ export function ArbitragePage({
                                 value={clusterRecipe.itemLevel}
                             />
                         ) : null}
-                        <Field className="max-w-sm">
+                        <Field className="min-w-0 max-w-sm flex-1">
                             <FieldLabel htmlFor="league">League</FieldLabel>
                             <Select
                                 name="league"
@@ -150,111 +175,118 @@ export function ArbitragePage({
                         </Field>
                         <Button type="submit">{loading ? "Loading prices…" : "Load prices"}</Button>
                     </Form>
-                    <FieldGroup className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <Field>
-                            <FieldLabel htmlFor="category">Recipe category</FieldLabel>
-                            <Select
-                                value={options.category}
-                                onValueChange={(category) => {
-                                    const result =
-                                        ArbitrageOptionsSchema.shape.category.safeParse(category);
-                                    if (result.success)
-                                        setOptions({ ...options, category: result.data });
-                                }}
-                                items={[
-                                    { value: "all", label: "All recipes" },
-                                    ...categories.map((category) => ({
-                                        value: category,
-                                        label: RECIPE_CATEGORY_LABELS[category],
-                                    })),
-                                ]}
-                            >
-                                <SelectTrigger id="category" className="w-full">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem value="all">All recipes</SelectItem>
-                                        {categories.map((category) => (
-                                            <SelectItem key={category} value={category}>
-                                                {RECIPE_CATEGORY_LABELS[category]}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </Field>
-                        <Field data-invalid={invalidBuffer}>
-                            <FieldLabel htmlFor="buffer">Price buffer (%)</FieldLabel>
-                            <Input
-                                id="buffer"
-                                type="number"
-                                min="0"
-                                max="99"
-                                step="0.1"
-                                value={buffer}
-                                onChange={(event) => setBuffer(event.target.value)}
-                                aria-invalid={invalidBuffer}
-                                aria-describedby="buffer-help"
+                    <div
+                        id="arbitrage-filters"
+                        className={`flex flex-col gap-6 ${filtersOpen ? "" : "max-sm:hidden"}`}
+                    >
+                        <FieldGroup className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <Field>
+                                <FieldLabel htmlFor="category">Recipe category</FieldLabel>
+                                <Select
+                                    value={options.category}
+                                    onValueChange={(category) => {
+                                        const result =
+                                            ArbitrageOptionsSchema.shape.category.safeParse(
+                                                category,
+                                            );
+                                        if (result.success)
+                                            setOptions({ ...options, category: result.data });
+                                    }}
+                                    items={[
+                                        { value: "all", label: "All recipes" },
+                                        ...categories.map((category) => ({
+                                            value: category,
+                                            label: RECIPE_CATEGORY_LABELS[category],
+                                        })),
+                                    ]}
+                                >
+                                    <SelectTrigger id="category" className="w-full">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectItem value="all">All recipes</SelectItem>
+                                            {categories.map((category) => (
+                                                <SelectItem key={category} value={category}>
+                                                    {RECIPE_CATEGORY_LABELS[category]}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                            </Field>
+                            <Field data-invalid={invalidBuffer}>
+                                <FieldLabel htmlFor="buffer">Price buffer (%)</FieldLabel>
+                                <Input
+                                    id="buffer"
+                                    type="number"
+                                    min="0"
+                                    max="99"
+                                    step="0.1"
+                                    value={buffer}
+                                    onChange={(event) => setBuffer(event.target.value)}
+                                    aria-invalid={invalidBuffer}
+                                    aria-describedby="buffer-help"
+                                />
+                                <FieldDescription id="buffer-help">
+                                    Adds to buying cost and subtracts from sale value. Enter 0–99.
+                                </FieldDescription>
+                            </Field>
+                            <Field data-invalid={invalidMinimum}>
+                                <FieldLabel htmlFor="minimum-profit">
+                                    Minimum profit ({currencyLabel})
+                                </FieldLabel>
+                                <Input
+                                    id="minimum-profit"
+                                    type="number"
+                                    min="0"
+                                    step="any"
+                                    value={minimumProfit}
+                                    onChange={(event) => setMinimumProfit(event.target.value)}
+                                    aria-invalid={invalidMinimum}
+                                    disabled={options.showUnprofitable}
+                                />
+                            </Field>
+                            <Field>
+                                <FieldLabel htmlFor="sort">Sort by</FieldLabel>
+                                <Select
+                                    value={options.sort}
+                                    onValueChange={(sort) => {
+                                        const result =
+                                            ArbitrageOptionsSchema.shape.sort.safeParse(sort);
+                                        if (result.success)
+                                            setOptions({ ...options, sort: result.data });
+                                    }}
+                                    items={[
+                                        { value: "profit", label: "Highest profit" },
+                                        { value: "roi", label: "Highest ROI" },
+                                    ]}
+                                >
+                                    <SelectTrigger id="sort" className="w-full">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectItem value="profit">Highest profit</SelectItem>
+                                            <SelectItem value="roi">Highest ROI</SelectItem>
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                            </Field>
+                        </FieldGroup>
+                        <Field orientation="horizontal">
+                            <Checkbox
+                                id="show-unprofitable"
+                                checked={options.showUnprofitable}
+                                onCheckedChange={(showUnprofitable) =>
+                                    setOptions({ ...options, showUnprofitable })
+                                }
                             />
-                            <FieldDescription id="buffer-help">
-                                Adds to buying cost and subtracts from sale value. Enter 0–99.
-                            </FieldDescription>
-                        </Field>
-                        <Field data-invalid={invalidMinimum}>
-                            <FieldLabel htmlFor="minimum-profit">
-                                Minimum profit ({currencyLabel})
+                            <FieldLabel htmlFor="show-unprofitable">
+                                Show all priced recipes, including losses
                             </FieldLabel>
-                            <Input
-                                id="minimum-profit"
-                                type="number"
-                                min="0"
-                                step="any"
-                                value={minimumProfit}
-                                onChange={(event) => setMinimumProfit(event.target.value)}
-                                aria-invalid={invalidMinimum}
-                                disabled={options.showUnprofitable}
-                            />
                         </Field>
-                        <Field>
-                            <FieldLabel htmlFor="sort">Sort by</FieldLabel>
-                            <Select
-                                value={options.sort}
-                                onValueChange={(sort) => {
-                                    const result =
-                                        ArbitrageOptionsSchema.shape.sort.safeParse(sort);
-                                    if (result.success)
-                                        setOptions({ ...options, sort: result.data });
-                                }}
-                                items={[
-                                    { value: "profit", label: "Highest profit" },
-                                    { value: "roi", label: "Highest ROI" },
-                                ]}
-                            >
-                                <SelectTrigger id="sort" className="w-full">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem value="profit">Highest profit</SelectItem>
-                                        <SelectItem value="roi">Highest ROI</SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </Field>
-                    </FieldGroup>
-                    <Field orientation="horizontal">
-                        <Checkbox
-                            id="show-unprofitable"
-                            checked={options.showUnprofitable}
-                            onCheckedChange={(showUnprofitable) =>
-                                setOptions({ ...options, showUnprofitable })
-                            }
-                        />
-                        <FieldLabel htmlFor="show-unprofitable">
-                            Show all priced recipes, including losses
-                        </FieldLabel>
-                    </Field>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -286,131 +318,62 @@ export function ArbitragePage({
             ) : null}
 
             {results ? (
-                <section className="flex flex-col gap-3" aria-label="Arbitrage results">
+                <section
+                    id="opportunities"
+                    className="flex scroll-mt-20 flex-col gap-3"
+                    aria-label="Arbitrage results"
+                >
                     <div
                         className="flex flex-wrap items-center justify-between gap-2"
                         role="status"
                     >
                         <h2 className="text-xl font-semibold">
                             {results.opportunities.length}{" "}
-                            {options.showUnprofitable ? "priced recipes" : "opportunities"}
+                            {options.showUnprofitable
+                                ? results.opportunities.length === 1
+                                    ? "priced recipe"
+                                    : "priced recipes"
+                                : results.opportunities.length === 1
+                                  ? "opportunity"
+                                  : "opportunities"}
                         </h2>
-                        <p className="text-sm text-muted-foreground">
-                            {results.pricedCount} recipes priced · {results.missingPrices.length}{" "}
-                            missing prices
-                        </p>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                            <p>
+                                {results.pricedCount} recipes priced ·{" "}
+                                {results.missingPrices.length} missing prices
+                            </p>
+                            {snapshot && Object.keys(snapshot.quotes).length > 0 ? (
+                                <p>
+                                    Latest hour:{" "}
+                                    <LocalTime at={Date.parse(snapshot.fetchedAt)} seconds />
+                                </p>
+                            ) : null}
+                        </div>
                     </div>
                     {results.opportunities.length ? (
-                        <Table>
-                            <TableCaption>
+                        <Table className="max-xl:flex max-xl:flex-col">
+                            <TableCaption className="max-xl:order-last">
                                 Per recipe: adjusted sale value − adjusted input cost = estimated
                                 profit. ROI = profit ÷ cost.
                             </TableCaption>
-                            <TableHeader>
+                            <TableHeader className="max-xl:sr-only">
                                 <TableRow>
                                     <TableHead>Recipe</TableHead>
                                     <TableHead>Buy inputs</TableHead>
                                     <TableHead>Sell output</TableHead>
-                                    <TableHead>Profit</TableHead>
-                                    <TableHead>ROI</TableHead>
+                                    <TableHead id="recipe-profit">Profit</TableHead>
+                                    <TableHead id="recipe-roi">ROI</TableHead>
                                     <TableHead>Trade</TableHead>
                                 </TableRow>
                             </TableHeader>
-                            <TableBody>
-                                {results.opportunities.map((opportunity) => {
-                                    const { recipe } = opportunity;
-                                    return (
-                                        <TableRow key={recipe.id}>
-                                            <TableCell className="whitespace-normal min-w-64">
-                                                <div className="flex flex-col gap-1">
-                                                    <a
-                                                        href={recipe.source}
-                                                        aria-label={`${recipe.input.quantity} × ${recipe.input.name} → ${recipe.output.quantity} × ${recipe.output.name}`}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="font-medium underline underline-offset-4"
-                                                    >
-                                                        <RecipeItems recipe={recipe} />
-                                                    </a>
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {RECIPE_CATEGORY_LABELS[recipe.category]}
-                                                    </span>
-                                                    {recipe.method ? (
-                                                        <Badge variant="secondary">
-                                                            {recipe.method === "purchase"
-                                                                ? "NPC purchase"
-                                                                : "Sell to vendor"}{" "}
-                                                            · Fixed currency amount
-                                                        </Badge>
-                                                    ) : null}
-                                                    {recipe.notes ? (
-                                                        <p className="max-w-sm text-xs text-muted-foreground">
-                                                            {recipe.notes}
-                                                        </p>
-                                                    ) : null}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div>{value(opportunity.cost)}</div>
-                                                <div className="text-xs text-muted-foreground">
-                                                    {value(opportunity.inputUnitValue)} / item
-                                                    before buffer
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div>{value(opportunity.revenue)}</div>
-                                                <div className="text-xs text-muted-foreground">
-                                                    {value(opportunity.outputUnitValue)} / item
-                                                    before buffer
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    variant={
-                                                        opportunity.profit > 0
-                                                            ? "default"
-                                                            : "secondary"
-                                                    }
-                                                >
-                                                    {value(opportunity.profit)}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                {formatNumber.format(opportunity.roi)}%
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex gap-3">
-                                                    <a
-                                                        href={buildRecipeTradeUrl(
-                                                            game,
-                                                            league,
-                                                            recipe.input.id,
-                                                        )}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="underline underline-offset-4"
-                                                        aria-label={`Buy ${recipe.input.name}`}
-                                                    >
-                                                        Inputs
-                                                    </a>
-                                                    <a
-                                                        href={buildRecipeTradeUrl(
-                                                            game,
-                                                            league,
-                                                            recipe.output.id,
-                                                        )}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="underline underline-offset-4"
-                                                        aria-label={`Check ${recipe.output.name} listings`}
-                                                    >
-                                                        Output listings
-                                                    </a>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })}
+                            <TableBody className="max-xl:block">
+                                {results.opportunities.map((opportunity) => (
+                                    <OpportunityRow
+                                        key={opportunity.recipe.id}
+                                        opportunity={opportunity}
+                                        league={league}
+                                    />
+                                ))}
                             </TableBody>
                         </Table>
                     ) : (
@@ -466,12 +429,7 @@ export function ArbitragePage({
                         market
                     </Link>{" "}
                     lists them: the latest completed hour's trades, or else the newest of the last
-                    seven days that traded.{" "}
-                    {snapshot && Object.keys(snapshot.quotes).length > 0 ? (
-                        <>
-                            Latest hour: <LocalTime at={Date.parse(snapshot.fetchedAt)} seconds />.
-                        </>
-                    ) : null}
+                    seven days that traded.
                 </p>
             </div>
         </main>
