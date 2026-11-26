@@ -5,7 +5,7 @@ export const BOSS_RATES = { source: "https://xddbsns.com/boss-profit.html", capt
 export type BossItem = readonly [
     name: string,
     amount: number,
-    market?: "gem" | "map-entry" | "unidentified" | "unpriced",
+    market?: "corrupted" | "gem" | "map-entry" | "unidentified" | "unpriced",
 ];
 
 export interface BossEncounter {
@@ -231,7 +231,7 @@ export const BOSS_ENCOUNTERS = {
             ["Wine of the Prophet", 2],
         ],
         extraDrops: [
-            ["Bound by Destiny", 10, "unidentified"],
+            ["Bound By Destiny", 10, "unidentified"],
             ["Orb of Unravelling", 33],
             ["Congregation Support", 2, "gem"],
         ],
@@ -255,7 +255,7 @@ export const BOSS_ENCOUNTERS = {
             ["The Golden Charlatan", 2],
         ],
         extraDrops: [
-            ["Bound by Destiny", 10, "unidentified"],
+            ["Bound By Destiny", 10, "unidentified"],
             ["Orb of Unravelling", 33],
             ["Reverent Reliquary Key", 1],
             ["Congregation Support", 2, "gem"],
@@ -280,7 +280,7 @@ export const BOSS_ENCOUNTERS = {
             ["Legacy of the Rose", 2],
         ],
         extraDrops: [
-            ["Bound by Destiny", 10, "unidentified"],
+            ["Bound By Destiny", 10, "unidentified"],
             ["Orb of Remembrance", 33],
             ["Monochrome", 3],
             ["Frostmage Support", 5, "gem"],
@@ -305,7 +305,7 @@ export const BOSS_ENCOUNTERS = {
             ["Festering Resentment", 2],
         ],
         extraDrops: [
-            ["Bound by Destiny", 10, "unidentified"],
+            ["Bound By Destiny", 10, "unidentified"],
             ["Orb of Remembrance", 33],
             ["Lonely Reliquary Key", 1],
             ["Monochrome", 3],
@@ -331,7 +331,7 @@ export const BOSS_ENCOUNTERS = {
             ["Starcaller", 2],
         ],
         extraDrops: [
-            ["Bound by Destiny", 10, "unidentified"],
+            ["Bound By Destiny", 10, "unidentified"],
             ["Orb of Intention", 50],
             ["Greater Devour Support", 5, "gem"],
         ],
@@ -355,7 +355,7 @@ export const BOSS_ENCOUNTERS = {
             ["Wing of the Wyvern", 2],
         ],
         extraDrops: [
-            ["Bound by Destiny", 10, "unidentified"],
+            ["Bound By Destiny", 10, "unidentified"],
             ["Orb of Intention", 50],
             ["Traumatic Reliquary Key", 1],
             ["Greater Devour Support", 6, "gem"],
@@ -670,7 +670,7 @@ export const BOSS_ENCOUNTERS = {
             ["Atziri's Promise", 48],
             ["Unidentified Triumvirate Authority (3-mod)", 18, "unpriced"],
             ["Atziri's Step", 15],
-            ["Doryani's Invitation", 15],
+            ["Doryani's Invitation", 15, "corrupted"],
             ["Doryani's Catalyst", 3],
             ["Pledge of Hands", 0.5],
         ],

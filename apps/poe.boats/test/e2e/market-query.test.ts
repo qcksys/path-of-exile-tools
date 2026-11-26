@@ -2638,6 +2638,8 @@ it("prices boss drops from the latest eligible merchant hour and exact item stat
         ask("Dying Sun", 1, { tab: "other" }),
         ask("Cortex", 100, { baseType: "Map (Tier 16)", corrupted: true }),
         ask("Replica Cortex", 1, { baseType: "Map (Tier 16)", corrupted: true }),
+        ask("Doryani's Invitation", 75, { corrupted: true }),
+        ask("Doryani's Invitation", 1),
         ask("Sublime Vision", 80, { itemKey: "unid:Vision", identified: false }),
         ask("Sublime Vision", 2),
         ask("Voidstorm", 4, {
@@ -2655,6 +2657,7 @@ it("prices boss drops from the latest eligible merchant hour and exact item stat
     ]);
     const quotes = await findBossStashQuotes(db as unknown as TDatabase, league, [
         ["Cortex", 1, "map-entry"],
+        ["Doryani's Invitation", 15, "corrupted"],
         ["Dying Sun", 2],
         ["Sublime Vision", 2, "unidentified"],
         ["Voidstorm Support", 10, "gem"],
@@ -2664,6 +2667,7 @@ it("prices boss drops from the latest eligible merchant hour and exact item stat
     expect(quotes).toEqual(
         new Map([
             ["Cortex", { source: "stash", unitChaos: 100, hour }],
+            ["Doryani's Invitation", { source: "stash", unitChaos: 75, hour }],
             ["Dying Sun", { source: "stash", unitChaos: 90, hour }],
             ["Unidentified Sublime Vision", { source: "stash", unitChaos: 80, hour }],
             ["Voidstorm Support", { source: "stash", unitChaos: 4, hour }],

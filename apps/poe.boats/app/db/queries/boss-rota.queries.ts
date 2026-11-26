@@ -12,12 +12,12 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
     const names = (kind: BossItem[2]) =>
         items.filter((item) => item[2] === kind).map(([name]) => name);
     const regular = names(undefined);
+    const corrupted = names("corrupted");
     const mapEntries = names("map-entry");
     const gems = names("gem");
     const unidentified = names("unidentified");
     const quotes = new Map<string, BossQuote>();
-    if (!regular.length && !mapEntries.length && !gems.length && !unidentified.length)
-        return quotes;
+    if (!items.some((item) => item[2] !== "unpriced")) return quotes;
     const { earliestHour, latestHour } = marketObservationRange();
     const rows = await traceQuery(
         "boss_rota.stash_quotes",
@@ -42,6 +42,11 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
                     gt(market.listingCount, 0),
                     or(
                         and(eq(market.identified, true), inArray(market.itemKey, mapEntries)),
+                        and(
+                            eq(market.identified, true),
+                            eq(market.corrupted, true),
+                            inArray(market.itemKey, corrupted),
+                        ),
                         and(
                             eq(market.identified, true),
                             eq(market.corrupted, false),
