@@ -37,15 +37,19 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
             308,
         );
     }
-    const data = await getMarketExchangeItem(context.get(dbContext), {
+    const { item, history, ...data } = await getMarketExchangeItem(context.get(dbContext), {
         realm: filters.realm,
         league: filters.league,
         days: filters.days,
         itemId,
     });
-    const { item } = data;
     if (!item) throw new Response("Unknown exchange item", { status: 404 });
-    return { ...data, item, filters: { ...filters, league: data.league } };
+    return {
+        ...data,
+        item,
+        historyJson: JSON.stringify(history),
+        filters: { ...filters, league: data.league },
+    };
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

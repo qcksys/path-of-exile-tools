@@ -3,11 +3,18 @@ import { drizzle } from "drizzle-orm/mysql-proxy";
 import { afterEach, expect, it, vi } from "vite-plus/test";
 import { type TDatabase, workerDatabaseCacheScopes } from "~/db/client";
 import { exchangePricingCache } from "~/db/queries/exchange-pricing-cache.server";
-import { exchangePricingBook } from "~/db/queries/exchange-pricing-inputs.server";
+import type { PriceBook } from "~/db/queries/exchange-pricing-inputs.server";
+import { marketFiltersSchema } from "~/schemas/market";
 import { createTraceRecorder } from "./trace-recorder";
 
 const recorder = createTraceRecorder();
-vi.mock("cloudflare:workers", () => ({ env: { LOG_LEVEL: "silent" }, tracing: recorder.tracing }));
+const writes: Promise<unknown>[] = [];
+vi.doMock("cloudflare:workers", () => ({
+    env: { LOG_LEVEL: "silent" },
+    tracing: recorder.tracing,
+    waitUntil: (write: Promise<unknown>) => writes.push(write),
+}));
+const { exchangePricingBook } = await import("~/db/queries/exchange-pricing-inputs.server");
 
 const chaos = exchangeCurrencyId("chaos")!;
 const divine = exchangeCurrencyId("divine")!;
@@ -38,6 +45,12 @@ function database(coverage = 2, source = "first") {
     ].map((pair) => pair.join("|"));
     const query = vi.fn(async (sql: string, params: unknown[]) => {
         if (sql.includes("hour_coverage")) return { rows: [[league, hour, hour, coverage]] };
+        if (sql.includes("json_arrayagg") && sql.includes("_currency_hour`"))
+            return {
+                rows: markets
+                    .filter((id) => params.includes(id))
+                    .map((id) => [id, [[hour, 1, 12, 0, 0, 0, 0]]]),
+            };
         if (sql.includes("_currency_market`")) return { rows: markets.map((id) => [id, hour]) };
         if (sql.includes("_currency_hourly`"))
             return {
@@ -60,9 +73,55 @@ function database(coverage = 2, source = "first") {
     return { db, query };
 }
 
-afterEach(() => {
+afterEach(async () => {
+    await Promise.all(writes.splice(0));
     recorder.spans.length = 0;
     vi.unstubAllGlobals();
+});
+
+it("shares the currency category exchange rows across periods and sorting and bypasses free-text searches", async () => {
+    const cache = edgeCache();
+    const { getMarketData } = await import("~/db/queries/market.queries");
+    const read = (filters: Record<string, string>, coverage = 2) =>
+        getMarketData(
+            database(coverage).db,
+            marketFiltersSchema.parse({ league, category: "currency", ...filters }),
+            "list",
+        );
+    const first = await read({ days: "7" });
+    expect(first.exchange.length).toBeGreaterThan(0);
+    expect(
+        recorder.spans.findLast((s) => s.name === "market.data")?.attributes[
+            "market.category_exchange_cache"
+        ],
+    ).toBe("miss");
+    recorder.spans.length = 0;
+    const longer = await read({ days: "30", order: "listings-desc" });
+    expect(longer.exchange).toEqual(first.exchange);
+    expect(longer.priceRates).toEqual(first.priceRates);
+    expect(
+        recorder.spans.find((s) => s.name === "market.data")?.attributes[
+            "market.category_exchange_cache"
+        ],
+    ).toBe("hit");
+    expect(recorder.spans.some((s) => s.name === "market.exchange_recent")).toBe(false);
+
+    cache.put.mockClear();
+    for (const q of ["div", "MY SEARCH"]) {
+        const result = await read({ q });
+        expect(result.exchange.map((row) => row.name)).toEqual(
+            first.exchange
+                .filter((row) => row.name.toLowerCase().includes(q.toLowerCase()))
+                .map((row) => row.name),
+        );
+    }
+    expect(cache.put).not.toHaveBeenCalled();
+    await read({}, 3);
+    expect(
+        recorder.spans.findLast((s) => s.name === "market.data")?.attributes[
+            "market.category_exchange_cache"
+        ],
+    ).toBe("miss");
 });
 
 it("reuses the league's pairs for other items and a finished price across history windows and connections", async () => {
@@ -72,6 +131,13 @@ it("reuses the league's pairs for other items and a finished price across histor
     const input = { realm: "pc" as const, league, itemId: divine, days: "7" as const };
     const seven = await getMarketExchangeItem(first.db, input);
     expect(seven.item?.price).toBe(12);
+    const priceQueries = first.query.mock.calls.map(([sql]) => sql);
+    const dailyPricing = priceQueries.filter(
+        (sql) => sql.includes("_currency_daily`") && sql.includes("json_arrayagg("),
+    );
+    expect(dailyPricing).toHaveLength(1);
+    expect(dailyPricing[0]).toContain("group by");
+    expect(recorder.spans.filter((span) => span.name === "market.exchange_recent")).toHaveLength(1);
     expect(seven.priceRates.divine).toBe(1 / 12);
     expect(
         recorder.spans.findLast((s) => s.name === "market.exchange_item")?.attributes,
@@ -92,7 +158,7 @@ it("reuses the league's pairs for other items and a finished price across histor
         "market.price_input_cached_markets": 3,
         "market.price_input_read_markets": 0,
     });
-    expect(second.query.mock.calls.some(([q]) => q.includes("_currency_market`"))).toBe(false);
+    expect(recorder.spans.map((s) => s.name)).not.toContain("market.exchange_markets");
     expect(recorder.spans.map((s) => s.name)).not.toContain("market.exchange_recent");
     expect(recorder.spans.map((s) => s.name)).not.toContain("market.exchange_daily");
 
@@ -101,22 +167,36 @@ it("reuses the league's pairs for other items and a finished price across histor
     expect(thirty.item).toEqual(seven.item);
     expect(thirty.priceRates).toEqual(seven.priceRates);
     expect(thirty.historyStart).toBe(seven.historyStart - 23 * 86400);
-    expect(
-        recorder.spans.find((s) => s.name === "market.exchange_item")?.attributes[
-            "market.price_cache"
-        ],
-    ).toBe("hit");
+    expect(recorder.spans.find((s) => s.name === "market.exchange_item")?.attributes).toMatchObject(
+        {
+            "market.price_cache": "hit",
+            "market.history_cache": "miss",
+        },
+    );
     expect(recorder.spans.map((s) => s.name)).toContain("market.exchange_history");
     expect(recorder.spans.map((s) => s.name)).not.toContain("market.exchange_recent");
     expect(recorder.spans.map((s) => s.name)).not.toContain("market.exchange_daily");
 
+    recorder.spans.length = 0;
+    expect(await getMarketExchangeItem(database().db, { ...input, days: "30" })).toEqual(thirty);
+    expect(recorder.spans.find((s) => s.name === "market.exchange_item")?.attributes).toMatchObject(
+        {
+            "market.history_cache": "hit",
+            "market.history_markets": 3,
+        },
+    );
+    expect(recorder.spans.map((s) => s.name)).not.toContain("market.exchange_select_history_pairs");
+    expect(recorder.spans.map((s) => s.name)).not.toContain("market.exchange_history");
+    expect(recorder.spans.map((s) => s.name)).not.toContain("market.exchange_build_history");
+
     for (const next of [database(3), database(2, "second")]) {
         await getMarketExchangeItem(next.db, input);
         expect(
-            recorder.spans.findLast((s) => s.name === "market.exchange_item")?.attributes[
-                "market.price_cache"
-            ],
-        ).toBe("miss");
+            recorder.spans.findLast((s) => s.name === "market.exchange_item")?.attributes,
+        ).toMatchObject({
+            "market.price_cache": "miss",
+            "market.history_cache": "miss",
+        });
     }
 });
 
@@ -151,48 +231,45 @@ it("reads only a cold thin item's pairs and preserves oriented hourly ranges whe
         reverse,
         ...Array.from({ length: 62 }, (_, index) => `item${index}|${divine}`),
     ];
-    const load = vi.fn(async (ids: string[]) => ({
-        snapshots: ids.map((marketId) => ({
-            ...scope,
-            marketId,
-            hour,
-            volumeTraded: { [divine]: 1, [chaos]: 14 },
-            lowestRatio: marketId === reverse ? null : { [divine]: 1, [chaos]: 12 },
-            highestRatio: { [divine]: 1, [chaos]: 16 },
-        })),
-        days: ids.map((marketId) => ({
-            marketId,
-            day: hour,
-            firstVolume: 1,
-            secondVolume: 14,
-            tradedHours: 1,
-            latestHour: hour,
-        })),
-    }));
-    const cold = await exchangePricingBook(cache, scope, listed, [pair, reverse], load);
+    const load = vi.fn(
+        async (ids: string[]): Promise<PriceBook> =>
+            Object.fromEntries(
+                ids.map((id) => [
+                    id,
+                    {
+                        hours:
+                            id === reverse
+                                ? [[hour, 14, 1, 0, 0, 16, 1]]
+                                : [[hour, 1, 14, 1, 12, 1, 16]],
+                        days: [[hour, 1, 14, 1, hour]],
+                    },
+                ]),
+            ),
+    );
+    const cold = await exchangePricingBook(cache, listed, [pair, reverse], [], false, load);
     expect(cold.readMarkets).toBe(2);
     expect(load.mock.calls[0]![0].toSorted()).toEqual([pair, reverse].toSorted());
-    const broad = await exchangePricingBook(cache, scope, listed, listed.slice(0, 32), load);
+    const broad = await exchangePricingBook(cache, listed, listed.slice(0, 32), [], true, load);
     expect(broad.readMarkets).toBe(64);
-    expect(broad.snapshots).toHaveLength(32);
+    expect(Object.keys(broad.book)).toHaveLength(32);
+    await Promise.all(writes);
     load.mockClear();
-    const after = await exchangePricingBook(cache, scope, listed, [pair, reverse], load);
+    const after = await exchangePricingBook(cache, listed, [pair, reverse], [], true, load);
     expect(load).not.toHaveBeenCalled();
     expect(after).toEqual({ ...cold, readMarkets: 0, cachedMarkets: 2 });
 
     const extended = [...listed, ...Array.from({ length: 64 }, (_, index) => `z${index}|quote`)];
     const partial = await exchangePricingBook(
         cache,
-        scope,
         extended,
         [pair, extended.at(-1)!],
+        [],
+        true,
         load,
     );
     expect(partial).toMatchObject({ cachedMarkets: 1, readMarkets: 1 });
     expect(load.mock.calls[0]![0]).toEqual([extended.at(-1)]);
-    expect(partial.snapshots.map((row) => row.marketId).toSorted()).toEqual(
-        [pair, extended.at(-1)!].toSorted(),
-    );
+    expect(Object.keys(partial.book).toSorted()).toEqual([pair, extended.at(-1)!].toSorted());
 });
 
 it("preserves scoped thin-bridge prices and conflicting inverse quotes on both cache paths", async () => {
@@ -210,22 +287,17 @@ it("preserves scoped thin-bridge prices and conflicting inverse quotes on both c
     ].map((row) => ({ ...row, id: [row.first, row.second].join("|") }));
     const db = drizzle(async (sql, params) => {
         if (sql.includes("hour_coverage")) return { rows: [[league, hour, hour, 5]] };
-        if (sql.includes("_currency_market`")) return { rows: quotes.map(({ id }) => [id, hour]) };
         const found = quotes.filter((row) => params.includes(row.id));
-        if (sql.includes("_currency_hourly`"))
+        if (sql.includes("json_arrayagg") && sql.includes("_currency_hour`"))
             return {
                 rows: found.map((row) => [
-                    "pc",
-                    league,
                     row.id,
-                    hour,
-                    { [row.first]: row.a, [row.second]: row.b },
-                    { [row.first]: 1, [row.second]: row.low },
-                    { [row.first]: row.a, [row.second]: row.b },
+                    [[hour, row.a, row.b, 1, row.low, row.a, row.b]],
                 ]),
             };
+        if (sql.includes("_currency_market`")) return { rows: quotes.map(({ id }) => [id, hour]) };
         if (sql.includes("_currency_daily`"))
-            return { rows: found.map((row) => [row.id, day, row.a, row.b, row.hours, hour]) };
+            return { rows: found.map((row) => [row.id, [[day, row.a, row.b, row.hours, hour]]]) };
         return { rows: [] };
     }) as unknown as TDatabase;
     const input = { realm: "pc" as const, league, days: "7" as const };

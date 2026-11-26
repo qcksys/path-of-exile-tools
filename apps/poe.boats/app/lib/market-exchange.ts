@@ -2,6 +2,7 @@ import {
     type ExchangeSnapshot,
     exchangeCurrencyId,
     listingCurrencyId,
+    quoteExchangeSnapshot,
     quoteExchangeWindow,
 } from "@poe-tools/market";
 import type { MarketExchangeCategory } from "~/lib/market-categories";
@@ -126,31 +127,50 @@ function dailyQuote(pairs: Map<string, MarketExchangeDaily>): Quote {
  * pair with an item that has one (divine first, then chaos or exalted, then by ID). A pair that is
  * low volume for an item never prices it, even as its only path in that period.
  */
-function anchorRates(pairs: string[][], quote: Quote, anchor: string, isLowVolume: IsLowVolume) {
+function anchorRates(
+    pairs: ReadonlyMap<string, unknown>,
+    quote: Quote,
+    anchor: string,
+    isLowVolume: IsLowVolume,
+    requested?: string[],
+) {
     const rates = new Map<string, AnchorRate>();
-    for (const ids of pairs) {
-        const item = ids.find((id) => id !== anchor);
-        if (!item || !ids.includes(anchor) || isLowVolume(item, anchor)) continue;
-        const amount = quote(item, anchor);
-        if (amount) rates.set(item, { price: amount, via: anchor });
+    const direct = new Map<string, number | undefined>();
+    const directPrice = (id: string) => {
+        if (!direct.has(id))
+            direct.set(id, isLowVolume(id, anchor) ? undefined : quote(id, anchor));
+        return direct.get(id);
+    };
+    const unresolved = new Set<string>();
+    for (const item of requested ?? new Set([...pairs.keys()].flatMap((key) => key.split("|")))) {
+        if (item === anchor) continue;
+        const price = directPrice(item);
+        if (price) rates.set(item, { price, via: anchor });
+        else unresolved.add(item);
     }
-    const direct = new Map(rates);
+    if (!unresolved.size) return rates;
     const candidates = new Map<string, string[]>();
-    for (const [a, b] of pairs) {
+    const addBridge = (id: string, bridge: string) => {
+        if (!unresolved.has(id) || isLowVolume(id, bridge)) return;
+        const existing = candidates.get(id);
+        if (existing) existing.push(bridge);
+        else candidates.set(id, [bridge]);
+    };
+    for (const key of pairs.keys()) {
+        const [a, b] = key.split("|");
         if (!a || !b || a === anchor || b === anchor) continue;
-        if (direct.has(b) && !isLowVolume(a, b))
-            candidates.set(a, [...(candidates.get(a) ?? []), b]);
-        if (direct.has(a) && !isLowVolume(b, a))
-            candidates.set(b, [...(candidates.get(b) ?? []), a]);
+        addBridge(a, b);
+        addBridge(b, a);
     }
     const priority = (id: string) => (id === DIVINE ? 0 : id === CHAOS || id === EXALTED ? 1 : 2);
     for (const [item, bridges] of candidates) {
-        if (rates.has(item)) continue;
         for (const bridge of bridges.sort(
             (a, b) => priority(a) - priority(b) || (a < b ? -1 : a > b ? 1 : 0),
         )) {
+            const bridgePrice = directPrice(bridge);
+            if (!bridgePrice) continue;
             const amount = quote(item, bridge);
-            const converted = amount && amount * direct.get(bridge)!.price;
+            const converted = amount && amount * bridgePrice;
             if (converted && Number.isFinite(converted)) {
                 rates.set(item, { price: converted, via: bridge });
                 break;
@@ -169,6 +189,7 @@ function hourRates(
     hour: number,
     anchor: string,
     isLowVolume: IsLowVolume,
+    requested?: string[],
 ) {
     const pairs = new Map<string, ExchangeSnapshot[]>();
     const traded = new Set<string>();
@@ -181,6 +202,8 @@ function hourRates(
     }
     const full = (itemId: string, quoteId: string) => {
         const rows = pairs.get([itemId, quoteId].sort().join("|"));
+        if (rows?.length === 1 && rows[0]!.hour === Math.floor(hour / 3600) * 3600)
+            return quoteExchangeSnapshot(rows[0]!, itemId, quoteId);
         return rows?.[0]
             ? quoteExchangeWindow(
                   rows,
@@ -191,12 +214,8 @@ function hourRates(
     };
     const quote: Quote = (itemId, quoteId) => full(itemId, quoteId)?.amount;
     return {
-        rates: anchorRates(
-            [...pairs.keys()].map((key) => key.split("|")),
-            quote,
-            anchor,
-            isLowVolume,
-        ),
+        rates: anchorRates(pairs, quote, anchor, isLowVolume, requested),
+        pairKeys: pairs.keys(),
         quote,
         full,
         traded,
@@ -208,18 +227,11 @@ function exchangeDailyRates(
     days: Map<number, Map<string, MarketExchangeDaily>>,
     anchor: string,
     isLowVolume: IsLowVolume,
+    requested?: string[],
 ) {
     const result = new Map<number, Map<string, AnchorRate>>();
     for (const [day, pairs] of days)
-        result.set(
-            day,
-            anchorRates(
-                [...pairs.keys()].map((key) => key.split("|")),
-                dailyQuote(pairs),
-                anchor,
-                isLowVolume,
-            ),
-        );
+        result.set(day, anchorRates(pairs, dailyQuote(pairs), anchor, isLowVolume, requested));
     return result;
 }
 
@@ -350,12 +362,13 @@ export function marketExchangeRows(
     const days = tradedDays(daily);
     const isLowVolume = lowVolumeCheck(dailyPairHours(days));
     const byHour = Map.groupBy(snapshots, (snapshot) => snapshot.hour);
+    const requested = output === "listed" ? listed : undefined;
     const recentHours = Array.from(
         { length: MARKET_EXCHANGE_RECENT_HOURS },
         (_, index) => latestHour - (MARKET_EXCHANGE_RECENT_HOURS - 1 - index) * 3600,
-    ).map((hour) => hourRates(byHour.get(hour) ?? [], hour, anchor, isLowVolume));
+    ).map((hour) => hourRates(byHour.get(hour) ?? [], hour, anchor, isLowVolume, requested));
     const current = recentHours.at(-1)!;
-    const dayRates = exchangeDailyRates(days, anchor, isLowVolume);
+    const dayRates = exchangeDailyRates(days, anchor, isLowVolume, requested);
     const lastDay = Math.floor(latestHour / DAY) * DAY;
     const window = Array.from(
         { length: MARKET_EXCHANGE_DAYS },
@@ -543,20 +556,22 @@ export function marketExchangeHistory(
     })[] = [];
     const hours = Map.groupBy(snapshots, (snapshot) => snapshot.hour);
     for (const [hour, rows] of [...hours].sort(([a], [b]) => a - b)) {
-        const { rates, full } = hourRates(rows, hour, anchor, isLowVolume);
+        const { rates, full, pairKeys } = hourRates(rows, hour, anchor, isLowVolume, [itemId]);
+        const rate = itemId === anchor ? { price: 1, via: anchor } : rates.get(itemId);
+        let leg: ReturnType<typeof full> = null;
         let units = 0;
-        for (const key of new Set(
-            rows.map((row) => row.marketId.split("|").toSorted().join("|")),
-        )) {
+        for (const key of pairKeys) {
             const ids = key.split("|");
             if (ids.length !== 2 || !ids.includes(itemId)) continue;
             const quoteId = ids.find((id) => id !== itemId)!;
             const quote = full(itemId, quoteId);
             if (!quote?.itemVolume) continue;
+            if (quoteId === rate?.via) leg = quote;
             units += quote.itemVolume;
-            const name = describe(quoteId)?.name;
+            const existing = pairs.get(quoteId);
+            const name = existing?.name ?? describe(quoteId)?.name;
             if (!name) continue;
-            const pair = pairs.get(quoteId) ?? {
+            const pair = existing ?? {
                 quoteId,
                 name,
                 hours: [],
@@ -573,9 +588,7 @@ export function marketExchangeHistory(
             pairs.set(quoteId, pair);
         }
         if (!units) continue;
-        const rate = itemId === anchor ? { price: 1, via: anchor } : rates.get(itemId);
-        const leg = rate && itemId !== anchor ? full(itemId, rate.via) : null;
-        const scale = rate?.via === anchor ? 1 : rate ? rates.get(rate.via)?.price : undefined;
+        const scale = rate?.via === anchor ? 1 : rate ? full(rate.via, anchor)?.amount : undefined;
         const low = leg?.low && scale ? leg.low * scale : null;
         const high = leg?.high && scale ? leg.high * scale : null;
         prices.push({

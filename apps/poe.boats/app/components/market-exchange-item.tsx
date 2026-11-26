@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { CurrencyLabel } from "~/components/currency-label";
 import { LocalTime } from "~/components/local-time";
@@ -28,7 +28,7 @@ const PRICE_SERIES = "price";
 
 /** An exchange item's summary, hourly price chart and pairs, in either game's exchange unit. */
 export function MarketExchangeItem({
-    data: { item, priceRates, history, latestHour, unit, seasons },
+    data: { item, priceRates, historyJson, latestHour, unit, seasons },
     league,
     days,
     realm,
@@ -36,7 +36,7 @@ export function MarketExchangeItem({
     categoryLabel,
     backTo,
 }: {
-    data: ExchangeItemData & { item: MarketExchangeRow };
+    data: Omit<ExchangeItemData, "history"> & { item: MarketExchangeRow; historyJson: string };
     league: string;
     days: string;
     /** PoE 1's realm; PoE 2 has one. */
@@ -45,6 +45,11 @@ export function MarketExchangeItem({
     categoryLabel: string;
     backTo: string;
 }) {
+    // One JSON string lets React Router serialize the page without visiting every chart point.
+    const history = useMemo<ExchangeItemData["history"]>(
+        () => JSON.parse(historyJson),
+        [historyJson],
+    );
     const [series, setSeries] = useState(PRICE_SERIES);
     const [showLowVolume, setShowLowVolume] = useState(false);
     const unitName = EXCHANGE_UNIT_NAMES[unit].replace(/ Orb$/, "");
@@ -231,7 +236,7 @@ export function MarketExchangeItem({
                                                     ),
                                                 )}
                                             </td>
-                                            <td className="py-2 text-right text-xs whitespace-nowrap text-muted-foreground">
+                                            <td className="py-2 text-right text-xs text-muted-foreground sm:whitespace-nowrap">
                                                 <LocalTime at={newest.hour * 1000} />
                                             </td>
                                         </tr>
