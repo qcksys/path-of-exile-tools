@@ -3,6 +3,7 @@ import type { TDatabase } from "~/db/client";
 import { getMarketExchangeLeagues, getMarketExchangePrices } from "~/db/queries/market.queries";
 import { marketExchangeItemId } from "~/lib/market-exchange.server";
 import type { ArbitrageGame, MarketSnapshot, RecipeCategory } from "~/schemas/arbitrage";
+import { traceSpan } from "~/services/tracing.server";
 
 const REALMS = { "1": "pc", "2": "poe2" } as const;
 const GAMES = { "1": "poe1", "2": "poe2" } as const;
@@ -11,7 +12,18 @@ const GAMES = { "1": "poe1", "2": "poe2" } as const;
  * The game's vendor recipes priced from its PC currency exchange, as the market list prices them,
  * in chaos for PoE 1 and exalted for PoE 2. Without a league, the one that traded most recently.
  */
-export async function loadArbitrageMarket(
+export function loadArbitrageMarket(
+    db: TDatabase,
+    game: ArbitrageGame,
+    requestedLeague: string | null,
+) {
+    return traceSpan("arbitrage.vendor_recipes", (span) => {
+        span.setAttributes({ "arbitrage.game": game });
+        return readArbitrageMarket(db, game, requestedLeague);
+    });
+}
+
+async function readArbitrageMarket(
     db: TDatabase,
     game: ArbitrageGame,
     requestedLeague: string | null,

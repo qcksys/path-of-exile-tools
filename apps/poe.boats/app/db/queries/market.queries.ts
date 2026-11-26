@@ -538,7 +538,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                       .orderBy(desc(market.hour))
                       // 90 days of hours per link count.
                       .limit(2160 * 3),
-              ).then(mergeByHour)
+              ).then((rows) => traceSpan("market.merge_history", () => mergeByHour(rows)))
             : Promise.resolve([]);
     const variantsPromise =
         filters.item && view !== "list"
@@ -818,7 +818,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         "market.history_rows": history.length,
         "market.variants": variants.length,
     });
-    return {
+    return traceSpan("market.prepare_response", () => ({
         filters,
         seasons,
         season,
@@ -885,7 +885,7 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                 priceRates: marketPriceRates(rates, game, row.hour),
             };
         }),
-    };
+    }));
 }
 
 /**
@@ -962,39 +962,41 @@ async function marketVariants(
             ),
     );
     const latest = await marketVariantLatestRows(db, market, scope, variants);
-    const markets = Map.groupBy(variants, (row) =>
-        JSON.stringify([
-            row.itemKey,
-            row.identified,
-            row.corrupted,
-            row.signatureKind,
-            row.signatureValue,
-        ]),
-    );
-    // Each market first merges its link counts (`links` null, as the list shows it), then lists
-    // them separately when any copy has 5 or 6 links.
-    return [...markets.values()].flatMap((group) => {
-        const latestHour = Math.max(...group.map((row) => row.latestHour));
-        const merged = {
-            ...group[0]!,
-            links: null,
-            latestHour,
-            periodSales: group.reduce((sum, row) => sum + row.periodSales, 0),
-        };
-        const linked = group.some((row) => row.links > 0);
-        return [merged, ...(linked ? group : [])].map((row) => {
-            const rows = latest.filter(
-                (entry) =>
-                    entry.hour === row.latestHour &&
-                    marketRowKey(entry, 0) === marketRowKey(row, 0) &&
-                    (row.links === null || entry.links === row.links),
-            );
-            const current = rows.length ? mergeMarketRows(rows) : undefined;
-            return {
-                ...row,
-                prices: current?.prices ?? null,
-                listingCount: current?.listingCount ?? 0,
+    return traceSpan("market.merge_variants", () => {
+        const markets = Map.groupBy(variants, (row) =>
+            JSON.stringify([
+                row.itemKey,
+                row.identified,
+                row.corrupted,
+                row.signatureKind,
+                row.signatureValue,
+            ]),
+        );
+        // Each market first merges its link counts (`links` null, as the list shows it), then lists
+        // them separately when any copy has 5 or 6 links.
+        return [...markets.values()].flatMap((group) => {
+            const latestHour = Math.max(...group.map((row) => row.latestHour));
+            const merged = {
+                ...group[0]!,
+                links: null,
+                latestHour,
+                periodSales: group.reduce((sum, row) => sum + row.periodSales, 0),
             };
+            const linked = group.some((row) => row.links > 0);
+            return [merged, ...(linked ? group : [])].map((row) => {
+                const rows = latest.filter(
+                    (entry) =>
+                        entry.hour === row.latestHour &&
+                        marketRowKey(entry, 0) === marketRowKey(row, 0) &&
+                        (row.links === null || entry.links === row.links),
+                );
+                const current = rows.length ? mergeMarketRows(rows) : undefined;
+                return {
+                    ...row,
+                    prices: current?.prices ?? null,
+                    listingCount: current?.listingCount ?? 0,
+                };
+            });
         });
     });
 }
@@ -1204,7 +1206,12 @@ function exchangeSnapshots(
                     marketIds ? inArray(currencyHourly.marketId, marketIds) : undefined,
                 ),
             ),
-    ).then((rows) => rows.map((row) => exchangeSnapshotSchema.parse(row)));
+    ).then((rows) =>
+        traceSpan("market.exchange_parse_snapshots", (span) => {
+            span.setAttributes({ "market.query": label, "market.snapshots": rows.length });
+            return rows.map((row) => exchangeSnapshotSchema.parse(row));
+        }),
+    );
 }
 
 /** Exchange markets' daily totals with trades from `fromDay`, optionally of some markets only. */
@@ -1284,21 +1291,23 @@ async function marketExchange(
               )
             : [],
     ]);
-    const snapshots = [...earlier, ...latest];
-    const past = days.filter((row) => row.day <= latestHour);
-    const volumes = marketExchangeRecentVolume(snapshots, past, latestHour, charted);
-    return marketExchangeRows(
-        snapshots,
-        past,
-        latestHour,
-        describe,
-        listed,
-        Math.min(...markets.map((row) => row.firstHour)),
-        marketExchangeUnit(scope.realm),
-    ).map((row) => ({
-        ...row,
-        recentVolume: volumes.get(row.itemId) ?? marketExchangeNoRecentVolume(),
-    }));
+    return traceSpan("market.aggregate_exchange_list", () => {
+        const snapshots = [...earlier, ...latest];
+        const past = days.filter((row) => row.day <= latestHour);
+        const volumes = marketExchangeRecentVolume(snapshots, past, latestHour, charted);
+        return marketExchangeRows(
+            snapshots,
+            past,
+            latestHour,
+            describe,
+            listed,
+            Math.min(...markets.map((row) => row.firstHour)),
+            marketExchangeUnit(scope.realm),
+        ).map((row) => ({
+            ...row,
+            recentVolume: volumes.get(row.itemId) ?? marketExchangeNoRecentVolume(),
+        }));
+    });
 }
 
 // Exchange rows need a divine rate even on pages without stash listings. Stash prices convert
@@ -1362,14 +1371,16 @@ export function getMarketExchangePrices(
                   exchangeDaily(db, scope, exchangeWindowStart(latestHour), marketIds),
               ])
             : [[], []];
-        const rows = marketExchangeRows(
-            snapshots,
-            days.filter((row) => row.day <= latestHour),
-            latestHour,
-            (itemId) => marketExchangeItem(input.realm, itemId),
-            input.itemIds,
-            0,
-            unit,
+        const rows = traceSpan("market.exchange_price_rows", () =>
+            marketExchangeRows(
+                snapshots,
+                days.filter((row) => row.day <= latestHour),
+                latestHour,
+                (itemId) => marketExchangeItem(input.realm, itemId),
+                input.itemIds,
+                0,
+                unit,
+            ),
         );
         const prices = new Map(
             rows.flatMap((row) =>
@@ -1395,7 +1406,8 @@ export async function getMarketExchangeLeagues(db: TDatabase, realm: string) {
  * exchange unit's markets that convert them.
  */
 export function getMarketExchangeItem(db: TDatabase, input: MarketExchangeItemInput) {
-    return traceSpan("market.exchange_item", async () => {
+    return traceSpan("market.exchange_item", async (span) => {
+        span.setAttributes({ "market.realm": input.realm, "market.days": input.days });
         const latestHour = marketObservationRange().latestHour;
         const seasons = await activeExchangeSeasons(db, input.realm, latestHour);
         const league = input.league || seasons[0]?.league || "";
@@ -1426,43 +1438,54 @@ export function getMarketExchangeItem(db: TDatabase, input: MarketExchangeItemIn
               ])
             : [[], []];
         const past = days.filter((row) => row.day <= latestHour);
-        const rows = marketExchangeRows(
-            snapshots,
-            past.filter((row) => row.day >= exchangeWindowStart(latestHour)),
-            latestHour,
-            describe,
-            [...new Set([input.itemId, ...priced])],
-            Math.min(...listed.map((row) => row.firstHour)),
-            unit,
+        const rows = traceSpan("market.exchange_price_rows", () =>
+            marketExchangeRows(
+                snapshots,
+                past.filter((row) => row.day >= exchangeWindowStart(latestHour)),
+                latestHour,
+                describe,
+                [...new Set([input.itemId, ...priced])],
+                Math.min(...listed.map((row) => row.firstHour)),
+                unit,
+            ),
         );
-        const units = new Map<string, number>();
-        for (const row of past) {
-            const ids = row.marketId.split("|");
-            if (!ids.includes(input.itemId)) continue;
-            const traded = ids[0] === input.itemId ? row.firstVolume : row.secondVolume;
-            units.set(row.marketId, (units.get(row.marketId) ?? 0) + traded);
-        }
-        // Every pair of chaos, divine or exalted includes itself, so it must not count as an anchor.
-        const always = [CHAOS, DIVINE, EXALTED].filter((id) => id !== input.itemId);
-        const pairs = markets
-            .filter((ids) => ids.includes(input.itemId))
-            .map((ids) => ids.join("|"))
-            .sort((a, b) => (units.get(b) ?? 0) - (units.get(a) ?? 0));
-        const kept = [
-            ...pairs.filter((id) => always.some((anchor) => id.split("|").includes(anchor))),
-            ...pairs
-                .filter((id) => !always.some((anchor) => id.split("|").includes(anchor)))
-                .slice(0, EXCHANGE_HISTORY_PAIRS),
-        ].map((id) => id.split("|"));
-        const historyIds = exchangeItemMarkets(
-            [...kept, ...markets.filter((ids) => !ids.includes(input.itemId))],
-            [input.itemId],
-            anchor,
-            priced,
-        );
+        const historyIds = traceSpan("market.exchange_select_history_pairs", () => {
+            const units = new Map<string, number>();
+            for (const row of past) {
+                const ids = row.marketId.split("|");
+                if (!ids.includes(input.itemId)) continue;
+                const traded = ids[0] === input.itemId ? row.firstVolume : row.secondVolume;
+                units.set(row.marketId, (units.get(row.marketId) ?? 0) + traded);
+            }
+            // Every pair of chaos, divine or exalted includes itself, so it must not count as an anchor.
+            const always = [CHAOS, DIVINE, EXALTED].filter((id) => id !== input.itemId);
+            const pairs = markets
+                .filter((ids) => ids.includes(input.itemId))
+                .map((ids) => ids.join("|"))
+                .sort((a, b) => (units.get(b) ?? 0) - (units.get(a) ?? 0));
+            const kept = [
+                ...pairs.filter((id) => always.some((anchor) => id.split("|").includes(anchor))),
+                ...pairs
+                    .filter((id) => !always.some((anchor) => id.split("|").includes(anchor)))
+                    .slice(0, EXCHANGE_HISTORY_PAIRS),
+            ].map((id) => id.split("|"));
+            return exchangeItemMarkets(
+                [...kept, ...markets.filter((ids) => !ids.includes(input.itemId))],
+                [input.itemId],
+                anchor,
+                priced,
+            );
+        });
         const history = historyIds.length
             ? await exchangeSnapshots(db, scope, [historyStart, latestHour], historyIds)
             : [];
+        span.setAttributes({
+            "market.listed_markets": listed.length,
+            "market.price_markets": marketIds.length,
+            "market.history_markets": historyIds.length,
+            "market.recent_snapshots": snapshots.length,
+            "market.daily_rows": days.length,
+        });
         const described = describe(input.itemId);
         return {
             realm: input.realm,
@@ -1474,7 +1497,15 @@ export function getMarketExchangeItem(db: TDatabase, input: MarketExchangeItemIn
             item: described ? (rows.find((row) => row.itemId === input.itemId) ?? null) : null,
             divine: rows.find((row) => row.itemId === DIVINE)?.price ?? null,
             priceRates: marketExchangePriceRates(rows, input.realm),
-            history: marketExchangeHistory(history, input.itemId, describe, unit),
+            history: traceSpan("market.exchange_build_history", (span) => {
+                const chart = marketExchangeHistory(history, input.itemId, describe, unit);
+                span.setAttributes({
+                    "market.snapshots": history.length,
+                    "market.price_points": chart.prices.length,
+                    "market.pairs": chart.pairs.length,
+                });
+                return chart;
+            }),
         };
     });
 }
@@ -1624,8 +1655,10 @@ async function marketChaosRates(
         marketRateSnapshots(db, filters, currencies, hours),
         { "market.currencies": currencies.length },
     );
-    return chaosRatesByHour(
-        snapshots.map((row) => exchangeSnapshotSchema.parse(row)),
-        currencies,
+    return traceSpan("market.calculate_rates", () =>
+        chaosRatesByHour(
+            snapshots.map((row) => exchangeSnapshotSchema.parse(row)),
+            currencies,
+        ),
     );
 }
