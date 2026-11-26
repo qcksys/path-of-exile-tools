@@ -1,4 +1,7 @@
 import { Globe } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import {
     Select,
     SelectContent,
@@ -7,7 +10,7 @@ import {
     SelectValue,
 } from "~/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
-import { SUPPORTED_LOCALES, type SupportedLocale, useI18n, useTranslations } from "~/i18n";
+import { SUPPORTED_LOCALES, type SupportedLocale } from "~/i18n";
 
 const LOCALE_NAMES: Record<SupportedLocale, string> = {
     en: "English",
@@ -32,19 +35,44 @@ function persistLocaleCookie(locale: SupportedLocale) {
 }
 
 export function LocaleSwitcher() {
-    const { locale, setLocale } = useI18n();
-    const t = useTranslations();
+    const { t, i18n } = useTranslation();
+    const [pending, setPending] = useState<SupportedLocale>();
+    const attempt = useRef(0);
+    useEffect(
+        () => () => {
+            attempt.current++;
+        },
+        [],
+    );
 
-    const handleChange = (value: SupportedLocale | null) => {
+    const handleChange = async (value: SupportedLocale | null) => {
         if (!value) return;
-        persistLocaleCookie(value);
-        setLocale(value);
+        const id = ++attempt.current;
+        setPending(value);
+        try {
+            if (!i18n.hasResourceBundle(value, "translation")) {
+                await i18n.reloadResources([value], ["translation"]);
+                if (!i18n.hasResourceBundle(value, "translation"))
+                    throw new Error("Language unavailable.");
+            }
+            if (id !== attempt.current) return;
+            persistLocaleCookie(value);
+            await i18n.changeLanguage(value);
+        } catch {
+            if (id === attempt.current) toast.error("Could not switch language.");
+        } finally {
+            if (id === attempt.current) setPending(undefined);
+        }
     };
 
     return (
         <Tooltip>
             <TooltipTrigger render={<div />}>
-                <Select value={locale} onValueChange={handleChange}>
+                <Select
+                    items={LOCALE_NAMES}
+                    value={pending ?? (i18n.language as SupportedLocale)}
+                    onValueChange={handleChange}
+                >
                     <SelectTrigger
                         aria-label={t("actions.changeLanguage")}
                         className="w-14 justify-center px-2 sm:w-[140px]"

@@ -11,6 +11,7 @@ import { type MarketListPrices, marketListColumns } from "~/components/market-li
 import { RouteError } from "~/components/route-error";
 import { dbContext } from "~/context";
 import { getMarketData } from "~/db/queries/market.queries";
+import { usePendingSearchParams } from "~/hooks/use-pending-search-params";
 import { marketItemArtUrl } from "~/lib/item-presentation";
 import { MARKET_BASE_NOTE } from "~/lib/market-bases";
 import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
@@ -21,6 +22,7 @@ import {
     type MarketFilters,
     marketCategorySchema,
     marketExchangeLink,
+    marketFiltersSchema,
     marketLink,
     parseMarketFilters,
     poe2MarketRedirect,
@@ -168,9 +170,17 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
     const { filters, seasons, season, rows, hasMore, chaosRates, priceRates, exchange } =
         loaderData;
     const navigate = useNavigate();
+    const pendingParams = usePendingSearchParams();
+    const pending =
+        pendingParams &&
+        marketFiltersSchema.safeParse({
+            ...Object.fromEntries(pendingParams),
+            category: filters.category,
+        });
+    const controls = pending?.success ? pending.data : filters;
     const categories = Object.keys(MARKET_CATEGORIES) as MarketCategory[];
     const game: Game = filters.realm === "poe2" ? "poe2" : "poe1";
-    const server = marketTableState(filters, (to) => navigate(to, { preventScrollReset: true }));
+    const server = marketTableState(controls, (to) => navigate(to, { preventScrollReset: true }));
     const prices = useMemo(() => ({ chaosRates, rates: priceRates }), [chaosRates, priceRates]);
     const settings = marketSettings(filters.category);
     const table = { filters, game, prices, server };
@@ -188,7 +198,7 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
     );
     return (
         <>
-            <MarketFiltersForm filters={filters} seasons={seasons} />
+            <MarketFiltersForm filters={controls} seasons={seasons} />
             <section aria-label="Item markets" className="space-y-4">
                 <header className="flex flex-wrap items-end justify-between gap-2">
                     <div>
@@ -285,19 +295,19 @@ export default function MarketIndex({ loaderData }: Pick<Route.ComponentProps, "
                     aria-label="Market pages"
                     className="flex items-center justify-between py-3 text-sm"
                 >
-                    <span className="text-muted-foreground">Page {filters.page}</span>
+                    <span className="text-muted-foreground">Page {controls.page}</span>
                     <div className="flex gap-4">
-                        {filters.page > 1 ? (
+                        {controls.page > 1 ? (
                             <Link
-                                to={marketLink({ ...filters, page: filters.page - 1 })}
+                                to={marketLink({ ...controls, page: controls.page - 1 })}
                                 className="text-primary"
                             >
                                 Previous
                             </Link>
                         ) : null}
-                        {hasMore ? (
+                        {hasMore && controls.page === filters.page ? (
                             <Link
-                                to={marketLink({ ...filters, page: filters.page + 1 })}
+                                to={marketLink({ ...controls, page: controls.page + 1 })}
                                 className="text-primary"
                             >
                                 Next

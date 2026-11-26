@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { CopyButton } from "~/components/copy-button";
 import { Button } from "~/components/ui/button";
 import {
     Dialog,
@@ -30,16 +32,20 @@ export function ShareModal({ open, onOpenChange, set, inventory }: ShareModalPro
     const [shareState, setShareState] = useState<ShareState>({
         status: "idle",
     });
-    const [copied, setCopied] = useState(false);
+    const request = useRef<AbortController | null>(null);
+    useEffect(() => () => request.current?.abort(), []);
 
     const handleShare = async () => {
         if (!set) return;
-
+        request.current?.abort();
+        const controller = new AbortController();
+        request.current = controller;
         setShareState({ status: "loading" });
 
         try {
             const response = await fetch("/1/idol-planner/api/share", {
                 method: "POST",
+                signal: controller.signal,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ set, inventory }),
             });
@@ -52,8 +58,10 @@ export function ShareModal({ open, onOpenChange, set, inventory }: ShareModalPro
             }
 
             const data = (await response.json()) as { shareUrl: string };
+            if (controller.signal.aborted) return;
             setShareState({ status: "success", shareUrl: data.shareUrl });
         } catch (error) {
+            if (controller.signal.aborted) return;
             setShareState({
                 status: "error",
                 message: error instanceof Error ? error.message : "Failed to create share link",
@@ -61,25 +69,10 @@ export function ShareModal({ open, onOpenChange, set, inventory }: ShareModalPro
         }
     };
 
-    const handleCopy = async () => {
-        if (shareState.status !== "success") return;
-
-        try {
-            await navigator.clipboard.writeText(shareState.shareUrl);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch (error) {
-            console.log({
-                message: "Copy failed",
-                error: error instanceof Error ? error.message : "Unknown error",
-            });
-        }
-    };
-
     const handleClose = (newOpen: boolean) => {
         if (!newOpen) {
             setShareState({ status: "idle" });
-            setCopied(false);
+            request.current?.abort();
         }
         onOpenChange(newOpen);
     };
@@ -119,9 +112,17 @@ export function ShareModal({ open, onOpenChange, set, inventory }: ShareModalPro
                         <div className="space-y-3">
                             <div className="flex gap-2">
                                 <Input readOnly value={shareState.shareUrl} className="flex-1" />
-                                <Button onClick={handleCopy} variant="outline" className="shrink-0">
-                                    {copied ? t("actions.copied") : t("actions.copy")}
-                                </Button>
+                                <CopyButton
+                                    getText={() => shareState.shareUrl}
+                                    onCopyError={() =>
+                                        toast.error("Copy failed. Select and copy the link.")
+                                    }
+                                    variant="outline"
+                                    className="shrink-0"
+                                    copiedLabel={t("actions.copied")}
+                                >
+                                    {t("actions.copy")}
+                                </CopyButton>
                             </div>
                             <p className="text-center text-muted-foreground text-xs">
                                 {t("share.linkExpiry")}

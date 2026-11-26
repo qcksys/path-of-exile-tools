@@ -1,10 +1,21 @@
 import { readFile } from "node:fs/promises";
-import { RouterContextProvider } from "react-router";
+import { RouterContextProvider, type ShouldRevalidateFunctionArgs } from "react-router";
 import { Theme } from "remix-themes";
 import { describe, expect, it } from "vite-plus/test";
 import { localeContext } from "../app/context";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "../app/i18n/types";
-import { loader } from "../app/root";
+import { loader, shouldRevalidate } from "../app/root";
+
+it("switches pages without requesting the theme and translations again, and refreshes them after actions", () => {
+    const args = {
+        currentUrl: new URL("https://example.invalid/1/crafting/simulate"),
+        nextUrl: new URL("https://example.invalid/1/crafting/emulate"),
+        defaultShouldRevalidate: true,
+    } as ShouldRevalidateFunctionArgs;
+    expect(shouldRevalidate(args)).toBe(false);
+    expect(shouldRevalidate({ ...args, formMethod: "POST" })).toBe(true);
+    expect(shouldRevalidate({ ...args, nextUrl: args.currentUrl })).toBe(true);
+});
 
 describe("root locale loader", () => {
     it.each(SUPPORTED_LOCALES)("provides SSR translations for %s", async (locale) => {

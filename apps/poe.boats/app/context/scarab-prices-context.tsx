@@ -1,4 +1,12 @@
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
+import {
+    createContext,
+    type ReactNode,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import { useLeague } from "~/context/league-context";
 import { type ScarabPricesData, ScarabPricesDataSchema } from "~/schemas/scarab";
 
@@ -21,6 +29,7 @@ const SCARAB_PRICES_CONTEXT = createContext<ScarabPricesContextValue | null>(nul
 
 export function ScarabPricesProvider({ children }: { children: ReactNode }) {
     const { league, realm, isHydrated } = useLeague();
+    const pending = useRef<AbortController | null>(null);
     const [state, setState] = useState<ScarabPricesState>({
         data: null,
         isLoading: false,
@@ -28,13 +37,17 @@ export function ScarabPricesProvider({ children }: { children: ReactNode }) {
     });
 
     const fetchPrices = useCallback(async (leagueId: string) => {
-        setState((prev) => ({ ...prev, isLoading: true, error: null }));
+        pending.current?.abort();
+        const controller = new AbortController();
+        pending.current = controller;
+        setState({ data: null, isLoading: true, error: null });
 
         try {
             const response = await fetch(
                 `/1/idol-planner/api/prices/scarabs?league=${encodeURIComponent(leagueId)}`,
+                { signal: controller.signal },
             );
-
+            if (controller.signal.aborted) return;
             if (!response.ok) {
                 if (response.status === 404) {
                     setState({
@@ -48,6 +61,7 @@ export function ScarabPricesProvider({ children }: { children: ReactNode }) {
             }
 
             const data = await response.json();
+            if (controller.signal.aborted) return;
             const parsed = ScarabPricesDataSchema.safeParse(data);
 
             if (!parsed.success) {
@@ -60,6 +74,7 @@ export function ScarabPricesProvider({ children }: { children: ReactNode }) {
                 error: null,
             });
         } catch (err) {
+            if (controller.signal.aborted) return;
             setState({
                 data: null,
                 isLoading: false,
@@ -75,6 +90,7 @@ export function ScarabPricesProvider({ children }: { children: ReactNode }) {
             return;
         }
         fetchPrices(league);
+        return () => pending.current?.abort();
     }, [league, realm, isHydrated, fetchPrices]);
 
     const getPrice = useCallback(
@@ -86,8 +102,8 @@ export function ScarabPricesProvider({ children }: { children: ReactNode }) {
     );
 
     const refetch = useCallback(() => {
-        fetchPrices(league);
-    }, [fetchPrices, league]);
+        if (realm === "pc" && isHydrated) void fetchPrices(league);
+    }, [fetchPrices, league, realm, isHydrated]);
 
     return (
         <SCARAB_PRICES_CONTEXT.Provider

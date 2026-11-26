@@ -7,6 +7,7 @@ import { MarketListForm } from "~/components/market-form";
 import { RouteError } from "~/components/route-error";
 import { dbContext } from "~/context";
 import { getPoe2MarketExchange } from "~/db/queries/market.queries";
+import { usePendingSearchParams } from "~/hooks/use-pending-search-params";
 import { POE2_EXCHANGE_CATEGORIES } from "~/lib/market-categories";
 import {
     parsePoe2MarketFilters,
@@ -40,6 +41,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 
 export default function Poe2MarketIndex({ loaderData }: Pick<Route.ComponentProps, "loaderData">) {
     const { filters, seasons, season, rows, unit, priceRates } = loaderData;
+    const pending = usePendingSearchParams();
     const category = filters.category === "all" ? null : POE2_EXCHANGE_CATEGORIES[filters.category];
     const itemLink = useCallback(
         (itemId: string) => poe2MarketExchangeLink(filters, itemId),
@@ -50,10 +52,10 @@ export default function Poe2MarketIndex({ loaderData }: Pick<Route.ComponentProp
             <MarketListForm
                 action={poe2MarketLink(filters).split("?")[0]!}
                 hidden={{ days: filters.days }}
-                league={filters.league}
+                league={pending?.get("league") ?? filters.league}
                 seasons={seasons}
                 game="poe2"
-                q={filters.q}
+                q={pending?.get("q") ?? filters.q}
                 placeholder="Item name…"
             />
             <section

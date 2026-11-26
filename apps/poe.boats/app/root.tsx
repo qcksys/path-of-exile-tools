@@ -1,19 +1,47 @@
 import clsx from "clsx";
 import { type ReactNode, useState } from "react";
 import { I18nextProvider } from "react-i18next";
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "react-router";
-import { PreventFlashOnWrongTheme, Theme, ThemeProvider, useTheme } from "remix-themes";
+import {
+    Links,
+    Meta,
+    Outlet,
+    Scripts,
+    ScrollRestoration,
+    type ShouldRevalidateFunctionArgs,
+    useLoaderData,
+    useNavigation,
+} from "react-router";
+import { Theme } from "remix-themes";
 import type { Route } from "./+types/root";
 import "./app.css";
 import { RouteError } from "~/components/route-error";
 import { Toaster } from "~/components/ui/sonner";
 import { localeContext } from "~/context";
+import { ThemeProvider, useThemePreference } from "~/context/theme-context";
 import { createI18nInstance, DEFAULT_LOCALE, useLocale } from "~/i18n";
+import { recoverBrowseNavigation } from "~/lib/browse-navigation";
 import { themeSessionResolver } from "~/sessions.server";
 
 export const links: Route.LinksFunction = () => [
     { rel: "icon", href: "/logo.avif", type: "image/avif" },
 ];
+
+export const clientMiddleware = [recoverBrowseNavigation];
+
+export function shouldRevalidate({
+    currentUrl,
+    nextUrl,
+    formMethod,
+    defaultShouldRevalidate,
+}: ShouldRevalidateFunctionArgs) {
+    // The mounted theme and locale providers own these preferences after hydration.
+    if (
+        (!formMethod || formMethod === "GET") &&
+        (currentUrl.pathname !== nextUrl.pathname || currentUrl.search !== nextUrl.search)
+    )
+        return false;
+    return defaultShouldRevalidate;
+}
 
 export async function loader({ request, context }: Route.LoaderArgs) {
     const { getTheme } = await themeSessionResolver(request);
@@ -36,8 +64,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 function InnerLayout({ children }: { children: ReactNode }) {
-    const data = useLoaderData<typeof loader>();
-    const [theme] = useTheme();
+    const { theme } = useThemePreference();
     const locale = useLocale();
 
     return (
@@ -46,7 +73,10 @@ function InnerLayout({ children }: { children: ReactNode }) {
                 <meta charSet="utf-8" />
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
                 <Meta />
-                <PreventFlashOnWrongTheme ssrTheme={Boolean(data?.theme)} />
+                <meta
+                    name="color-scheme"
+                    content={theme === Theme.LIGHT ? "light dark" : "dark light"}
+                />
                 <Links />
             </head>
             <body className="bg-background text-foreground">
@@ -78,7 +108,7 @@ export function Layout({ children }: { children: ReactNode }) {
     );
 
     return (
-        <ThemeProvider specifiedTheme={theme} themeAction="/action/set-theme">
+        <ThemeProvider initial={theme}>
             <I18nextProvider i18n={instance}>
                 <InnerLayout>{children}</InnerLayout>
             </I18nextProvider>
@@ -87,7 +117,22 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
-    return <Outlet />;
+    const navigation = useNavigation();
+    return (
+        <>
+            {navigation.state !== "idle" && (
+                <div
+                    role="status"
+                    className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-1 bg-primary motion-safe:animate-pulse"
+                >
+                    <span className="sr-only">
+                        {navigation.state === "submitting" ? "Submitting…" : "Loading page…"}
+                    </span>
+                </div>
+            )}
+            <Outlet />
+        </>
+    );
 }
 
 // Last resort: renders without the site header, since the header itself may be what failed.

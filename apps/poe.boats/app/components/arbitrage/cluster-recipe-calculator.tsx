@@ -32,6 +32,7 @@ import {
     CLUSTER_RECIPE_SOURCE,
     clusterRecipeBand,
 } from "~/data/cluster-jewel-recipe";
+import { usePendingSearchParams } from "~/hooks/use-pending-search-params";
 import { calculateClusterRecipe } from "~/lib/cluster-recipe";
 import { ClusterRecipeOptionsSchema } from "~/schemas/arbitrage";
 import type { ClusterRecipeMarketData } from "~/services/cluster-recipe.server";
@@ -47,6 +48,7 @@ const bandLabel = ({ min, max }: { min: number; max: number }) =>
 export function ClusterRecipeCalculator({ data }: { data: ClusterRecipeMarketData }) {
     const { league, itemLevel, snapshot, error } = data;
     const navigation = useNavigation();
+    const pending = usePendingSearchParams();
     const [buffer, setBuffer] = useState("0");
     const options = ClusterRecipeOptionsSchema.safeParse({
         buffer: buffer.trim() ? Number(buffer) : Number.NaN,
@@ -57,6 +59,7 @@ export function ClusterRecipeCalculator({ data }: { data: ClusterRecipeMarketDat
             : null;
     const bands = CLUSTER_RECIPE_SIZES[0]!.bands;
     const band = clusterRecipeBand(itemLevel);
+    const selectedLevel = pending?.get("clusterIlvl") ?? String(band.min);
     const chaos = <CurrencyLabel currency="chaos" game="poe1" />;
     const value = (amount: number | null) =>
         amount === null ? (
@@ -79,14 +82,21 @@ export function ClusterRecipeCalculator({ data }: { data: ClusterRecipeMarketDat
             <CardContent className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-end gap-4">
                     <Form method="get" className="flex flex-wrap items-end gap-3">
-                        {league ? <Input type="hidden" name="league" value={league} /> : null}
+                        {league ? (
+                            <Input
+                                type="hidden"
+                                name="league"
+                                value={pending?.get("league") ?? league}
+                            />
+                        ) : null}
                         <Field className="w-56">
                             <FieldLabel htmlFor="cluster-item-level">
                                 Lowest input item level
                             </FieldLabel>
                             <Select
                                 name="clusterIlvl"
-                                defaultValue={String(band.min)}
+                                key={selectedLevel}
+                                defaultValue={selectedLevel}
                                 items={bands.map((entry) => ({
                                     value: String(entry.min),
                                     label: bandLabel(entry),

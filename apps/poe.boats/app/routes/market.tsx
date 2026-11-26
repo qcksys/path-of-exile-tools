@@ -1,6 +1,7 @@
 import { Outlet, useParams, useSearchParams } from "react-router";
 import { MarketCategoryNav, MarketPageContent } from "~/components/market-category-nav";
 import { MarketDisplayProvider } from "~/components/market-exchange";
+import { usePendingSearchParams } from "~/hooks/use-pending-search-params";
 import { MARKET_CATEGORIES, type MarketCategory } from "~/lib/market-categories";
 import { MARKET_AXIS_DEFAULTS } from "~/lib/market-kinds";
 import type { SiteHandle } from "~/routes/layouts/site";
@@ -18,9 +19,10 @@ export const handle = { section: "Season market", sectionBadge: "Estimates" } sa
 
 export default function Market() {
     const [searchParams] = useSearchParams();
+    const pending = usePendingSearchParams();
     const { category } = useParams();
     const parsed = marketFiltersSchema.safeParse({
-        ...Object.fromEntries(searchParams),
+        ...Object.fromEntries(pending ?? searchParams),
         ...(category ? { category } : {}),
     });
     const filters = parsed.success ? parsed.data : marketFiltersSchema.parse({});

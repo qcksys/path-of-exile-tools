@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import { CopyButton } from "~/components/copy-button";
 import { CatalogItemArt } from "~/components/item-art";
 import { Button } from "~/components/ui/button";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
@@ -94,23 +95,23 @@ export function ItemTextPanel({
                     >
                         Export current item text
                     </Button>
-                    <Button
+                    <CopyButton
                         variant="outline"
                         disabled={!text.trim()}
-                        onClick={async () => {
-                            try {
-                                await navigator.clipboard.writeText(text);
-                                setNotice("Item text copied.");
-                                setError("");
-                            } catch {
-                                setError(
-                                    "Clipboard access is unavailable. Select and copy the text above.",
-                                );
-                            }
+                        getText={() => text}
+                        onCopied={() => {
+                            setNotice("Item text copied.");
+                            setError("");
+                        }}
+                        onCopyError={() => {
+                            setNotice("");
+                            setError(
+                                "Clipboard access is unavailable. Select and copy the text above.",
+                            );
                         }}
                     >
                         Copy item text
-                    </Button>
+                    </CopyButton>
                 </div>
                 {error ? (
                     <p role="alert" className="text-sm text-destructive">
