@@ -55,6 +55,11 @@ export function OpportunityRow({
                         <span className="text-xs text-muted-foreground">
                             {RECIPE_CATEGORY_LABELS[recipe.category]}
                         </span>
+                        <span className="text-xs text-muted-foreground">
+                            {opportunity.batches24h === null
+                                ? "Volume unavailable"
+                                : `${opportunity.batches24h.toLocaleString("en")} full batches by 24h volume`}
+                        </span>
                         {recipe.method ? (
                             <Badge variant="secondary">
                                 {recipe.method === "purchase" ? "NPC purchase" : "Sell to vendor"} ·
@@ -92,12 +97,18 @@ export function OpportunityRow({
                 <div className="text-xs text-muted-foreground">
                     {value(opportunity.inputUnitValue)} / item before buffer
                 </div>
+                <div className="text-xs text-muted-foreground">
+                    {opportunity.inputUnits24h?.toLocaleString("en") ?? "—"} inputs traded in 24h
+                </div>
             </TableCell>
             <TableCell id={saleId} className={detailCell}>
                 <span className="block text-xs text-muted-foreground xl:hidden">Sell output</span>
                 <div>{value(opportunity.revenue)}</div>
                 <div className="text-xs text-muted-foreground">
                     {value(opportunity.outputUnitValue)} / item before buffer
+                </div>
+                <div className="text-xs text-muted-foreground">
+                    {opportunity.outputUnits24h?.toLocaleString("en") ?? "—"} outputs traded in 24h
                 </div>
             </TableCell>
             <TableCell headers="recipe-profit" className="max-xl:whitespace-normal">

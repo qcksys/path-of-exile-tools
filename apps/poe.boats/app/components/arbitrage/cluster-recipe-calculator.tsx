@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Form, useNavigation } from "react-router";
 import { CurrencyLabel } from "~/components/currency-label";
 import { CatalogItemArt } from "~/components/item-art";
@@ -33,8 +32,7 @@ import {
     clusterRecipeBand,
 } from "~/data/cluster-jewel-recipe";
 import { usePendingSearchParams } from "~/hooks/use-pending-search-params";
-import { calculateClusterRecipe } from "~/lib/cluster-recipe";
-import { ClusterRecipeOptionsSchema } from "~/schemas/arbitrage";
+import type { calculateClusterRecipe } from "~/lib/cluster-recipe";
 import type { ClusterRecipeMarketData } from "~/services/cluster-recipe.server";
 
 const formatNumber = new Intl.NumberFormat("en", { maximumSignificantDigits: 4 });
@@ -45,18 +43,22 @@ const formatPercent = new Intl.NumberFormat("en", {
 const bandLabel = ({ min, max }: { min: number; max: number }) =>
     max === 100 ? `${min}+` : `${min}–${max}`;
 
-export function ClusterRecipeCalculator({ data }: { data: ClusterRecipeMarketData }) {
+export function ClusterRecipeCalculator({
+    data,
+    buffer,
+    setBuffer,
+    validBuffer,
+    result,
+}: {
+    data: ClusterRecipeMarketData;
+    buffer: string;
+    setBuffer: (buffer: string) => void;
+    validBuffer: boolean;
+    result: ReturnType<typeof calculateClusterRecipe> | null;
+}) {
     const { league, itemLevel, snapshot, error } = data;
     const navigation = useNavigation();
     const pending = usePendingSearchParams();
-    const [buffer, setBuffer] = useState("0");
-    const options = ClusterRecipeOptionsSchema.safeParse({
-        buffer: buffer.trim() ? Number(buffer) : Number.NaN,
-    });
-    const result =
-        snapshot?.fetchedAt && options.success
-            ? calculateClusterRecipe(snapshot, options.data)
-            : null;
     const bands = CLUSTER_RECIPE_SIZES[0]!.bands;
     const band = clusterRecipeBand(itemLevel);
     const selectedLevel = pending?.get("clusterIlvl") ?? String(band.min);
@@ -120,7 +122,7 @@ export function ClusterRecipeCalculator({ data }: { data: ClusterRecipeMarketDat
                             {navigation.state !== "idle" ? "Loading prices…" : "Load prices"}
                         </Button>
                     </Form>
-                    <Field className="w-56" data-invalid={!options.success}>
+                    <Field className="w-56" data-invalid={!validBuffer}>
                         <FieldLabel htmlFor="cluster-buffer">Cluster recipe buffer (%)</FieldLabel>
                         <Input
                             id="cluster-buffer"
@@ -130,7 +132,7 @@ export function ClusterRecipeCalculator({ data }: { data: ClusterRecipeMarketDat
                             step="0.1"
                             value={buffer}
                             onChange={(event) => setBuffer(event.target.value)}
-                            aria-invalid={!options.success}
+                            aria-invalid={!validBuffer}
                         />
                         <FieldDescription>Enter 0–99.</FieldDescription>
                     </Field>

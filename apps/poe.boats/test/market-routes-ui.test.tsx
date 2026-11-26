@@ -133,6 +133,10 @@ it("renders list and detail through the layout outlet and restores browsing stat
     expect(await screen.findByRole("heading", { name: "Abberath's Hooves" }, cold)).toBeTruthy();
     expect(screen.queryByRole("region", { name: "Item markets" })).toBeNull();
     expect(screen.getAllByRole("navigation", { name: "Market categories" })).toHaveLength(1);
+    const atlas = within(screen.getByRole("heading", { name: "Atlas" }).parentElement!);
+    expect(atlas.getByRole("link", { name: "Maps" })).toBeTruthy();
+    expect(atlas.queryByRole("link", { name: "Scarabs" })).toBeNull();
+    expect(atlas.queryByRole("link", { name: "Memories" })).toBeNull();
     expect(screen.getByLabelText("Current URL").textContent).toContain(
         "/1/market/items/Abberath's%20Hooves?",
     );
@@ -732,6 +736,14 @@ it("lists many variants as their best sellers, with prices, until all are shown"
     fireEvent.click(within(variants).getByRole("button", { name: "Show all 30" }));
     expect(rows()).toHaveLength(30);
     fireEvent.click(within(variants).getByRole("button", { name: "Show top 10" }));
+    expect(rows()).toHaveLength(11);
+    fireEvent.click(within(variants).getByRole("button", { name: "Show all 30" }));
+    fireEvent.click(within(variants).getByRole("link", { name: "Notable 26" }));
+    await waitFor(() =>
+        expect(
+            within(variants).getByRole("link", { name: "Notable 26" }).getAttribute("aria-current"),
+        ).toBe("page"),
+    );
     expect(rows()).toHaveLength(11);
 });
 

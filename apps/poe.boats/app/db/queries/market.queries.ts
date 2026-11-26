@@ -93,7 +93,11 @@ import {
     expandPricingInputs,
     type PriceBook,
 } from "./exchange-pricing-inputs.server";
-import { exchangeSnapshotGroups, exchangeSnapshots } from "./exchange-snapshots.queries";
+import {
+    exchangeSnapshotGroups,
+    exchangeSnapshots,
+    exchangeTradedUnits,
+} from "./exchange-snapshots.queries";
 import { marketRateSnapshots } from "./market-rates.queries";
 import { endedStashLeagues } from "./stash-league.queries";
 import { utcDay } from "./stash-rollups.queries";
@@ -1343,7 +1347,7 @@ function exchangeItemMarkets(
  */
 export function getMarketExchangePrices(
     db: TDatabase,
-    input: { realm: string; league: string; itemIds: string[] },
+    input: { realm: string; league: string; itemIds: string[]; includeVolume?: boolean },
 ) {
     return traceSpan("market.exchange_prices", async () => {
         const latestHour = marketObservationRange().latestHour;
@@ -1358,12 +1362,20 @@ export function getMarketExchangePrices(
             marketExchangeUnitId(unit),
             [],
         );
-        const [snapshots, days] = marketIds.length
+        const [snapshots, days, units] = marketIds.length
             ? await Promise.all([
                   exchangeSnapshots(db, scope, [latestHour, latestHour], marketIds),
                   exchangeDaily(db, scope, exchangeWindowStart(latestHour), marketIds),
+                  input.includeVolume
+                      ? exchangeTradedUnits(
+                            db,
+                            scope,
+                            [latestHour - (MARKET_EXCHANGE_RECENT_HOURS - 1) * 3600, latestHour],
+                            marketIds,
+                        )
+                      : null,
               ])
-            : [[], []];
+            : [[], [], null];
         const rows = traceSpan("market.exchange_price_rows", () =>
             marketExchangeRows(
                 snapshots,
@@ -1375,13 +1387,15 @@ export function getMarketExchangePrices(
                 unit,
             ),
         );
-        const prices = new Map(
-            rows.flatMap((row) =>
-                row.price === null || row.hour === null
-                    ? []
-                    : [[row.itemId, { price: row.price, hour: row.hour }] as const],
-            ),
-        );
+        const prices = new Map<string, { price: number; hour: number; units24h?: number }>();
+        for (const row of rows) {
+            if (row.price === null || row.hour === null) continue;
+            prices.set(row.itemId, {
+                price: row.price,
+                hour: row.hour,
+                ...(units && { units24h: units.get(row.itemId) ?? 0 }),
+            });
+        }
         return { latestHour, unit, prices };
     });
 }

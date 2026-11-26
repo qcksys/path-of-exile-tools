@@ -54,11 +54,13 @@ async function readArbitrageMarket(
         realm,
         league,
         itemIds: [...new Set(items.values())],
+        includeVolume: true,
     });
     const quotes: MarketSnapshot["quotes"] = {};
     for (const [id, itemId] of items) {
-        const price = prices.get(itemId)?.price;
-        if (price && Number.isFinite(price) && price > 0) quotes[id] = { value: price };
+        const quote = prices.get(itemId);
+        if (quote && Number.isFinite(quote.price) && quote.price > 0)
+            quotes[id] = { value: quote.price, units24h: quote.units24h };
     }
     const unavailableCategories = [...new Set(recipes.map((recipe) => recipe.category))].filter(
         (category: RecipeCategory) =>

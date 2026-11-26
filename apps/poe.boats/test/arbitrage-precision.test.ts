@@ -12,7 +12,10 @@ it("does not treat floating-point rounding as arbitrage profit", () => {
             league: "Standard",
             fetchedAt: "2026-10-02T00:00:00.000Z",
             unavailableCategories: [],
-            quotes: { [recipe.input.id]: { value: 0.3 }, [recipe.output.id]: { value: 0.9 } },
+            quotes: {
+                [recipe.input.id]: { value: 0.3, units24h: 3 },
+                [recipe.output.id]: { value: 0.9, units24h: 1 },
+            },
         },
         DEFAULT_ARBITRAGE_OPTIONS,
     );

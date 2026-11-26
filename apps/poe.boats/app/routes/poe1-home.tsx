@@ -1,3 +1,11 @@
+import {
+    Anvil,
+    ArrowRight,
+    ArrowRightLeft,
+    ChartNoAxesCombined,
+    Combine,
+    Grid2X2,
+} from "lucide-react";
 import { Link } from "react-router";
 import type { SiteHandle } from "~/routes/layouts/site";
 import type { Route } from "./+types/poe1-home";
@@ -8,41 +16,38 @@ export function meta(): Route.MetaDescriptors {
     return [{ title: "Path of Exile 1 · POE.BOATS" }];
 }
 
+const tools = [
+    { to: "/1/crafting", label: "Crafting Calculator", icon: Anvil },
+    { to: "/1/idol-planner", label: "Idol Planner", icon: Grid2X2 },
+    { to: "/1/arbitrage", label: "Vendor Recipe Arbitrage", icon: ArrowRightLeft },
+    { to: "/1/recombinator", label: "Recombinator Simulator", icon: Combine },
+    { to: "/1/market/currency", label: "Season market", icon: ChartNoAxesCombined },
+];
+
 export default function Poe1Home() {
     return (
-        <main className="container mx-auto flex flex-1 flex-col items-center justify-center gap-6 p-4 text-center">
+        <main className="container mx-auto flex max-w-5xl flex-1 flex-col justify-center gap-6 px-4 py-12">
             <h1 className="font-heading text-4xl font-bold tracking-tight">Path of Exile 1</h1>
-            <nav className="flex flex-wrap justify-center gap-4">
-                <Link
-                    to="/1/crafting"
-                    className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                    Crafting Calculator
-                </Link>
-                <Link
-                    to="/1/idol-planner"
-                    className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                    Idol Planner
-                </Link>
-                <Link
-                    to="/1/arbitrage"
-                    className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                    Vendor Recipe Arbitrage
-                </Link>
-                <Link
-                    to="/1/recombinator"
-                    className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                    Recombinator Simulator
-                </Link>
-                <Link
-                    to="/1/market/currency"
-                    className="rounded-lg border border-border px-6 py-3 font-medium transition-colors hover:bg-muted"
-                >
-                    Season market
-                </Link>
+            <nav
+                aria-label="Path of Exile 1 tools"
+                className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+            >
+                {tools.map((tool) => (
+                    <Link
+                        key={tool.to}
+                        to={tool.to}
+                        className="group flex items-center gap-4 rounded-xl border border-border bg-card p-5 shadow-sm transition-colors hover:border-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-ring"
+                    >
+                        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                            <tool.icon className="size-5" aria-hidden="true" />
+                        </span>
+                        <span className="font-semibold text-primary">{tool.label}</span>
+                        <ArrowRight
+                            className="ml-auto size-4 shrink-0 text-primary"
+                            aria-hidden="true"
+                        />
+                    </Link>
+                ))}
             </nav>
         </main>
     );

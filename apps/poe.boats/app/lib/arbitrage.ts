@@ -11,6 +11,9 @@ export type ArbitrageOpportunity = {
     recipe: VendorRecipe;
     inputUnitValue: number;
     outputUnitValue: number;
+    inputUnits24h: number | null;
+    outputUnits24h: number | null;
+    batches24h: number | null;
     cost: number;
     revenue: number;
     profit: number;
@@ -26,6 +29,8 @@ export function findArbitrage(
     const opportunities: ArbitrageOpportunity[] = [];
     const missingPrices: VendorRecipe[] = [];
     let pricedCount = 0;
+    let lowVolumeCount = 0;
+    let bestRoi: number | null = null;
 
     for (const recipe of recipes) {
         if (recipe.game !== snapshot.game) continue;
@@ -47,12 +52,32 @@ export function findArbitrage(
             continue;
         }
         pricedCount++;
+        const inputUnits24h = input.data.units24h ?? null;
+        const outputUnits24h = output.data.units24h ?? null;
+        const batches24h =
+            inputUnits24h === null || outputUnits24h === null
+                ? null
+                : Math.floor(
+                      Math.min(
+                          inputUnits24h / recipe.input.quantity,
+                          outputUnits24h / recipe.output.quantity,
+                      ),
+                  );
+        if (batches24h === null || batches24h < 1) {
+            lowVolumeCount++;
+            if (!settings.showUnprofitable) continue;
+        } else {
+            bestRoi = bestRoi === null ? roi : Math.max(bestRoi, roi);
+        }
         if (!settings.showUnprofitable && (profit <= 0 || profit < settings.minimumProfit))
             continue;
         opportunities.push({
             recipe,
             inputUnitValue: input.data.value,
             outputUnitValue: output.data.value,
+            inputUnits24h,
+            outputUnits24h,
+            batches24h,
             cost,
             revenue,
             profit,
@@ -63,7 +88,7 @@ export function findArbitrage(
     opportunities.sort(
         (a, b) => b[settings.sort] - a[settings.sort] || a.recipe.id.localeCompare(b.recipe.id),
     );
-    return { opportunities, missingPrices, pricedCount };
+    return { opportunities, missingPrices, pricedCount, lowVolumeCount, bestRoi };
 }
 
 export function calculateRecipeScenario(input: {

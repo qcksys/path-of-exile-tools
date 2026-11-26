@@ -17,7 +17,11 @@ describe("PoE 1 currency exchanges", () => {
                 league: "Standard",
                 fetchedAt: "2026-10-02T00:00:00Z",
                 unavailableCategories: [],
-                quotes: { transmute: { value: 1 }, wisdom: { value: 0.5 }, portal: { value: 3 } },
+                quotes: {
+                    transmute: { value: 1, units24h: 50 },
+                    wisdom: { value: 0.5, units24h: 100 },
+                    portal: { value: 3, units24h: 10 },
+                },
             },
             DEFAULT_ARBITRAGE_OPTIONS,
         );

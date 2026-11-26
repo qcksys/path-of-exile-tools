@@ -19,7 +19,9 @@ function mockPrices(priced: (itemId: string) => boolean = () => true) {
         latestHour,
         unit: "chaos",
         prices: new Map(
-            itemIds.filter(priced).map((itemId) => [itemId, { price: 2, hour: latestHour }]),
+            itemIds
+                .filter(priced)
+                .map((itemId) => [itemId, { price: 2, hour: latestHour, units24h: 40 }]),
         ),
     }));
 }
@@ -39,17 +41,21 @@ describe("arbitrage market", () => {
             fetchedAt: "2026-10-29T04:00:00.000Z",
             unavailableCategories: [],
         });
-        expect(poe1.snapshot?.quotes["clear-oil"]).toEqual({ value: 2 });
-        expect(poe1.snapshot?.quotes.wisdom).toEqual({ value: 2 });
+        expect(poe1.snapshot?.quotes["clear-oil"]).toEqual({ value: 2, units24h: 40 });
+        expect(poe1.snapshot?.quotes.wisdom).toEqual({ value: 2, units24h: 40 });
         const [, request] = vi.mocked(getMarketExchangePrices).mock.calls[0]!;
-        expect(request).toMatchObject({ realm: "pc", league: "Current League" });
+        expect(request).toMatchObject({
+            realm: "pc",
+            league: "Current League",
+            includeVolume: true,
+        });
         expect(request.itemIds).toContain(clearOil);
 
         const poe2 = await loadArbitrageMarket(db, "2", "Standard");
         expect(poe2.league).toBe("Standard");
         expect(getMarketExchangeLeagues).toHaveBeenLastCalledWith(db, "poe2");
         expect(vi.mocked(getMarketExchangePrices).mock.calls[1]![1].realm).toBe("poe2");
-        expect(poe2.snapshot?.quotes["diluted-liquid-ire"]).toEqual({ value: 2 });
+        expect(poe2.snapshot?.quotes["diluted-liquid-ire"]).toEqual({ value: 2, units24h: 40 });
     });
 
     it("does not query prices for an unsupported league", async () => {

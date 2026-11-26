@@ -78,6 +78,9 @@ export const calculatorOperations = [
                     recipe: VendorRecipeSchema,
                     inputUnitValue: z.number(),
                     outputUnitValue: z.number(),
+                    inputUnits24h: z.number().nullable(),
+                    outputUnits24h: z.number().nullable(),
+                    batches24h: z.number().nullable(),
                     cost: z.number(),
                     revenue: z.number(),
                     profit: z.number(),
@@ -86,6 +89,8 @@ export const calculatorOperations = [
             ),
             missingPrices: z.array(VendorRecipeSchema),
             pricedCount: z.number(),
+            lowVolumeCount: z.number(),
+            bestRoi: z.number().nullable(),
         }),
         execute: ({ snapshot, options }) =>
             findArbitrage(getVendorRecipes(snapshot.game), snapshot, options),

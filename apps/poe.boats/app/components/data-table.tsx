@@ -19,8 +19,8 @@ import {
     tableFeatures,
     useTable,
 } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import { type ComponentProps, type ReactNode, useState } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
+import { type ComponentProps, type ReactNode, useId } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
@@ -76,7 +76,7 @@ export function DataTable<TData extends RowData>({
     server,
     search = false,
     empty = "No rows match these filters.",
-    maxRows,
+    limit,
     keepRow,
     className,
 }: {
@@ -89,12 +89,12 @@ export function DataTable<TData extends RowData>({
     search?: boolean;
     empty?: ReactNode;
     /** Shows only this many rows, after sorting and filtering, until "Show all" is pressed. */
-    maxRows?: number;
+    limit?: { maxRows: number; expanded: boolean; setExpanded: (expanded: boolean) => void };
     /** A row `maxRows` never hides. */
     keepRow?: (row: TData) => boolean;
     className?: string;
 }) {
-    const [showAll, setShowAll] = useState(false);
+    const tableId = useId();
     const table = useTable({
         features: dataTableFeatures,
         data,
@@ -115,24 +115,47 @@ export function DataTable<TData extends RowData>({
             : {}),
     });
     const allRows = table.getRowModel().rows;
-    const canLimit = maxRows !== undefined && allRows.length > maxRows;
+    const canLimit = limit !== undefined && allRows.length > limit.maxRows;
     const rows =
-        canLimit && !showAll
-            ? allRows.filter((row, index) => index < maxRows || keepRow?.(row.original))
+        canLimit && !limit.expanded
+            ? allRows.filter((row, index) => index < limit.maxRows || keepRow?.(row.original))
             : allRows;
     return (
         <div className={cn("space-y-3", className)}>
-            {search ? (
-                <Input
-                    type="search"
-                    aria-label={`Search ${label}`}
-                    placeholder="Search rows…"
-                    value={String(table.state.globalFilter ?? "")}
-                    onChange={(event) => table.setGlobalFilter(event.target.value)}
-                    className="max-w-xs bg-background"
-                />
-            ) : null}
-            <Table aria-label={label} className="text-sm">
+            {(search || canLimit) && (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    {search ? (
+                        <Input
+                            type="search"
+                            aria-label={`Search ${label}`}
+                            placeholder="Search rows…"
+                            value={String(table.state.globalFilter ?? "")}
+                            onChange={(event) => table.setGlobalFilter(event.target.value)}
+                            className="max-w-xs bg-background"
+                        />
+                    ) : null}
+                    {canLimit ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            aria-controls={tableId}
+                            aria-expanded={limit.expanded}
+                            onClick={() => limit.setExpanded(!limit.expanded)}
+                        >
+                            {limit.expanded ? (
+                                <ChevronUp aria-hidden="true" />
+                            ) : (
+                                <ChevronDown aria-hidden="true" />
+                            )}
+                            {limit.expanded
+                                ? `Show top ${limit.maxRows}`
+                                : `Show all ${allRows.length}`}
+                        </Button>
+                    ) : null}
+                </div>
+            )}
+            <Table id={tableId} aria-label={label} className="text-sm">
                 <TableHeader className="bg-muted/40 text-xs text-muted-foreground">
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id} className="hover:bg-transparent">
@@ -208,16 +231,6 @@ export function DataTable<TData extends RowData>({
                     )}
                 </TableBody>
             </Table>
-            {canLimit ? (
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowAll(!showAll)}
-                >
-                    {showAll ? `Show top ${maxRows}` : `Show all ${allRows.length}`}
-                </Button>
-            ) : null}
         </div>
     );
 }

@@ -1,6 +1,51 @@
 import { expect, test } from "@playwright/test";
 import { selectValue } from "./control-helpers";
 
+test("offers the season market alongside the other PoE 1 tools", async ({ page }) => {
+    await page.goto("/1");
+    const tools = page.getByRole("navigation", { name: "Path of Exile 1 tools" });
+    await expect(tools.getByRole("link")).toHaveCount(5);
+    const market = tools.getByRole("link", { name: "Season market" });
+    await expect(market.locator("svg").first()).toBeVisible();
+    await market.click();
+    await expect(page).toHaveURL(/\/1\/market\/currency/);
+    const atlas = page.getByRole("heading", { name: "Atlas", exact: true }).locator("..");
+    await expect(atlas.getByRole("link", { name: "Maps" })).toBeVisible();
+    await expect(atlas.getByRole("link", { name: /Scarabs|Memories/ })).toHaveCount(0);
+});
+
+test("wraps long Cluster Jewel groups and collapses the variants after selection", async ({
+    page,
+}, testInfo) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(
+        "/1/market/items/Large%20Cluster%20Jewel?league=Allflame&category=cluster-jewel-bases&kind=base",
+    );
+    const nav = page.getByRole("navigation", { name: "Item variants" });
+    const rows = nav.locator("tbody tr");
+    const toggle = nav.getByRole("button", { name: /Show (all|top)/ });
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(await rows.count()).toBeGreaterThan(300);
+    const link = nav.getByRole("link", {
+        name: /^Mace or Sceptre Attacks.*Staff Attacks.* · 8 passives · ilvl 75–83$/,
+    });
+    const cells = link.locator("xpath=ancestor::tr").getByRole("cell");
+    await expect(cells.nth(1)).toHaveText("8");
+    await expect(cells.nth(2)).toHaveText("75–83");
+    expect(await link.evaluate((element) => element.getClientRects().length)).toBeGreaterThan(1);
+    await link
+        .locator("xpath=ancestor::tr")
+        .screenshot({ path: testInfo.outputPath("large-cluster-variant.png") });
+    await link.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(page).toHaveURL(
+        (url) => url.searchParams.get("value")?.startsWith("Mace or Sceptre Attacks") === true,
+    );
+    await expect(link).toHaveAttribute("aria-current", "page");
+    expect(await rows.count()).toBeLessThanOrEqual(11);
+});
+
 test("a failed market sort restores the URL, rows and selected order", async ({ page }) => {
     await page.goto("/1/market/armour?league=Allflame&order=name-asc");
     const table = page.getByRole("table", { name: "Unique armour markets" });
@@ -25,11 +70,13 @@ test("a failed market sort restores the URL, rows and selected order", async ({ 
     await expect(page).toHaveURL(url);
 });
 
-test("arbitrage keeps recipe returns visible and links to each calculator", async ({
+test("arbitrage keeps recipe returns visible and switches between calculators", async ({
     page,
 }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/1/arbitrage?league=Exchange+One");
+    const sections = page.getByRole("tablist", { name: "Arbitrage types" });
+    await sections.getByRole("tab", { name: /Currency exchanges/ }).click();
     const results = page.getByRole("region", { name: "Arbitrage results" });
     await expect(results.getByRole("heading")).toBeInViewport();
     await expect(results.locator("time")).toBeVisible();
@@ -65,15 +112,14 @@ test("arbitrage keeps recipe returns visible and links to each calculator", asyn
     await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: testInfo.outputPath("arbitrage-mobile.png") });
-    const sections = page.getByRole("navigation", { name: "Arbitrage sections" });
     for (const [name, title] of [
         ["Item recipes", "3-for-1 and 5-for-1 item recipes"],
         ["Cluster Jewel rerolls", "5-for-1 Cluster Jewel rerolls"],
     ] as const) {
-        await sections.getByRole("link", { name, exact: true }).click();
+        await sections.getByRole("tab", { name: new RegExp(name) }).click();
         await expect(page.getByText(title, { exact: true })).toBeInViewport({ ratio: 1 });
     }
-    await sections.getByRole("link", { name: "Opportunities" }).click();
+    await sections.getByRole("tab", { name: /Currency exchanges/ }).click();
     await expect(results.getByRole("heading")).toBeInViewport();
     await page.setViewportSize({ width: 1440, height: 900 });
     await expect(details).toBeHidden();

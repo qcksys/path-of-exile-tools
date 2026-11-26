@@ -44,7 +44,7 @@ import { importPlannerShare } from "~/operations/import-share";
 import type { OperationContext } from "~/operations/operation";
 import { editPlanner, newPlannerSet } from "~/operations/planner";
 import { operations } from "~/operations/registry.server";
-import { ClusterRecipeSnapshotSchema } from "~/schemas/arbitrage";
+import { ClusterRecipeSnapshotSchema, DEFAULT_ARBITRAGE_OPTIONS } from "~/schemas/arbitrage";
 import { craftingCatalogSchema, craftingMethodSchema } from "~/schemas/crafting";
 import { craftingGraphSchema } from "~/schemas/crafting-graph";
 import { craftingItemQueryTextResultSchema } from "~/schemas/crafting-item-query-text";
@@ -2739,6 +2739,48 @@ describe("transport parity", () => {
             ).json(),
         );
         expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual(expected);
+    });
+
+    it("returns volume-qualified arbitrage through HTTP and MCP", async () => {
+        const input = {
+            snapshot: {
+                game: "1",
+                league: "Standard",
+                fetchedAt: "2026-11-24T00:00:00.000Z",
+                unavailableCategories: [],
+                quotes: {
+                    "clear-oil": { value: 1, units24h: 12 },
+                    "sepia-oil": { value: 6, units24h: 3 },
+                    "amber-oil": { value: 80, units24h: 0 },
+                },
+            },
+            options: DEFAULT_ARBITRAGE_OPTIONS,
+        };
+        const http = await api.request(
+            "https://poe.boats/api/v1/arbitrage/calculate",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(input),
+            },
+            { runtime },
+        );
+        expect(http.status).toBe(200);
+        const result = await http.json();
+        expect(result).toMatchObject({
+            bestRoi: 100,
+            lowVolumeCount: 1,
+            opportunities: [{ inputUnits24h: 12, outputUnits24h: 3, batches24h: 3, roi: 100 }],
+        });
+        const rpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", {
+                    name: "calculate_arbitrage",
+                    arguments: input,
+                })
+            ).json(),
+        );
+        expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual(result);
     });
 
     it("rejects invalid inputs without leaking internal failures", async () => {

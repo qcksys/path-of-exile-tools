@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RecipeItems } from "~/components/arbitrage/recipe-items";
 import { CurrencyLabel } from "~/components/currency-label";
 import { CatalogItemArt } from "~/components/item-art";
@@ -32,7 +32,11 @@ const recipeArtwork: Record<string, string> = {
     "1:manual:runegrafts": "Runegraft of the River",
 };
 
-export function ManualRecipeCalculator() {
+export function ManualRecipeCalculator({
+    onRoiChange,
+}: {
+    onRoiChange?: (roi: number | null) => void;
+} = {}) {
     const [recipeId, setRecipeId] = useState(MANUAL_VENDOR_RECIPES[0].id);
     const [inputCost, setInputCost] = useState("");
     const [outputValue, setOutputValue] = useState("");
@@ -44,6 +48,8 @@ export function ManualRecipeCalculator() {
         buffer: buffer.trim() ? Number(buffer) : Number.NaN,
     });
     const result = parsed.success ? calculateRecipeScenario(parsed.data) : null;
+    const roi = result?.roi ?? null;
+    useEffect(() => onRoiChange?.(roi), [onRoiChange, roi]);
     const chaos = <CurrencyLabel currency="chaos" game="poe1" />;
     const money = (value: number) => (
         <>

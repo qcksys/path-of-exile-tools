@@ -11,6 +11,46 @@ export type ExchangeHour = [number, Side, Side, Side, Side, Side, Side];
 type Scope = { realm: string; league: string };
 const snapshotIdentity = exchangeSnapshotSchema.pick({ realm: true, league: true, marketId: true });
 
+export async function exchangeTradedUnits(
+    db: TDatabase,
+    scope: Scope,
+    [fromHour, toHour]: [number, number],
+    marketIds: string[],
+) {
+    const game = stashGame(scope.realm);
+    const market = tStashCurrencyMarket[game];
+    const hour = tStashCurrencyHour[game];
+    const rows = await traceQuery(
+        "market.exchange_traded_units",
+        db
+            .select({
+                marketId: market.marketId,
+                first: sql<number>`sum(${hour.volumeTradedFirst})`.mapWith(Number),
+                second: sql<number>`sum(${hour.volumeTradedSecond})`.mapWith(Number),
+            })
+            .from(market)
+            .innerJoin(hour, eq(hour.marketId, market.id))
+            .where(
+                and(
+                    eq(market.realm, scope.realm),
+                    eq(market.league, scope.league),
+                    inArray(market.marketId, marketIds),
+                    gte(hour.hour, fromHour),
+                    lte(hour.hour, toHour),
+                ),
+            )
+            .groupBy(market.marketId),
+    );
+    const units = new Map<string, number>();
+    for (const row of rows) {
+        const [first, second] = row.marketId.split("|");
+        if (!first || !second) continue;
+        units.set(first, (units.get(first) ?? 0) + row.first);
+        units.set(second, (units.get(second) ?? 0) + row.second);
+    }
+    return units;
+}
+
 export function exchangeSnapshotGroups(
     db: TDatabase,
     scope: Scope,

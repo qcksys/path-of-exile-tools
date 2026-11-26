@@ -1,4 +1,5 @@
 import { fileURLToPath } from "node:url";
+import { marketClusterBases, marketClusterValue } from "@poe-tools/market";
 import { MySqlContainer } from "@testcontainers/mysql";
 import { drizzle } from "drizzle-orm/mysql2";
 import { migrate } from "drizzle-orm/mysql2/migrator";
@@ -20,6 +21,7 @@ const insertMarket = (rows: TStashUniqueHourlyI[]) =>
     writeStashUniqueHourly(db as unknown as TDatabase, "poe1", rows);
 // The market shows merchant tab listings only.
 const row = { ...marketFixture().rows[0]!, tab: "merchant" as const };
+const large = marketClusterBases().find(({ baseType }) => baseType === "Large Cluster Jewel")!;
 await insertMarket([
     row,
     { ...row, identified: false },
@@ -33,6 +35,19 @@ await insertMarket([
     { ...row, itemKey: "Headhunter", name: "Headhunter", baseType: "Leather Belt" },
     { ...row, itemKey: "Divine Orb", name: "", baseType: "Divine Orb", frameType: 5 },
     { ...row, itemKey: "Jagged Fossil", name: "", baseType: "Jagged Fossil", frameType: 5 },
+    ...large.skills.flatMap(({ label }) =>
+        large.bands.flatMap((band) =>
+            Array.from({ length: large.maxPassives - large.minPassives + 1 }, (_, index) => ({
+                ...row,
+                itemKey: large.baseType,
+                name: null,
+                baseType: large.baseType,
+                frameType: 2,
+                signatureKind: "base",
+                signatureValue: marketClusterValue(label, large.minPassives + index, band),
+            })),
+        ),
+    ),
     ...["ilvl 86+ · 6 links", "ilvl 84–85 · 1–5 links"].map((signatureValue) => ({
         ...row,
         itemKey: "Twilight Regalia",
