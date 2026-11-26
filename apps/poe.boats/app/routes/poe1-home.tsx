@@ -1,13 +1,6 @@
-import {
-    Anvil,
-    ArrowRight,
-    ArrowRightLeft,
-    ChartNoAxesCombined,
-    Combine,
-    Grid2X2,
-    Swords,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router";
+import { GAME_TOOLS } from "~/data/game-tools";
 import type { SiteHandle } from "~/routes/layouts/site";
 import type { Route } from "./+types/poe1-home";
 
@@ -17,15 +10,6 @@ export function meta(): Route.MetaDescriptors {
     return [{ title: "Path of Exile 1 · POE.BOATS" }];
 }
 
-const tools = [
-    { to: "/1/crafting", label: "Crafting Calculator", icon: Anvil },
-    { to: "/1/idol-planner", label: "Idol Planner", icon: Grid2X2 },
-    { to: "/1/arbitrage", label: "Vendor Recipe Arbitrage", icon: ArrowRightLeft },
-    { to: "/1/boss-rota", label: "Boss Rota Profits", icon: Swords },
-    { to: "/1/recombinator", label: "Recombinator Simulator", icon: Combine },
-    { to: "/1/market/currency", label: "Season market", icon: ChartNoAxesCombined },
-];
-
 export default function Poe1Home() {
     return (
         <main className="container mx-auto flex max-w-5xl flex-1 flex-col justify-center gap-6 px-4 py-12">
@@ -34,7 +18,7 @@ export default function Poe1Home() {
                 aria-label="Path of Exile 1 tools"
                 className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
             >
-                {tools.map((tool) => (
+                {GAME_TOOLS["1"].map((tool) => (
                     <Link
                         key={tool.to}
                         to={tool.to}

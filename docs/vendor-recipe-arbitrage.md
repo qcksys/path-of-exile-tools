@@ -49,7 +49,7 @@ For a price buffer `b` percent:
 - Profit = sale value − input cost.
 - ROI = profit / input cost × 100.
 
-By default, each side must have enough traded units for one complete recipe and profit must be positive and meet the minimum. The batch count is the smaller of input units divided by input quantity and output units divided by output quantity, rounded down. Showing all priced recipes also shows losses and recipes with insufficient or unknown volume. The best ROI in each automatic tab uses only recipes with at least one batch. Calculations use unrounded values and suppress floating-point noise at break-even.
+By default, each side must have enough traded units for one complete recipe and profit must be positive and meet the minimum. The batch count is the smaller of input units divided by input quantity and output units divided by output quantity, rounded down. The trade volume filters let you set separate minimums for input and output units traded in the last 24 completed hours. A blank or zero minimum allows any volume on that side. Showing all priced recipes includes losses and recipes with less than one batch, subject to any volume minimums you set. The best ROI in each automatic tab uses recipes that meet the volume minimums and have at least one batch. Calculations use unrounded values and suppress floating-point noise at break-even.
 
 Historical trades do not establish current stock at the quoted price. The captured exchange data omits gold fees. Check the linked trade listings before buying.
 

@@ -2,6 +2,7 @@ import { Mail } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 import { siGithub } from "simple-icons";
+import { GameToolNav } from "~/components/game-tool-nav";
 import { LocaleSwitcher } from "~/components/idol-planner/locale-switcher";
 import { ModeToggle } from "~/components/idol-planner/mode-toggle";
 import { Button } from "~/components/ui/button";
@@ -18,7 +19,7 @@ export function AppHeader({ section, sectionBadge, tools }: AppHeaderProps = {})
     const t = useTranslations();
 
     return (
-        <header className="sticky top-0 z-50 border-border border-b bg-background/90 backdrop-blur">
+        <header className="sticky top-0 z-50 shrink-0 border-border border-b bg-background/90 backdrop-blur has-[nav]:-top-14">
             <div className="container mx-auto flex h-14 items-center justify-between gap-2 px-4">
                 <div className="flex min-w-0 items-center gap-2">
                     <Link to="/" className="flex shrink-0 items-center gap-2">
@@ -105,6 +106,7 @@ export function AppHeader({ section, sectionBadge, tools }: AppHeaderProps = {})
                     </Tooltip>
                 </div>
             </div>
+            <GameToolNav />
         </header>
     );
 }

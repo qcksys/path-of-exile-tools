@@ -1,4 +1,5 @@
 import { Form, useNavigation } from "react-router";
+import { VolumeQueryFields } from "~/components/arbitrage/volume-query-fields";
 import { CurrencyLabel } from "~/components/currency-label";
 import { CatalogItemArt } from "~/components/item-art";
 import { LocalTime } from "~/components/local-time";
@@ -84,6 +85,7 @@ export function ClusterRecipeCalculator({
             <CardContent className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-end gap-4">
                     <Form method="get" className="flex flex-wrap items-end gap-3">
+                        <VolumeQueryFields />
                         {league ? (
                             <Input
                                 type="hidden"

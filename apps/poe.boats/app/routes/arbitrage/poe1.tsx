@@ -6,6 +6,8 @@ import { loadArbitrageMarket } from "~/services/arbitrage.server";
 import { loadClusterRecipeMarket } from "~/services/cluster-recipe.server";
 import type { Route } from "./+types/poe1";
 
+export { shouldRevalidateArbitrage as shouldRevalidate } from "~/lib/arbitrage-volume-filters";
+
 export const handle = { section: "PoE 1" } satisfies SiteHandle;
 
 export function meta() {

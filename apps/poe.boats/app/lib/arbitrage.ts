@@ -63,6 +63,13 @@ export function findArbitrage(
                           outputUnits24h / recipe.output.quantity,
                       ),
                   );
+        if (
+            (inputUnits24h ?? 0) < settings.minimumInputUnits24h ||
+            (outputUnits24h ?? 0) < settings.minimumOutputUnits24h
+        ) {
+            lowVolumeCount++;
+            continue;
+        }
         if (batches24h === null || batches24h < 1) {
             lowVolumeCount++;
             if (!settings.showUnprofitable) continue;

@@ -4,6 +4,8 @@ import type { SiteHandle } from "~/routes/layouts/site";
 import { loadArbitrageMarket } from "~/services/arbitrage.server";
 import type { Route } from "./+types/poe2";
 
+export { shouldRevalidateArbitrage as shouldRevalidate } from "~/lib/arbitrage-volume-filters";
+
 export const handle = { section: "PoE 2" } satisfies SiteHandle;
 
 export function meta() {

@@ -2,10 +2,11 @@
 // biome-ignore-all lint/style/useNamingConvention: React component exports and route configuration use PascalCase.
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { createElement } from "react";
-import { createRoutesStub } from "react-router";
+import { createRoutesStub, type ShouldRevalidateFunctionArgs } from "react-router";
 import { afterEach, describe, expect, it } from "vite-plus/test";
 import { ArbitragePage } from "~/components/arbitrage/arbitrage-page";
 import { getVendorRecipes } from "~/data/vendor-recipes";
+import { shouldRevalidateArbitrage } from "~/lib/arbitrage-volume-filters";
 import type { ArbitrageMarketData } from "~/services/arbitrage.server";
 import type { ClusterRecipeMarketData } from "~/services/cluster-recipe.server";
 import { byText } from "./control-helpers";
@@ -31,13 +32,29 @@ const data: ArbitrageMarketData = {
     },
 };
 
-function showPage(market = data) {
+function showPage(market = data, search = "") {
     const Component = () => createElement(ArbitragePage, { data: market });
     const Routes = createRoutesStub([{ path: "/1/arbitrage", Component }]);
-    return render(createElement(Routes, { initialEntries: ["/1/arbitrage"] }));
+    return render(createElement(Routes, { initialEntries: [`/1/arbitrage${search}`] }));
 }
 
 describe("arbitrage page", () => {
+    it("reuses loaded prices for volume edits and reloads on a league change or refresh", () => {
+        const currentUrl = new URL("https://example.invalid/2/arbitrage?league=Standard");
+        const check = (search: string) =>
+            shouldRevalidateArbitrage({
+                currentUrl,
+                nextUrl: new URL(search, currentUrl),
+                currentParams: {},
+                nextParams: {},
+                defaultShouldRevalidate: true,
+            } satisfies ShouldRevalidateFunctionArgs);
+        expect(check("?league=Standard&minimumInputUnits24h=30&minimumOutputUnits24h=4")).toBe(
+            false,
+        );
+        expect(check("?league=Hardcore&minimumInputUnits24h=30")).toBe(true);
+        expect(check(currentUrl.search)).toBe(true);
+    });
     it("displays recipe quantities, estimates and trade links", () => {
         showPage();
         expect(screen.getByText("1 opportunity")).toBeTruthy();
@@ -112,6 +129,23 @@ describe("arbitrage page", () => {
         fireEvent.change(screen.getByLabelText("Price buffer (%)"), { target: { value: "100" } });
         expect(screen.getByText("Check the filters")).toBeTruthy();
         expect(screen.queryByRole("table")).toBeNull();
+    });
+
+    it("loads both volume minimums from the URL and updates results as they change", async () => {
+        showPage(data, "?minimumInputUnits24h=33&minimumOutputUnits24h=7");
+        const inputs = screen.getByRole("spinbutton", { name: "Minimum inputs traded" });
+        const outputs = screen.getByRole("spinbutton", { name: "Minimum outputs traded" });
+        expect(inputs).toHaveProperty("value", "33");
+        expect(outputs).toHaveProperty("value", "7");
+        expect(screen.getByText("1 opportunity")).toBeTruthy();
+        expect(screen.getByRole("button", { name: "Filters (2)" })).toBeTruthy();
+        fireEvent.change(outputs, { target: { value: "8" } });
+        expect(await screen.findByText("No recipes meet these filters")).toBeTruthy();
+        fireEvent.change(outputs, { target: { value: "" } });
+        expect(await screen.findByText("1 opportunity")).toBeTruthy();
+        fireEvent.change(inputs, { target: { value: "0.5" } });
+        expect(await screen.findByText("Check the filters")).toBeTruthy();
+        expect(inputs.getAttribute("aria-invalid")).toBe("true");
     });
 
     it("makes missing prices visible without implying zero input cost", () => {
