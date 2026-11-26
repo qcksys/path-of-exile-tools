@@ -51,6 +51,7 @@ async function runtimeContext(timing = new ServerTiming()) {
     context.set(dbContext, createDbConnection("mysql://test:test@unused.invalid"));
     context.set(serverTimingContext, timing);
     context.set(envContext, {
+        CF_VERSION_METADATA: { id: "test", tag: "", timestamp: "" },
         ASSETS: {
             fetch: vi.fn(async () => new Response(catalogBytes)),
             connect: () => {

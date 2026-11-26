@@ -64,7 +64,9 @@ completed hour share the market list and recent pricing inputs. On a price miss,
 `market.price_input_cached_markets` and `market.price_input_read_markets` show how many market
 pairs came from the cache and the database. Broad requests populate groups of pairs that other
 items can use. A change in exchange coverage selects fresh entries. Entries also expire after five
-minutes to pick up corrections with the same row count. Each request reads its own chart history.
+minutes to pick up corrections with the same row count. Workers using Hyperdrive keep entries
+within the deployed Worker version so connections through different proxies share prices. Each
+request reads its own chart history.
 
 On stash item pages, `market.variant_latest_rows` measures a single query that totals sales and
 finds the latest hour for each variant, then reads its price and listing count by hour and market

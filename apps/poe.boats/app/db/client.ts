@@ -23,7 +23,7 @@ export const createDbConnection = (url: string) => {
 let sharedDatabase: { url: string; db: TDatabase } | undefined;
 
 type WorkerDatabaseEnv = Pick<CloudflareBindings, "DATABASE_URL" | "DATABASE_DRIVER"> &
-    Partial<Pick<CloudflareBindings, "URL" | "HYPERDRIVE">>;
+    Partial<Pick<CloudflareBindings, "URL" | "HYPERDRIVE" | "CF_VERSION_METADATA">>;
 
 export const workerDatabaseCacheScopes = new WeakMap<TDatabase, { host: string; source: string }>();
 
@@ -50,18 +50,19 @@ export async function openWorkerDatabase(env: WorkerDatabaseEnv) {
               database: hyperdrive.database,
           })
         : await openDatabase(env.DATABASE_URL, env.DATABASE_DRIVER);
-    if (env.URL) {
-        const endpoint = hyperdrive ?? new URL(env.DATABASE_URL);
+    const version = env.CF_VERSION_METADATA?.id;
+    if (env.URL && version) {
+        // Hyperdrive issues request-specific connection parameters. Its binding belongs to this Worker version.
+        const endpoint = hyperdrive ? undefined : new URL(env.DATABASE_URL);
         workerDatabaseCacheScopes.set(opened.db, {
             host: env.URL,
-            source: JSON.stringify([
-                hyperdrive ? "hyperdrive" : env.DATABASE_DRIVER,
-                endpoint.host,
-                endpoint.port,
-                "database" in endpoint ? endpoint.database : endpoint.pathname,
-            ]),
+            source: JSON.stringify(
+                endpoint
+                    ? [version, env.DATABASE_DRIVER, endpoint.host, endpoint.pathname]
+                    : [version, "HYPERDRIVE"],
+            ),
         });
-    }
+    } else workerDatabaseCacheScopes.delete(opened.db);
     return opened;
 }
 
