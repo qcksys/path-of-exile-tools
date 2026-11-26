@@ -7,13 +7,24 @@ import type { TDatabase } from "~/db/client";
 import { findCraftingRecipeListings, recipeMarketKey } from "~/db/queries/crafting-recipes.queries";
 import { getMarketExchangeLeagues } from "~/db/queries/market.queries";
 import type { ClusterRecipeSnapshot } from "~/schemas/arbitrage";
+import { traceSpan } from "~/services/tracing.server";
 
 /**
  * Every 5-for-1 Cluster Jewel outcome at `itemLevel` priced from the league's captured
  * merchant-tab asks in chaos, as Bestiary and temple crafting inputs are. Leagues are the PoE 1
  * PC exchange's, as on the arbitrage page; without one, the league that traded most recently.
  */
-export async function loadClusterRecipeMarket(
+export function loadClusterRecipeMarket(
+    db: TDatabase,
+    requestedLeague: string | null,
+    itemLevel: number,
+) {
+    return traceSpan("arbitrage.cluster_recipes", () =>
+        readClusterRecipeMarket(db, requestedLeague, itemLevel),
+    );
+}
+
+async function readClusterRecipeMarket(
     db: TDatabase,
     requestedLeague: string | null,
     itemLevel: number,

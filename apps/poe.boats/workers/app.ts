@@ -4,6 +4,7 @@ import { openWorkerDatabase } from "~/db/client.ts";
 import { detectLocale } from "~/lib/locale.server.ts";
 import { handleScheduled } from "~/scheduled/index.ts";
 import { ServerTiming } from "~/services/server-timing.server.ts";
+import { isPageRead, traceSpan } from "~/services/tracing.server";
 
 const requestHandler = createRequestHandler(
     () => import("virtual:react-router/server-build"),
@@ -21,7 +22,16 @@ export default {
 
         const context = new RouterContextProvider();
 
-        const database = await openWorkerDatabase(env);
+        const database = isPageRead(request)
+            ? await traceSpan("page.db.open", (span) => {
+                  span.setAttributes({
+                      "db.driver": env.HYPERDRIVE
+                          ? "hyperdrive"
+                          : (env.DATABASE_DRIVER ?? "planetscale"),
+                  });
+                  return openWorkerDatabase(env);
+              })
+            : await openWorkerDatabase(env);
         const db = database.db;
 
         context.set(envContext, env);

@@ -50,6 +50,21 @@ source models retain their original eligibility, and unknown or incompatible sta
 
 `app/operations/registry.server.ts` assembles the feature operation catalogs. HTTP routes, OpenAPI, MCP tool registration, and `/integrations` all read that catalog. A registration points at the function the normal UI uses; it is not an alternative implementation. Pure calculations can run locally in the browser, including the recombinator's Web Worker, without an HTTP round trip.
 
+## Page request traces
+
+In Cloudflare Workers Observability, open a slow GET in **Traces**. The `page.db.open` span covers
+database setup. Each `page.loader` identifies its React Router module in `route.id`. Expand the
+market or arbitrage span inside that loader to compare SQL reads, row counts, and result processing.
+On exchange detail pages, this includes snapshot parsing, price calculation, pair selection, and
+history construction. Parallel reads overlap in the waterfall.
+
+For HTML requests, `page.render_shell` ends when React has a stream ready to return. A crawler that
+waits for the complete render also has a `page.wait_all_ready` span. To compare loaders across
+requests, filter on `$metadata.spanName = "page.loader"`, group by `route.id`, and calculate the
+median or p95 of `$metadata.duration`. CPU-only spans can show 0 ms, so use the recorded input
+counts and the enclosing request's CPU time when investigating expensive calculations.
+[Cloudflare trace timing limitations](https://developers.cloudflare.com/workers/observability/traces/known-limitations/)
+
 ## Coverage
 
 Season market browsing uses a parent layout and outlet with separate list and item-history

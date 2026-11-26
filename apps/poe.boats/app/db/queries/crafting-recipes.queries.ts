@@ -2,6 +2,7 @@ import { exchangeCurrencyId, marketObservationRange } from "@poe-tools/market";
 import { and, desc, eq, gte, inArray, lte, or } from "drizzle-orm";
 import type { TDatabase } from "~/db/client";
 import { tStashPoe1UniqueHourly as hourly } from "~/db/schema/stash.unique-hourly";
+import { traceQuery, traceSpan } from "~/services/tracing.server";
 import { findCraftingExchangePrices } from "./crafting-exchange.queries";
 
 type Currency = "chaos" | "divine" | "exalted";
@@ -48,7 +49,7 @@ export async function findCraftingRecipeListings(
     );
     if (!markets.length) return result;
     const range = marketObservationRange(at);
-    const rows = await db
+    const hourlyListings = db
         .select({
             itemKey: hourly.itemKey,
             signatureKind: hourly.signatureKind,
@@ -101,52 +102,64 @@ export async function findCraftingRecipeListings(
             ),
         )
         .orderBy(desc(hourly.hour));
+    const rows = await traceQuery("crafting.recipe_hourly_listings", hourlyListings, {
+        "recipe.markets": markets.length,
+    });
     const rates = new Map<number, Awaited<ReturnType<typeof findCraftingExchangePrices>>>();
     async function rate(from: Currency, hour: number) {
         let exchange = rates.get(hour);
         if (!exchange) {
-            exchange = await findCraftingExchangePrices(
-                db,
-                {
-                    game: "poe1",
-                    realm: "pc",
-                    league,
-                    currency,
-                    itemIds: CURRENCIES.map((entry) => exchangeCurrencyId(entry)!),
-                    conversion: "reference-currency-v1",
-                    at: hour,
-                },
-                { exactHour: true },
+            exchange = await traceSpan("crafting.recipe_exchange_rates", () =>
+                findCraftingExchangePrices(
+                    db,
+                    {
+                        game: "poe1",
+                        realm: "pc",
+                        league,
+                        currency,
+                        itemIds: CURRENCIES.map((entry) => exchangeCurrencyId(entry)!),
+                        conversion: "reference-currency-v1",
+                        at: hour,
+                    },
+                    { exactHour: true },
+                ),
             );
             rates.set(hour, exchange);
         }
         return exchange.quotes[exchangeCurrencyId(from)!]?.amount;
     }
-    for (const row of rows) {
-        const key = recipeMarketKey({
-            itemKey: row.itemKey,
-            rooms: row.signatureKind === "temple" ? row.signatureValue : undefined,
-            base: row.signatureKind === "base" ? row.signatureValue : undefined,
-        });
-        if (result.has(key) || !(row.listingCount > 0)) continue;
-        const direct = row.prices?.[currency]?.median;
-        if (direct && direct > 0) {
-            result.set(key, { unitPrice: direct, listingCount: row.listingCount, hour: row.hour });
-            continue;
-        }
-        for (const from of CURRENCIES) {
-            const original = row.prices?.[from]?.median;
-            if (from === currency || !original || original <= 0) continue;
-            const amount = await rate(from, row.hour);
-            if (!amount) continue;
-            result.set(key, {
-                unitPrice: original * amount,
-                listingCount: row.listingCount,
-                hour: row.hour,
-                exchange: { currency: from, unitPrice: original, rate: amount },
+    return traceSpan("crafting.recipe_select_quotes", async (span) => {
+        for (const row of rows) {
+            const key = recipeMarketKey({
+                itemKey: row.itemKey,
+                rooms: row.signatureKind === "temple" ? row.signatureValue : undefined,
+                base: row.signatureKind === "base" ? row.signatureValue : undefined,
             });
-            break;
+            if (result.has(key) || !(row.listingCount > 0)) continue;
+            const direct = row.prices?.[currency]?.median;
+            if (direct && direct > 0) {
+                result.set(key, {
+                    unitPrice: direct,
+                    listingCount: row.listingCount,
+                    hour: row.hour,
+                });
+                continue;
+            }
+            for (const from of CURRENCIES) {
+                const original = row.prices?.[from]?.median;
+                if (from === currency || !original || original <= 0) continue;
+                const amount = await rate(from, row.hour);
+                if (!amount) continue;
+                result.set(key, {
+                    unitPrice: original * amount,
+                    listingCount: row.listingCount,
+                    hour: row.hour,
+                    exchange: { currency: from, unitPrice: original, rate: amount },
+                });
+                break;
+            }
         }
-    }
-    return result;
+        span.setAttributes({ "recipe.quotes": result.size, "recipe.rate_hours": rates.size });
+        return result;
+    });
 }

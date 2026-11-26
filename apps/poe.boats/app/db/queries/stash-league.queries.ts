@@ -3,6 +3,7 @@ import { and, eq, isNotNull, isNull, lt, notInArray, sql } from "drizzle-orm";
 import type { TDatabase } from "~/db/client.ts";
 import { stashGame } from "~/db/helpers/stash-game";
 import { tStashLeague } from "~/db/schema/stash.league";
+import { traceQuery } from "~/services/tracing.server";
 
 /**
  * Stores a realm's complete league list and ends the stored leagues it no longer contains.
@@ -60,9 +61,12 @@ export async function recordStashLeagues(db: TDatabase, list: LeagueList) {
 /** The realm's stored leagues that have ended, by name. */
 export async function endedStashLeagues(db: TDatabase, realm: string) {
     const table = tStashLeague[stashGame(realm)];
-    const rows = await db
-        .select({ league: table.league })
-        .from(table)
-        .where(and(eq(table.realm, realm), isNotNull(table.endedAt)));
+    const rows = await traceQuery(
+        "market.ended_leagues",
+        db
+            .select({ league: table.league })
+            .from(table)
+            .where(and(eq(table.realm, realm), isNotNull(table.endedAt))),
+    );
     return new Set(rows.map((row) => row.league));
 }

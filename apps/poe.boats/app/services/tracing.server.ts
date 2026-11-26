@@ -8,6 +8,12 @@ type Tracing = { enterSpan<T>(name: string, callback: (span: Span) => T): T };
 const { tracing } = workers as typeof workers & { tracing?: Tracing };
 const untracedSpan: Span = { setAttributes: () => untracedSpan };
 
+export function isPageRead(request: Pick<Request, "method" | "url">) {
+    if (request.method !== "GET" && request.method !== "HEAD") return false;
+    const { pathname } = new URL(request.url);
+    return !/^\/(?:api|mcp|1\/idol-planner\/api)(?:\/|$)/.test(pathname);
+}
+
 export function traceSpan<T>(name: string, callback: (span: Span) => T): T {
     return tracing ? tracing.enterSpan(name, callback) : callback(untracedSpan);
 }
