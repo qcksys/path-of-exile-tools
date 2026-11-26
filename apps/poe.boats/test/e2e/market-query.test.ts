@@ -1989,6 +1989,51 @@ it("prices exchange-traded items from the exchange and leaves out their stash li
     expect(searched.exchange.map((row) => row.name)).toEqual(["Scroll of Wisdom"]);
 });
 
+it("keeps latest-hour trades and display rates when projecting a searched currency category", async () => {
+    const league = "Late Directory";
+    const chaos = "Metadata/Items/Currency/CurrencyRerollRare";
+    const divine = "Metadata/Items/Currency/CurrencyModValues";
+    const alchemy = "Metadata/Items/Currency/CurrencyUpgradeToRare";
+    const pairs = [
+        [divine, 200],
+        [alchemy, 2],
+    ] as const;
+    await upsertStashCurrencyHourly(
+        db as unknown as TDatabase,
+        pairs.map(([item, price]) => ({
+            realm: "pc",
+            league,
+            hour,
+            marketId: `${item}|${chaos}`,
+            volumeTraded: { [item]: 1, [chaos]: price },
+        })),
+    );
+    const market = tStashCurrencyMarket.poe1;
+    await db
+        .update(market)
+        .set({ firstHour: hour + 3600 })
+        .where(and(eq(market.league, league), eq(market.marketId, `${alchemy}|${chaos}`)));
+    const result = await getMarketData(
+        db as unknown as TDatabase,
+        marketFiltersSchema.parse({
+            league,
+            category: "currency",
+            q: "ALCH",
+        }),
+        "list",
+    );
+    expect(result.exchange).toEqual([
+        expect.objectContaining({
+            itemId: alchemy,
+            name: "Orb of Alchemy",
+            current: true,
+            price: 2,
+        }),
+    ]);
+    expect(result.priceRates.divine).toBe(1 / 200);
+    expect(result.chaosRates.divine).toBe(200);
+});
+
 it("lists exchange-only PoE 2 leagues in exalted, from the latest completed hour first", async () => {
     const chaosId = "Metadata/Items/Currency/CurrencyRerollRare";
     const divineId = "Metadata/Items/Currency/CurrencyModValues";
@@ -2302,6 +2347,18 @@ it("limits Divine Orb's history to its anchor and most traded pairs", async () =
     expect(statements.filter(({ params }) => params.includes(`${portalId}|${chaosId}`))).toEqual(
         [],
     );
+    const rank = statements.find(({ sql }) => sql.includes("ranked_pairs"))!;
+    const [top] = await connection.query<RowDataPacket[]>(rank.sql, rank.params);
+    expect(top).toHaveLength(8);
+    // The first two are now tied in eighth place. Both candidates must reach the stable sort.
+    await upsertStashCurrencyHourly(db as unknown as TDatabase, [
+        {
+            ...snapshot(`${others[0]}|${divineId}`, { [others[0]!]: 10, [divineId]: 1 }),
+            hour: hour - 3600,
+        },
+    ]);
+    const [tied] = await connection.query<RowDataPacket[]>(rank.sql, rank.params);
+    expect(tied).toHaveLength(9);
 });
 
 it("prices an exchange item without its low volume pair, from the stored traded hours", async () => {

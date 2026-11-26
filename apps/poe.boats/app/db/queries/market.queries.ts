@@ -35,7 +35,6 @@ import {
 import type { TDatabase } from "~/db/client";
 import { stashGame } from "~/db/helpers/stash-game";
 import { tStashCurrencyDaily } from "~/db/schema/stash.currency-daily";
-import { tStashCurrencyHourly } from "~/db/schema/stash.currency-hourly";
 import { tStashCurrencyMarket } from "~/db/schema/stash.currency-market";
 import { tStashHourCoverage } from "~/db/schema/stash.hour-coverage";
 import { tStashMarketDaily } from "~/db/schema/stash.market-daily";
@@ -88,7 +87,13 @@ import {
 } from "~/schemas/market";
 import { type Span, traceQuery, traceSpan } from "~/services/tracing.server";
 import { cachedExchangeValue, exchangePricingCache } from "./exchange-pricing-cache.server";
-import { exchangePricingBook } from "./exchange-pricing-inputs.server";
+import {
+    type ExchangeDay,
+    exchangePricingBook,
+    expandPricingInputs,
+    type PriceBook,
+} from "./exchange-pricing-inputs.server";
+import { exchangeSnapshotGroups, exchangeSnapshots } from "./exchange-snapshots.queries";
 import { marketRateSnapshots } from "./market-rates.queries";
 import { endedStashLeagues } from "./stash-league.queries";
 import { utcDay } from "./stash-rollups.queries";
@@ -106,7 +111,6 @@ function marketTables(realm: string) {
     return {
         market: tStashUniqueHourly[game],
         daily: tStashMarketDaily[game],
-        currencyHourly: tStashCurrencyHourly[game],
         currencyDaily: tStashCurrencyDaily[game],
         currencyMarket: tStashCurrencyMarket[game],
         hourCoverage: tStashHourCoverage[game],
@@ -558,10 +562,28 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
             ? modPoolRows(db, filters, filters.item, scope, windowStart)
             : Promise.resolve(null);
     // Items listed on the exchange are priced from it; the rows query leaves out their stash listings.
-    const listedMarkets =
+    const currencyCategorySeason =
+        view !== "history" &&
+        filters.category === "currency" &&
+        !filters.q &&
+        exchangeListed(filters)
+            ? exchangeSeasons.find((entry) => entry.league === filters.league)
+            : undefined;
+    const categoryCache = currencyCategorySeason
+        ? await exchangePricingCache(
+              db,
+              filters.realm,
+              filters.league,
+              exchangeHour,
+              exchangeRevision(currencyCategorySeason),
+          )
+        : undefined;
+    const { value: listedMarkets } =
         season && view !== "history"
-            ? await marketExchangeMarkets(db, filters, exchangeHour, "market.exchange_listed")
-            : [];
+            ? await cachedExchangeValue(categoryCache, "markets", () =>
+                  marketExchangeMarkets(db, filters, exchangeHour, "market.exchange_listed"),
+              )
+            : { value: [] };
     const listed = [...new Set(listedMarkets.flatMap((row) => row.marketId.split("|")))];
     const exchangeNames = [
         ...new Set(listed.flatMap((id) => marketExchangeItem(filters.realm, id)?.name ?? [])),
@@ -761,22 +783,28 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
                           marketPriceTrendFromHours([], latestHour),
                   }));
               });
-    const [rows, history, variants, exchange, modRows] = await Promise.all([
+    const [rows, history, variants, exchangeResult, modRows] = await Promise.all([
         rowsPromise,
         historyPromise,
         variantsPromise,
         listed.length
-            ? marketExchange(
-                  db,
-                  filters,
-                  exchangeHour,
-                  listedMarkets,
-                  (item) =>
-                      exchangeListed(filters) && exchangeMatch(item, filters.category, filters.q),
+            ? cachedExchangeValue(categoryCache, "category/currency", () =>
+                  marketExchange(
+                      db,
+                      filters,
+                      exchangeHour,
+                      listedMarkets,
+                      (item) =>
+                          exchangeListed(filters) &&
+                          exchangeMatch(item, filters.category, filters.q),
+                  ),
               )
-            : [],
+            : { value: [], status: "bypass" },
         modRowsPromise,
     ]);
+    const exchange = exchangeResult.value;
+    if (currencyCategorySeason)
+        span.setAttributes({ "market.category_exchange_cache": exchangeResult.status });
     // Variants are priced at the season's latest rates, as list rows are.
     const priced = [...rows, ...variants];
     const rates = await marketChaosRates(
@@ -1126,13 +1154,16 @@ async function activeExchangeSeasons(
         marketExchangeSeasons(db, realm, latestHour),
         endedStashLeagues(db, realm),
     ]);
-    for (const season of seasons)
-        revisions?.set(season.league, `${season.firstHour}/${season.latestHour}/${season.rows}`);
+    for (const season of seasons) revisions?.set(season.league, exchangeRevision(season));
     return activeFirst(seasons, ended).map((season) => ({
         league: season.league,
         firstHour: Number(season.firstHour),
         latestHour: Number(season.latestHour),
     }));
+}
+
+function exchangeRevision(season: Awaited<ReturnType<typeof marketExchangeSeasons>>[number]) {
+    return `${season.firstHour}/${season.latestHour}/${season.rows}`;
 }
 
 /**
@@ -1161,46 +1192,6 @@ function marketExchangeSeasons(db: TDatabase, realm: string, latestHour: number)
             )
             .groupBy(hourCoverage.stream, hourCoverage.realm, hourCoverage.league)
             .orderBy(desc(max(hourCoverage.hour)), desc(sum(hourCoverage.rowCount))),
-    );
-}
-
-/** Exchange snapshots of the hours in [from, to], optionally of some markets only. */
-function exchangeSnapshots(
-    db: TDatabase,
-    scope: { realm: string; league: string },
-    [fromHour, toHour]: [number, number],
-    marketIds?: string[],
-    label = fromHour === toHour ? "market.exchange" : "market.exchange_history",
-) {
-    const { currencyHourly } = marketTables(scope.realm);
-    return traceQuery(
-        label,
-        db
-            .select({
-                realm: currencyHourly.realm,
-                league: currencyHourly.league,
-                marketId: currencyHourly.marketId,
-                hour: currencyHourly.hour,
-                volumeTraded: currencyHourly.volumeTraded,
-                lowestRatio: currencyHourly.lowestRatio,
-                highestRatio: currencyHourly.highestRatio,
-            })
-            .from(currencyHourly)
-            .where(
-                and(
-                    eq(currencyHourly.realm, scope.realm),
-                    eq(currencyHourly.league, scope.league),
-                    fromHour === toHour
-                        ? eq(currencyHourly.hour, fromHour)
-                        : and(gte(currencyHourly.hour, fromHour), lte(currencyHourly.hour, toHour)),
-                    marketIds ? inArray(currencyHourly.marketId, marketIds) : undefined,
-                ),
-            ),
-    ).then((rows) =>
-        traceSpan("market.exchange_parse_snapshots", (span) => {
-            span.setAttributes({ "market.query": label, "market.snapshots": rows.length });
-            return rows.map((row) => exchangeSnapshotSchema.parse(row));
-        }),
     );
 }
 
@@ -1242,9 +1233,7 @@ function exchangeWindowStart(latestHour: number) {
 }
 
 /**
- * Rows for every item on the listed markets, priced in the realm's exchange unit. Items `shown`
- * accepts carry their recent traded units and hourly prices; the others carry zeros and only the
- * latest hour's price.
+ * Exchange rows the list shows, plus its display currencies for price conversion.
  */
 async function marketExchange(
     db: TDatabase,
@@ -1253,10 +1242,10 @@ async function marketExchange(
     markets: ExchangeMarket[],
     shown: (item: { name: string; category: string }) => boolean,
 ) {
-    const listed = [...new Set(markets.flatMap((row) => row.marketId.split("|")))];
+    const listed = new Set(markets.flatMap((row) => row.marketId.split("|")));
     const describe = (itemId: string) => marketExchangeItem(scope.realm, itemId);
     const charted = new Set(
-        listed.filter((itemId) => {
+        [...listed].filter((itemId) => {
             const item = describe(itemId);
             return item !== undefined && shown(item);
         }),
@@ -1285,14 +1274,28 @@ async function marketExchange(
         const snapshots = [...earlier, ...latest];
         const past = days.filter((row) => row.day <= latestHour);
         const volumes = marketExchangeRecentVolume(snapshots, past, latestHour, charted);
+        const currencies = new Set(marketPriceCurrencyIds(scope.realm));
+        const output = [...listed].filter((id) => charted.has(id) || currencies.has(id));
+        // A trade in the latest hour is also listed when the directory hasn't caught up.
+        const unlisted = new Set<string>();
+        for (const snapshot of latest) {
+            const ids = snapshot.marketId.split("|");
+            if (ids.length === 2 && ids.every((id) => snapshot.volumeTraded?.[id]))
+                for (const id of ids) if (!listed.has(id)) unlisted.add(id);
+        }
+        for (const id of unlisted) {
+            const item = describe(id);
+            if (item && (currencies.has(id) || shown(item))) output.push(id);
+        }
         return marketExchangeRows(
             snapshots,
             past,
             latestHour,
             describe,
-            listed,
+            output,
             Math.min(...markets.map((row) => row.firstHour)),
             marketExchangeUnit(scope.realm),
+            "listed",
         ).map((row) => ({
             ...row,
             recentVolume: volumes.get(row.itemId) ?? marketExchangeNoRecentVolume(),
@@ -1395,19 +1398,50 @@ async function exchangePricingInputs(
     hour: number,
     marketIds: string[],
 ) {
-    const [snapshots, days] = marketIds.length
-        ? await Promise.all([
-              exchangeSnapshots(
-                  db,
-                  scope,
-                  [hour - (MARKET_EXCHANGE_RECENT_HOURS - 1) * 3600, hour],
-                  marketIds,
-                  "market.exchange_recent",
-              ),
-              exchangeDaily(db, scope, exchangeWindowStart(hour), marketIds),
-          ])
-        : [[], []];
-    return { snapshots, days: days.filter((row) => row.day <= hour) };
+    const book: PriceBook = Object.fromEntries(
+        marketIds.map((id) => [id, { hours: [], days: [] }]),
+    );
+    if (!marketIds.length) return book;
+    const { currencyDaily: daily } = marketTables(scope.realm);
+    const [hours, days] = await Promise.all([
+        exchangeSnapshotGroups(
+            db,
+            scope,
+            [hour - (MARKET_EXCHANGE_RECENT_HOURS - 1) * 3600, hour],
+            marketIds,
+            "market.exchange_recent",
+        ),
+        traceQuery(
+            "market.exchange_daily",
+            db
+                .select({
+                    marketId: daily.marketId,
+                    days: sql<
+                        ExchangeDay[]
+                    >`json_arrayagg(json_array(${daily.day}, ${daily.firstVolume}, ${daily.secondVolume}, ${daily.tradedHours}, ${daily.latestHour}))`.mapWith(
+                        (value: string | ExchangeDay[]) =>
+                            typeof value === "string"
+                                ? (JSON.parse(value) as ExchangeDay[])
+                                : value,
+                    ),
+                })
+                .from(daily)
+                .where(
+                    and(
+                        eq(daily.realm, scope.realm),
+                        eq(daily.league, scope.league),
+                        gte(daily.day, exchangeWindowStart(hour)),
+                        lte(daily.day, hour),
+                        gt(daily.firstVolume, 0),
+                        inArray(daily.marketId, marketIds),
+                    ),
+                )
+                .groupBy(daily.marketId),
+        ),
+    ]);
+    for (const row of hours) book[row.marketId]!.hours = row.hours;
+    for (const row of days) book[row.marketId]!.days = row.days;
+    return book;
 }
 
 async function exchangeHistoryVolumes(
@@ -1419,33 +1453,35 @@ async function exchangeHistoryVolumes(
     latestHour: number,
 ) {
     const { currencyDaily: daily } = marketTables(scope.realm);
+    const volume = sql<number>`cast(sum(if(binary substring_index(${daily.marketId}, '|', 1) = binary ${itemId}, ${daily.firstVolume}, ${daily.secondVolume})) as double)`;
+    const ranked = db
+        .select({
+            marketId: daily.marketId,
+            volume: volume.as("item_volume"),
+            rank: sql<number>`rank() over (order by ${volume} desc)`.as("volume_rank"),
+        })
+        .from(daily)
+        .where(
+            and(
+                eq(daily.realm, scope.realm),
+                eq(daily.league, scope.league),
+                gte(daily.day, fromDay),
+                lte(daily.day, latestHour),
+                gt(daily.firstVolume, 0),
+                inArray(daily.marketId, markets),
+            ),
+        )
+        .groupBy(daily.marketId)
+        .as("ranked_pairs");
+    // Include ties at the cutoff so the original market order still breaks them.
     const rows = await traceQuery(
         "market.exchange_pair_volumes",
         db
-            .select({
-                marketId: daily.marketId,
-                first: sum(daily.firstVolume),
-                second: sum(daily.secondVolume),
-            })
-            .from(daily)
-            .where(
-                and(
-                    eq(daily.realm, scope.realm),
-                    eq(daily.league, scope.league),
-                    gte(daily.day, fromDay),
-                    lte(daily.day, latestHour),
-                    gt(daily.firstVolume, 0),
-                    inArray(daily.marketId, markets),
-                ),
-            )
-            .groupBy(daily.marketId),
+            .select({ marketId: ranked.marketId, volume: ranked.volume })
+            .from(ranked)
+            .where(lte(ranked.rank, EXCHANGE_HISTORY_PAIRS)),
     );
-    return new Map(
-        rows.map((row) => [
-            row.marketId,
-            Number(row.marketId.split("|")[0] === itemId ? row.first : row.second),
-        ]),
-    );
+    return new Map(rows.map((row) => [row.marketId, Number(row.volume)]));
 }
 
 /**
@@ -1472,8 +1508,10 @@ export function getMarketExchangeItem(db: TDatabase, input: MarketExchangeItemIn
         const unit = marketExchangeUnit(input.realm);
         const anchor = marketExchangeUnitId(unit);
         const describe = (itemId: string) => marketExchangeItem(input.realm, itemId);
-        const { value: listed } = await cachedExchangeValue(cache, "markets", async () =>
-            league ? marketExchangeMarkets(db, scope, latestHour) : [],
+        const { value: listed, status: marketCache } = await cachedExchangeValue(
+            cache,
+            "markets",
+            async () => (league ? marketExchangeMarkets(db, scope, latestHour) : []),
         );
         const markets = listed.map((row) => row.marketId.split("|"));
         const priced = marketPriceCurrencyIds(input.realm);
@@ -1484,27 +1522,22 @@ export function getMarketExchangeItem(db: TDatabase, input: MarketExchangeItemIn
             `item/${input.itemId}`,
             async () => {
                 const commonIds = cache ? exchangeItemMarkets(markets, [], anchor, priced) : [];
-                const common = new Set(commonIds);
-                const shared = commonIds.length
-                    ? await cachedExchangeValue(cache, "display-currency-pairs", () =>
-                          exchangePricingInputs(db, scope, latestHour, commonIds),
-                      )
-                    : undefined;
-                const specific = await exchangePricingBook(
+                const inputs = await exchangePricingBook(
                     cache,
-                    { realm: input.realm, league },
-                    listed.map((row) => row.marketId).filter((id) => !common.has(id)),
-                    marketIds.filter((id) => !common.has(id)),
+                    listed.map((row) => row.marketId),
+                    marketIds,
+                    commonIds,
+                    marketCache === "hit",
                     (ids) => exchangePricingInputs(db, scope, latestHour, ids),
                 );
-                const snapshots = [...(shared?.value.snapshots ?? []), ...specific.snapshots];
-                const days = [...(shared?.value.days ?? []), ...specific.days];
+                const { snapshots, days } = expandPricingInputs(inputs.book, {
+                    realm: input.realm,
+                    league,
+                });
                 span.setAttributes({
-                    "market.anchor_cache": shared?.status ?? "bypass",
-                    "market.price_input_cached_markets":
-                        specific.cachedMarkets + (shared?.status === "hit" ? common.size : 0),
-                    "market.price_input_read_markets":
-                        specific.readMarkets + (shared?.status === "hit" ? 0 : common.size),
+                    "market.anchor_cache": inputs.anchorCache,
+                    "market.price_input_cached_markets": inputs.cachedMarkets,
+                    "market.price_input_read_markets": inputs.readMarkets,
                     "market.recent_snapshots": snapshots.length,
                     "market.daily_rows": days.length,
                 });
@@ -1527,44 +1560,63 @@ export function getMarketExchangeItem(db: TDatabase, input: MarketExchangeItemIn
                 };
             },
         );
-        const historyIds = await traceSpan("market.exchange_select_history_pairs", async () => {
-            // Every pair of chaos, divine or exalted includes itself, so it must not count as an anchor.
-            const always = [CHAOS, DIVINE, EXALTED].filter((id) => id !== input.itemId);
-            const pairs = markets
-                .filter((ids) => ids.includes(input.itemId))
-                .map((ids) => ids.join("|"));
-            const others = pairs.filter(
-                (id) => !always.some((anchor) => id.split("|").includes(anchor)),
-            );
-            if (others.length > EXCHANGE_HISTORY_PAIRS) {
-                const units = await exchangeHistoryVolumes(
-                    db,
-                    scope,
-                    input.itemId,
-                    others,
-                    Math.min(utcDay(historyStart), exchangeWindowStart(latestHour)),
-                    latestHour,
+        const { value: history, status: historyCache } = await cachedExchangeValue(
+            describe(input.itemId) && listed.length ? cache : undefined,
+            `history/${input.days}/${input.itemId}`,
+            async () => {
+                const historyIds = await traceSpan(
+                    "market.exchange_select_history_pairs",
+                    async () => {
+                        // Every pair of chaos, divine or exalted includes itself, so it must not count as an anchor.
+                        const always = [CHAOS, DIVINE, EXALTED].filter((id) => id !== input.itemId);
+                        const own = markets.filter((ids) => ids.includes(input.itemId));
+                        const anchored = own.filter((ids) => always.some((id) => ids.includes(id)));
+                        const others = own
+                            .filter((ids) => !always.some((id) => ids.includes(id)))
+                            .map((ids) => ids.join("|"));
+                        if (others.length > EXCHANGE_HISTORY_PAIRS) {
+                            const units = await exchangeHistoryVolumes(
+                                db,
+                                scope,
+                                input.itemId,
+                                others,
+                                Math.min(utcDay(historyStart), exchangeWindowStart(latestHour)),
+                                latestHour,
+                            );
+                            others.sort((a, b) => (units.get(b) ?? 0) - (units.get(a) ?? 0));
+                        }
+                        const kept = [
+                            ...anchored,
+                            ...others.slice(0, EXCHANGE_HISTORY_PAIRS).map((id) => id.split("|")),
+                        ];
+                        return exchangeItemMarkets(
+                            [...kept, ...markets.filter((ids) => !ids.includes(input.itemId))],
+                            [input.itemId],
+                            anchor,
+                            priced,
+                        );
+                    },
                 );
-                others.sort((a, b) => (units.get(b) ?? 0) - (units.get(a) ?? 0));
-            }
-            const kept = [
-                ...pairs.filter((id) => always.some((anchor) => id.split("|").includes(anchor))),
-                ...others.slice(0, EXCHANGE_HISTORY_PAIRS),
-            ].map((id) => id.split("|"));
-            return exchangeItemMarkets(
-                [...kept, ...markets.filter((ids) => !ids.includes(input.itemId))],
-                [input.itemId],
-                anchor,
-                priced,
-            );
-        });
-        const history = historyIds.length
-            ? await exchangeSnapshots(db, scope, [historyStart, latestHour], historyIds)
-            : [];
+                const snapshots = historyIds.length
+                    ? await exchangeSnapshots(db, scope, [historyStart, latestHour], historyIds)
+                    : [];
+                const chart = traceSpan("market.exchange_build_history", (span) => {
+                    const chart = marketExchangeHistory(snapshots, input.itemId, describe, unit);
+                    span.setAttributes({
+                        "market.snapshots": snapshots.length,
+                        "market.price_points": chart.prices.length,
+                        "market.pairs": chart.pairs.length,
+                    });
+                    return chart;
+                });
+                return { chart, marketCount: historyIds.length };
+            },
+        );
         span.setAttributes({
             "market.listed_markets": listed.length,
             "market.price_markets": marketIds.length,
-            "market.history_markets": historyIds.length,
+            "market.history_markets": history.marketCount,
+            "market.history_cache": historyCache,
             "market.price_cache": priceCache,
         });
         return {
@@ -1575,15 +1627,7 @@ export function getMarketExchangeItem(db: TDatabase, input: MarketExchangeItemIn
             historyStart,
             unit,
             ...pricing,
-            history: traceSpan("market.exchange_build_history", (span) => {
-                const chart = marketExchangeHistory(history, input.itemId, describe, unit);
-                span.setAttributes({
-                    "market.snapshots": history.length,
-                    "market.price_points": chart.prices.length,
-                    "market.pairs": chart.pairs.length,
-                });
-                return chart;
-            }),
+            history: history.chart,
         };
     });
 }

@@ -12,6 +12,7 @@ const { getMarketData, getPoe2MarketExchange } = await import("~/db/queries/mark
 const hour = 1_792_836_000;
 const db = drizzle(async (query) => {
     if (query.includes("hour_coverage")) return { rows: [["Current", hour, hour]] };
+    if (query.includes("json_arrayagg(")) return { rows: [] };
     if (query.includes("currency_market")) {
         const market = [exchangeCurrencyId("chaos"), exchangeCurrencyId("divine")].join("|");
         return { rows: [[market, hour]] };

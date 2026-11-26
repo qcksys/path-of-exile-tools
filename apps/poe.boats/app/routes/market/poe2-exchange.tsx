@@ -14,15 +14,19 @@ export const meta: Route.MetaFunction = ({ loaderData }) => [
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
     const filters = parsePoe2MarketFilters(request);
-    const data = await getMarketExchangeItem(context.get(dbContext), {
+    const { item, history, ...data } = await getMarketExchangeItem(context.get(dbContext), {
         realm: "poe2",
         league: filters.league,
         days: filters.days,
         itemId: marketExchangeItemId(params["*"] ?? ""),
     });
-    const { item } = data;
     if (!item) throw new Response("Unknown exchange item", { status: 404 });
-    return { ...data, item, filters: { ...filters, league: data.league } };
+    return {
+        ...data,
+        item,
+        historyJson: JSON.stringify(history),
+        filters: { ...filters, league: data.league },
+    };
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

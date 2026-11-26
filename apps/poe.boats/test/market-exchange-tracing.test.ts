@@ -17,13 +17,9 @@ it.each(["pc", "poe2"] as const)(
         const marketId = [itemId, anchor].join("|");
         const league = "Current";
         const db = drizzle(async (query) => {
+            if (query.includes("_currency_hour`"))
+                return { rows: [[marketId, [[hour, 1, 12, null, null, null, null]]]] };
             if (query.includes("_currency_market`")) return { rows: [[marketId, hour]] };
-            if (query.includes("_currency_hourly`"))
-                return {
-                    rows: [
-                        [realm, league, marketId, hour, { [itemId]: 1, [anchor]: 12 }, null, null],
-                    ],
-                };
             return { rows: [] };
         }) as unknown as TDatabase;
 
@@ -39,6 +35,7 @@ it.each(["pc", "poe2"] as const)(
             "market.listed_markets": 1,
             "market.price_markets": 1,
             "market.history_markets": 1,
+            "market.history_cache": "bypass",
             "market.recent_snapshots": 1,
             "market.daily_rows": 0,
             "market.anchor_cache": "bypass",
@@ -64,9 +61,6 @@ it.each(["pc", "poe2"] as const)(
             phases
                 .filter((span) => span.name === "market.exchange_parse_snapshots")
                 .map((span) => span.attributes),
-        ).toEqual([
-            { "market.query": "market.exchange_recent", "market.snapshots": 1 },
-            { "market.query": "market.exchange_history", "market.snapshots": 1 },
-        ]);
+        ).toEqual([{ "market.query": "market.exchange_history", "market.snapshots": 1 }]);
     },
 );
