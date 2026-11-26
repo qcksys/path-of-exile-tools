@@ -7,6 +7,7 @@ import { type Connection, createConnection, type RowDataPacket } from "mysql2/pr
 import { afterAll, beforeAll, describe, expect, it, vi } from "vite-plus/test";
 import type { TDatabase } from "~/db/client";
 import { stashGame, stashTableName } from "~/db/helpers/stash-game";
+import { findBossStashQuotes } from "~/db/queries/boss-rota.queries";
 import { findCraftingRecipeListings } from "~/db/queries/crafting-recipes.queries";
 import {
     getMarketData,
@@ -36,6 +37,7 @@ import { yellowBeastMarket } from "~/lib/crafting-yellow-beasts";
 import { marketExchangeItemId } from "~/lib/market-exchange.server";
 import { getServerStatus } from "~/operations/server-status.server";
 import { marketFiltersSchema } from "~/schemas/market";
+import { loadBossRota } from "~/services/boss-rota.server";
 
 const hour = 1_792_836_000;
 const uniqueHourly = stashTableName("poe1", "unique_hourly");
@@ -2616,6 +2618,93 @@ it("reads each beast and temple market's latest merchant ask, converting other c
         },
         "Chronicle of Atzoatl|Locus of Corruption": { unitPrice: 50, listingCount: 3, hour },
     });
+});
+
+it("prices boss drops from the latest eligible merchant hour and exact item state", async () => {
+    const league = "BossRota";
+    const ask = (name: string, price: number, overrides: Partial<TStashUniqueHourlyI> = {}) =>
+        observation({
+            league,
+            name,
+            itemKey: name,
+            prices: { chaos: { min: price, max: price, median: price, count: 1 } },
+            ...overrides,
+        });
+    await upsertStashUniqueHourly(db as unknown as TDatabase, [
+        ask("Dying Sun", 60, { hour: hour - 3600 }),
+        ask("Dying Sun", 90),
+        ask("Dying Sun", 10, { corrupted: true }),
+        ask("Dying Sun", 1, { league: "OtherBossRota" }),
+        ask("Dying Sun", 1, { tab: "other" }),
+        ask("Sublime Vision", 80, { itemKey: "unid:Vision", identified: false }),
+        ask("Sublime Vision", 2),
+        ask("Voidstorm Support", 4, {
+            signatureKind: "gem",
+            signatureValue: "Level 1–19 · Quality 0–19%",
+        }),
+        ask("Voidstorm Support", 99, {
+            signatureKind: "gem",
+            signatureValue: "Level 20 (max) · Quality 20%",
+        }),
+        ask("Voidwalker", 3, { hour: hour - 24 * 3600 }),
+        ask("Unidentified Watcher's Eye (2-mod)", 500),
+    ]);
+    const quotes = await findBossStashQuotes(db as unknown as TDatabase, league, [
+        ["Dying Sun", 2],
+        ["Sublime Vision", 2, "unidentified"],
+        ["Voidstorm Support", 10, "gem"],
+        ["Voidwalker", 32],
+        ["Unidentified Watcher's Eye (2-mod)", 40, "unpriced"],
+    ]);
+    expect(Object.fromEntries(quotes)).toEqual({
+        "Dying Sun": { source: "stash", unitChaos: 90, hour },
+        "Unidentified Sublime Vision": { source: "stash", unitChaos: 80, hour },
+        "Voidstorm Support": { source: "stash", unitChaos: 4, hour },
+    });
+});
+
+it("values a solo Shaper rota from both captured markets in the same league", async () => {
+    const league = "SoloShaper";
+    const database = db as unknown as TDatabase;
+    const chaos = marketExchangeItemId("poe1", "Chaos Orb")!;
+    const quoted = [
+        ...[1, 2, 3, 4].map(
+            (i) => [`Metadata/Items/MapFragments/CurrencyShaperFragment${i}`, 3] as const,
+        ),
+        ...["Fragment of Shape", "Fragment of Knowledge"].map(
+            (name) => [marketExchangeItemId("poe1", name)!, 20] as const,
+        ),
+    ];
+    await upsertStashCurrencyHourly(
+        database,
+        quoted.map(([id, price]) => ({
+            realm: "pc",
+            league,
+            hour,
+            marketId: `${id}|${chaos}`,
+            volumeTraded: { [id]: 100, [chaos]: 100 * price },
+        })),
+    );
+    await upsertStashUniqueHourly(database, [
+        observation({
+            league,
+            itemKey: "Dying Sun",
+            name: "Dying Sun",
+            prices: { chaos: { min: 50, median: 50, max: 50, count: 1 } },
+        }),
+    ]);
+    const result = await loadBossRota(database, { league, boss: "shaper", runs: 10 });
+    expect(result.encounters).toHaveLength(1);
+    expect(result.encounters[0]?.total).toEqual({
+        entryChaos: 120,
+        lootChaos: null,
+        profitChaos: null,
+        pricedLootChaos: 210,
+        profitFromPricedDropsChaos: 90,
+    });
+    expect(result.encounters[0]?.entries.every((row) => row.quote?.source === "exchange")).toBe(
+        true,
+    );
 });
 
 it("reads Cluster Jewel base markets' latest merchant asks by their signature value", async () => {

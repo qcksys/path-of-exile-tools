@@ -11,6 +11,7 @@ export default [
         ...prefix("1", [
             index("routes/poe1-home.tsx"),
             route("arbitrage", "routes/arbitrage/poe1.tsx"),
+            route("boss-rota/:boss?", "routes/boss-rota.tsx"),
             route("recombinator", "routes/recombinator.tsx"),
             route("market", "routes/market.tsx", [
                 route(":category?", "routes/market/index.tsx"),

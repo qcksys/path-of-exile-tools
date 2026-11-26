@@ -5,6 +5,7 @@ import {
     ChartNoAxesCombined,
     Combine,
     Grid2X2,
+    Swords,
 } from "lucide-react";
 import { Link } from "react-router";
 import type { SiteHandle } from "~/routes/layouts/site";
@@ -20,6 +21,7 @@ const tools = [
     { to: "/1/crafting", label: "Crafting Calculator", icon: Anvil },
     { to: "/1/idol-planner", label: "Idol Planner", icon: Grid2X2 },
     { to: "/1/arbitrage", label: "Vendor Recipe Arbitrage", icon: ArrowRightLeft },
+    { to: "/1/boss-rota", label: "Boss Rota Profits", icon: Swords },
     { to: "/1/recombinator", label: "Recombinator Simulator", icon: Combine },
     { to: "/1/market/currency", label: "Season market", icon: ChartNoAxesCombined },
 ];

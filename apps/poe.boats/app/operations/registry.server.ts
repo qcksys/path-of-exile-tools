@@ -12,6 +12,7 @@ import {
     MarketSnapshotSchema,
     VendorRecipeSchema,
 } from "~/schemas/arbitrage";
+import { bossRotaInputSchema, bossRotaResultSchema } from "~/schemas/boss-rota";
 import {
     marketCategorySchema,
     marketExchangeItemInputSchema,
@@ -27,6 +28,7 @@ import { recombinatorCatalogSchema } from "~/schemas/recombinator-catalog";
 import { ScarabPricesDataSchema } from "~/schemas/scarab";
 import { SharedSetSchema } from "~/schemas/share";
 import { loadArbitrageMarket } from "~/services/arbitrage.server";
+import { loadBossRota } from "~/services/boss-rota.server";
 import { loadClusterRecipeMarket } from "~/services/cluster-recipe.server";
 import { calculatorOperations } from "./calculators";
 import { craftingBuyInOperations } from "./crafting-buy-in";
@@ -123,6 +125,20 @@ const watchersEyeModValues = z
 
 export const operations = [
     serverStatusOperation,
+    defineOperation({
+        family: "boss-rota",
+        path: "/profits",
+        name: "get_boss_rota_profits",
+        description:
+            "Estimate solo PoE 1 boss profit in chaos for one or more kills. Each kill consumes one entry set and awards one instance's loot. Uses Perandus Ledger baseline drop rates and the selected PC league's exchange prices and merchant asks. Null totals indicate missing prices. Priced-drop subtotals include only quoted outcomes.",
+        ui: "/1/boss-rota",
+        method: "get",
+        access: "public",
+        readOnly: true,
+        input: bossRotaInputSchema,
+        output: bossRotaResultSchema,
+        execute: (input, context) => loadBossRota(context.db, input),
+    }),
     ...calculatorOperations,
     ...craftingGraphOperations,
     ...craftingMethodProjectOperations,

@@ -12,6 +12,7 @@ import { MAP_CRAFTING_OPTIONS } from "~/data/map-crafting-options";
 import { MAP_DEVICE_UNLOCKS } from "~/data/map-device-unlocks";
 import { SCARABS } from "~/data/scarab-data";
 import { createDbConnection } from "~/db/client";
+import * as bossQueries from "~/db/queries/boss-rota.queries";
 import * as craftingExchangeQueries from "~/db/queries/crafting-exchange.queries";
 import * as exchangeMembership from "~/db/queries/crafting-exchange-membership.queries";
 import * as craftingMarketQueries from "~/db/queries/crafting-market.queries";
@@ -3134,6 +3135,61 @@ it("reads the PoE 2 exchange market alike over HTTP and MCP", async () => {
         expect(query).toHaveBeenCalledTimes(2);
     } finally {
         query.mockRestore();
+    }
+});
+
+it("prices solo boss runs alike over HTTP and MCP and rejects invalid runs", async () => {
+    const leagues = vi.spyOn(marketQueries, "getMarketSeasons").mockResolvedValue({
+        seasons: [{ league: "Covens", firstHour: 3600, latestHour: 3600 }],
+        exchangeSeasons: [],
+    });
+    const exchange = vi
+        .spyOn(marketQueries, "getMarketExchangePrices")
+        .mockImplementation(async (_, { itemIds }) => ({
+            latestHour: 3600,
+            unit: "chaos",
+            prices: new Map(itemIds.map((id) => [id, { hour: 3600, price: 5 }])),
+        }));
+    const stash = vi
+        .spyOn(bossQueries, "findBossStashQuotes")
+        .mockResolvedValue(
+            new Map([["Dying Sun", { source: "stash", hour: 3600, unitChaos: 100 }]]),
+        );
+    try {
+        const url = "https://poe.boats/api/v1/boss-rota/profits?boss=shaper&runs=";
+        const response = await api.request(`${url}3`, {}, { runtime });
+        expect(response.status).toBe(200);
+        const market = await response.json();
+        expect(market).toMatchObject({
+            league: "Covens",
+            runs: 3,
+            encounters: [{ id: "shaper", total: { entryChaos: 60, profitChaos: null } }],
+        });
+        expect(exchange.mock.calls[0]?.[1].itemIds).toContain(
+            "Metadata/Items/MapFragments/CurrencyShaperFragment4",
+        );
+        expect(stash.mock.calls[0]?.[2].map(([name]) => name)).not.toContain(
+            "Fragment of the Hydra",
+        );
+        const call = async (runs: number) =>
+            CallToolResultSchema.parse(
+                RpcSchema.parse(
+                    await (
+                        await mcp("tools/call", {
+                            name: "get_boss_rota_profits",
+                            arguments: { boss: "shaper", runs },
+                        })
+                    ).json(),
+                ).result,
+            );
+        expect((await call(3)).structuredContent).toEqual(market);
+        expect((await api.request(`${url}0`, {}, { runtime })).status).toBe(400);
+        expect((await call(0)).isError).toBe(true);
+        expect(exchange).toHaveBeenCalledTimes(2);
+    } finally {
+        leagues.mockRestore();
+        stash.mockRestore();
+        exchange.mockRestore();
     }
 });
 

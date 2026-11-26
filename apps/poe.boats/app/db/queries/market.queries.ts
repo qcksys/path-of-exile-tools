@@ -475,13 +475,15 @@ export function getMarketData(db: TDatabase, input: MarketFilters, view: MarketV
     return traceSpan("market.data", (span) => readMarketData(db, input, view, span));
 }
 
-async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketView, span: Span) {
-    const { market, daily } = marketTables(input.realm);
-    const exchangeHour = marketObservationRange().latestHour;
+export async function getMarketSeasons(
+    db: TDatabase,
+    realm: string,
+    exchangeHour = marketObservationRange().latestHour,
+) {
     const [stashSeasons, exchangeSeasons, ended] = await Promise.all([
-        marketStashSeasons(db, input.realm),
-        marketExchangeSeasons(db, input.realm, exchangeHour),
-        endedStashLeagues(db, input.realm),
+        marketStashSeasons(db, realm),
+        marketExchangeSeasons(db, realm, exchangeHour),
+        endedStashLeagues(db, realm),
     ]);
     const byLeague = new Map(stashSeasons.map((season) => [season.league, season]));
     for (const { league, firstHour, latestHour } of exchangeSeasons) {
@@ -502,6 +504,13 @@ async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketV
         [...byLeague.values()].sort((a, b) => Number(b.latestHour) - Number(a.latestHour)),
         ended,
     );
+    return { seasons, exchangeSeasons };
+}
+
+async function readMarketData(db: TDatabase, input: MarketFilters, view: MarketView, span: Span) {
+    const { market, daily } = marketTables(input.realm);
+    const exchangeHour = marketObservationRange().latestHour;
+    const { seasons, exchangeSeasons } = await getMarketSeasons(db, input.realm, exchangeHour);
     const settings = marketSettings(input.category);
     const filters = {
         ...input,
