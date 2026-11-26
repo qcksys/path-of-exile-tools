@@ -2638,13 +2638,15 @@ it("prices boss drops from the latest eligible merchant hour and exact item stat
         ask("Dying Sun", 1, { tab: "other" }),
         ask("Sublime Vision", 80, { itemKey: "unid:Vision", identified: false }),
         ask("Sublime Vision", 2),
-        ask("Voidstorm Support", 4, {
+        ask("Voidstorm", 4, {
+            baseType: "Voidstorm Support",
             signatureKind: "gem",
-            signatureValue: "Level 1–19 · Quality 0–19%",
+            signatureValue: "Level 1–2 · Quality 0–19%",
         }),
-        ask("Voidstorm Support", 99, {
+        ask("Voidstorm", 99, {
+            baseType: "Voidstorm Support",
             signatureKind: "gem",
-            signatureValue: "Level 20 (max) · Quality 20%",
+            signatureValue: "Level 3 (max) · Quality 20%",
         }),
         ask("Voidwalker", 3, { hour: hour - 24 * 3600 }),
         ask("Unidentified Watcher's Eye (2-mod)", 500),

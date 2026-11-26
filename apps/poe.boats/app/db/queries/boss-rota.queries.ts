@@ -22,6 +22,8 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
         db
             .select({
                 itemKey: market.itemKey,
+                baseType: market.baseType,
+                signatureKind: market.signatureKind,
                 name: market.name,
                 identified: market.identified,
                 hour: market.hour,
@@ -49,7 +51,7 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
                                     ),
                                 ),
                                 and(
-                                    inArray(market.itemKey, gems),
+                                    inArray(market.baseType, gems),
                                     eq(market.signatureKind, "gem"),
                                     inArray(
                                         market.signatureValue,
@@ -67,13 +69,26 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
                     ),
                 ),
             )
-            .groupBy(market.itemKey, market.name, market.identified, market.hour)
+            .groupBy(
+                market.itemKey,
+                market.baseType,
+                market.signatureKind,
+                market.name,
+                market.identified,
+                market.hour,
+            )
             .orderBy(desc(market.hour)),
     );
 
     const newest = new Map<string, number>();
     for (const row of rows) {
-        const name = row.identified ? row.itemKey : `Unidentified ${row.name}`;
+        // A support gem that grants a skill can have that skill as its stash item key.
+        const name =
+            row.signatureKind === "gem"
+                ? row.baseType
+                : row.identified
+                  ? row.itemKey
+                  : `Unidentified ${row.name}`;
         const hour = newest.get(name) ?? row.hour;
         newest.set(name, hour);
         if (row.hour !== hour || row.unitChaos === null || row.unitChaos <= 0) continue;

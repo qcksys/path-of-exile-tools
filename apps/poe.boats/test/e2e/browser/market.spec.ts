@@ -4,7 +4,11 @@ import { selectValue } from "./control-helpers";
 test("offers the season market alongside the other PoE 1 tools", async ({ page }) => {
     await page.goto("/1");
     const tools = page.getByRole("navigation", { name: "Path of Exile 1 tools" });
-    await expect(tools.getByRole("link")).toHaveCount(5);
+    await expect(tools.getByRole("link")).toHaveCount(6);
+    await expect(tools.getByRole("link", { name: "Boss Rota Profits" })).toHaveAttribute(
+        "href",
+        "/1/boss-rota",
+    );
     const market = tools.getByRole("link", { name: "Season market" });
     await expect(market.locator("svg").first()).toBeVisible();
     await market.click();
