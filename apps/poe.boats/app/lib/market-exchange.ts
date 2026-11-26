@@ -334,6 +334,7 @@ export type MarketExchangeListRow = MarketExchangeRow & {
  * Items without trades get a row without a price. Volumes average over the hours since the
  * window's first day, or since `leagueStart` (the league's first exchange hour) when that is later.
  * Pairs low volume for an item over `daily` do not price it, in any hour or on any day.
+ * Detail pages request only the listed rows while retaining all pairs needed for conversion.
  */
 export function marketExchangeRows(
     snapshots: ExchangeSnapshot[],
@@ -343,6 +344,7 @@ export function marketExchangeRows(
     listed: string[] = [],
     leagueStart = 0,
     unit: MarketExchangeUnit = "chaos",
+    output: "listed" | "listed-and-traded" = "listed-and-traded",
 ): MarketExchangeRow[] {
     const anchor = marketExchangeUnitId(unit);
     const days = tradedDays(daily);
@@ -360,10 +362,11 @@ export function marketExchangeRows(
         (_, index) => lastDay - (MARKET_EXCHANGE_DAYS - 1 - index) * DAY,
     );
     const hours = (latestHour - Math.max(window[0]!, leagueStart)) / 3600 + 1;
+    const itemIds = output === "listed" ? listed : [...listed, ...current.traded];
     const items = new Map<
         string,
         { units: number; pairs: Map<string, { quoteId: string; units: number }> }
-    >([...listed, ...current.traded].map((id) => [id, { units: 0, pairs: new Map() }]));
+    >(itemIds.map((id) => [id, { units: 0, pairs: new Map() }]));
     for (const pairs of days.values())
         for (const [key, row] of pairs)
             for (const itemId of key.split("|")) {

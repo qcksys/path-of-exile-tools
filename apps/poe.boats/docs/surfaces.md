@@ -58,6 +58,18 @@ market or arbitrage span inside that loader to compare SQL reads, row counts, an
 On exchange detail pages, this includes snapshot parsing, price calculation, pair selection, and
 history construction. Parallel reads overlap in the waterfall.
 
+The exchange item span records `market.price_cache` as `hit`, `miss`, or `bypass`. A cached item
+price applies across the 7-, 30- and 90-day chart windows. Items in the same realm, league and
+completed hour share the market list and recent pricing inputs. On a price miss,
+`market.price_input_cached_markets` and `market.price_input_read_markets` show how many market
+pairs came from the cache and the database. Broad requests populate groups of pairs that other
+items can use. A change in exchange coverage selects fresh entries. Entries also expire after five
+minutes to pick up corrections with the same row count. Each request reads its own chart history.
+
+On stash item pages, `market.variant_latest_rows` measures a single query that totals sales and
+finds the latest hour for each variant, then reads its price and listing count by hour and market
+ID. Its row count is the number of stored variants, including separate link counts.
+
 For HTML requests, `page.render_shell` ends when React has a stream ready to return. A crawler that
 waits for the complete render also has a `page.wait_all_ready` span. To compare loaders across
 requests, filter on `$metadata.spanName = "page.loader"`, group by `route.id`, and calculate the

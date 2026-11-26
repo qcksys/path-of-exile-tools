@@ -16,8 +16,8 @@ const db = drizzle(async (query) => {
         const market = [exchangeCurrencyId("chaos"), exchangeCurrencyId("divine")].join("|");
         return { rows: [[market, hour]] };
     }
-    if (query.includes("any_value("))
-        return { rows: [["Ring", "Ring", 1, 0, "", "", 0, null, 1, hour]] };
+    if (query.includes("variant_period"))
+        return { rows: [["Ring", "Ring", 1, 0, "", "", 0, null, 1, hour, null, 1]] };
     if (query.includes("endedAt")) return { rows: [["Previous"]] };
     return { rows: [] };
 }) as unknown as TDatabase;

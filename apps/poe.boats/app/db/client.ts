@@ -22,6 +22,11 @@ export const createDbConnection = (url: string) => {
 
 let sharedDatabase: { url: string; db: TDatabase } | undefined;
 
+type WorkerDatabaseEnv = Pick<CloudflareBindings, "DATABASE_URL" | "DATABASE_DRIVER"> &
+    Partial<Pick<CloudflareBindings, "URL" | "HYPERDRIVE">>;
+
+export const workerDatabaseCacheScopes = new WeakMap<TDatabase, { host: string; source: string }>();
+
 export async function openDatabase(url: string, driver = "planetscale") {
     if (driver === "planetscale") {
         // The HTTP client owns no socket. Reusing it also scopes summary caches to this database.
@@ -33,19 +38,31 @@ export async function openDatabase(url: string, driver = "planetscale") {
 }
 
 /** Opens a Worker environment's database: through its Hyperdrive binding when it has one. */
-export function openWorkerDatabase(
-    env: Pick<CloudflareBindings, "DATABASE_URL" | "DATABASE_DRIVER"> & { HYPERDRIVE?: Hyperdrive },
-) {
+export async function openWorkerDatabase(env: WorkerDatabaseEnv) {
     const hyperdrive = env.HYPERDRIVE;
-    if (!hyperdrive) return openDatabase(env.DATABASE_URL, env.DATABASE_DRIVER);
     // Hyperdrive keeps the pool to the origin, so each request opens its own local connection.
-    return openMysql({
-        host: hyperdrive.host,
-        port: hyperdrive.port,
-        user: hyperdrive.user,
-        password: hyperdrive.password,
-        database: hyperdrive.database,
-    });
+    const opened = hyperdrive
+        ? await openMysql({
+              host: hyperdrive.host,
+              port: hyperdrive.port,
+              user: hyperdrive.user,
+              password: hyperdrive.password,
+              database: hyperdrive.database,
+          })
+        : await openDatabase(env.DATABASE_URL, env.DATABASE_DRIVER);
+    if (env.URL) {
+        const endpoint = hyperdrive ?? new URL(env.DATABASE_URL);
+        workerDatabaseCacheScopes.set(opened.db, {
+            host: env.URL,
+            source: JSON.stringify([
+                hyperdrive ? "hyperdrive" : env.DATABASE_DRIVER,
+                endpoint.host,
+                endpoint.port,
+                "database" in endpoint ? endpoint.database : endpoint.pathname,
+            ]),
+        });
+    }
+    return opened;
 }
 
 async function openMysql(options: ConnectionOptions) {

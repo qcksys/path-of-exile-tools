@@ -19,9 +19,9 @@ it("skips the market list query for item history but executes it for list views"
     });
 
     await getMarketData(db, filters, "history");
-    expect(statements.filter((query) => /\binner\s+join\b/i.test(query))).toEqual([]);
+    expect(statements.some((query) => query.includes("_market_daily`"))).toBe(false);
 
     statements.length = 0;
     await getMarketData(db, filters, "list");
-    expect(statements.filter((query) => /\binner\s+join\b/i.test(query))).toHaveLength(1);
+    expect(statements.filter((query) => query.includes("_market_daily`"))).toHaveLength(1);
 });
