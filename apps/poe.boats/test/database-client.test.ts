@@ -30,7 +30,8 @@ it("connects through the Hyperdrive binding when the environment has one", async
         URL: "poe-boats.localhost",
         HYPERDRIVE: hyperdrive,
     } as const;
-    const database = await openWorkerDatabase(env);
+    const versioned = { ...env, CF_VERSION_METADATA: { id: "first", tag: "", timestamp: "" } };
+    const database = await openWorkerDatabase(versioned);
     expect(mysql.createConnection).toHaveBeenCalledWith({
         host: "hyperdrive.local",
         port: 3306,
@@ -42,13 +43,36 @@ it("connects through the Hyperdrive binding when the environment has one", async
     await database.close();
     expect(mysql.end).toHaveBeenCalledOnce();
 
-    const next = await openWorkerDatabase(env);
+    const rotated = {
+        ...versioned,
+        HYPERDRIVE: {
+            ...hyperdrive,
+            host: "next-proxy.local",
+            port: 3307,
+            user: "next-user",
+            database: "next-database",
+        },
+    };
+    const next = await openWorkerDatabase(rotated);
     const scope = workerDatabaseCacheScopes.get(database.db);
     expect(next.db).not.toBe(database.db);
     expect(scope?.host).toBe(env.URL);
     expect(scope?.source).not.toContain(hyperdrive.password);
     expect(workerDatabaseCacheScopes.get(next.db)).toEqual(scope);
     await next.close();
+
+    const deployed = await openWorkerDatabase({
+        ...rotated,
+        CF_VERSION_METADATA: { ...versioned.CF_VERSION_METADATA, id: "second" },
+    });
+    expect(workerDatabaseCacheScopes.get(deployed.db)?.source).not.toBe(scope?.source);
+    await deployed.close();
+    const otherWorker = await openWorkerDatabase({ ...rotated, URL: "other.example" });
+    expect(workerDatabaseCacheScopes.get(otherWorker.db)?.host).not.toBe(scope?.host);
+    await otherWorker.close();
+    const unversioned = await openWorkerDatabase(env);
+    expect(workerDatabaseCacheScopes.has(unversioned.db)).toBe(false);
+    await unversioned.close();
 });
 
 it("uses the database URL and driver without a Hyperdrive binding", async () => {
@@ -57,6 +81,7 @@ it("uses the database URL and driver without a Hyperdrive binding", async () => 
         DATABASE_URL: "mysql://test:test@localhost/worker",
         DATABASE_DRIVER: "planetscale",
         URL: "poe-boats.localhost",
+        CF_VERSION_METADATA: { id: "first", tag: "", timestamp: "" },
     } as const;
     const database = await openWorkerDatabase(env);
     expect(database.db).toBe((await openDatabase(env.DATABASE_URL)).db);
