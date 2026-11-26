@@ -2752,10 +2752,14 @@ describe("transport parity", () => {
                 quotes: {
                     "clear-oil": { value: 1, units24h: 12 },
                     "sepia-oil": { value: 6, units24h: 3 },
-                    "amber-oil": { value: 80, units24h: 0 },
+                    "amber-oil": { value: 80, units24h: 2 },
                 },
             },
-            options: DEFAULT_ARBITRAGE_OPTIONS,
+            options: {
+                ...DEFAULT_ARBITRAGE_OPTIONS,
+                minimumInputUnits24h: 12,
+                minimumOutputUnits24h: 3,
+            },
         };
         const http = await api.request(
             "https://poe.boats/api/v1/arbitrage/calculate",
@@ -2782,6 +2786,27 @@ describe("transport parity", () => {
             ).json(),
         );
         expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual(result);
+
+        const invalid = { ...input, options: { ...input.options, minimumOutputUnits24h: -1 } };
+        const rejected = await api.request(
+            "https://poe.boats/api/v1/arbitrage/calculate",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(invalid),
+            },
+            { runtime },
+        );
+        expect(rejected.status).toBe(400);
+        const invalidRpc = RpcSchema.parse(
+            await (
+                await mcp("tools/call", { name: "calculate_arbitrage", arguments: invalid })
+            ).json(),
+        );
+        expect(
+            (invalidRpc.result && CallToolResultSchema.parse(invalidRpc.result).isError) ||
+                invalidRpc.error,
+        ).toBeTruthy();
     });
 
     it("rejects invalid inputs without leaking internal failures", async () => {

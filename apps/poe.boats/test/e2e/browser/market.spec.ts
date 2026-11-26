@@ -13,6 +13,10 @@ test("offers the season market alongside the other PoE 1 tools", async ({ page }
     await expect(market.locator("svg").first()).toBeVisible();
     await market.click();
     await expect(page).toHaveURL(/\/1\/market\/currency/);
+    await expect(tools.getByRole("link", { name: "Season market" })).toHaveAttribute(
+        "aria-current",
+        "page",
+    );
     const atlas = page.getByRole("heading", { name: "Atlas", exact: true }).locator("..");
     await expect(atlas.getByRole("link", { name: "Maps" })).toBeVisible();
     await expect(atlas.getByRole("link", { name: /Scarabs|Memories/ })).toHaveCount(0);
@@ -88,11 +92,25 @@ test("arbitrage keeps recipe returns visible and switches between calculators", 
     const filters = page.getByRole("button", { name: "Filters", exact: true });
     await expect(buffer).toBeHidden();
     await filters.click();
+    const inputVolume = page.getByRole("spinbutton", { name: "Minimum inputs traded" });
+    const outputVolume = page.getByRole("spinbutton", { name: "Minimum outputs traded" });
+    await inputVolume.pressSequentially("500");
+    await outputVolume.fill("101");
+    const recipe = page.getByRole("link", { name: "3 × Scroll of Wisdom → 1 × Portal Scroll" });
+    await expect(recipe).toHaveCount(0);
+    await outputVolume.fill("100");
+    await expect(recipe).toBeVisible();
+    await expect(page).toHaveURL(
+        (url) =>
+            url.searchParams.get("minimumInputUnits24h") === "500" &&
+            url.searchParams.get("minimumOutputUnits24h") === "100",
+    );
+    await inputVolume.fill("");
+    await outputVolume.fill("");
     await buffer.fill("1");
     await page.getByRole("button", { name: "Filters (1)", exact: true }).click();
     await expect(buffer).toBeHidden();
 
-    const recipe = page.getByRole("link", { name: "3 × Scroll of Wisdom → 1 × Portal Scroll" });
     const row = results.getByRole("row").filter({ has: recipe });
     const details = row.getByRole("button", { name: /Details for/ });
     const trade = row.getByRole("link", { name: "Buy Scroll of Wisdom" });

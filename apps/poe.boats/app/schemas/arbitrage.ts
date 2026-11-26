@@ -24,14 +24,18 @@ export const VendorRecipeSchema = z.object({
 });
 export type VendorRecipe = z.infer<typeof VendorRecipeSchema>;
 
+const minimumTradedUnits = z.number().int().nonnegative().default(0);
+
 export const ArbitrageOptionsSchema = z.object({
     buffer: z.number().min(0).max(99),
     minimumProfit: z.number().nonnegative(),
+    minimumInputUnits24h: minimumTradedUnits,
+    minimumOutputUnits24h: minimumTradedUnits,
     category: z.union([z.literal("all"), RecipeCategorySchema]),
     sort: z.enum(["profit", "roi"]),
     showUnprofitable: z.boolean(),
 });
-export type ArbitrageOptions = z.infer<typeof ArbitrageOptionsSchema>;
+export type ArbitrageOptions = z.input<typeof ArbitrageOptionsSchema>;
 
 export const ManualVendorRecipeSchema = VendorRecipeSchema.pick({
     id: true,
@@ -53,6 +57,8 @@ export const RecipeScenarioSchema = ArbitrageOptionsSchema.pick({ buffer: true }
 export const DEFAULT_ARBITRAGE_OPTIONS: ArbitrageOptions = {
     buffer: 0,
     minimumProfit: 0,
+    minimumInputUnits24h: 0,
+    minimumOutputUnits24h: 0,
     category: "all",
     sort: "profit",
     showUnprofitable: false,

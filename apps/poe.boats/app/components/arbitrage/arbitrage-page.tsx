@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { Form, Link, useNavigation } from "react-router";
+import { Form, Link, useNavigation, useSearchParams } from "react-router";
 import { ClusterRecipeCalculator } from "~/components/arbitrage/cluster-recipe-calculator";
 import { ManualRecipeCalculator } from "~/components/arbitrage/manual-recipe-calculator";
 import { OpportunityRow } from "~/components/arbitrage/opportunity-row";
 import { RecipeItems } from "~/components/arbitrage/recipe-items";
+import { VolumeQueryFields } from "~/components/arbitrage/volume-query-fields";
 import { CurrencyLabel } from "~/components/currency-label";
 import { LocalTime } from "~/components/local-time";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
@@ -11,7 +12,14 @@ import { Button, buttonVariants } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "~/components/ui/empty";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "~/components/ui/field";
+import {
+    Field,
+    FieldDescription,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSet,
+} from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
 import {
     Select,
@@ -33,6 +41,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { RECIPE_CATEGORY_LABELS } from "~/data/vendor-recipes";
 import { usePendingSearchParams } from "~/hooks/use-pending-search-params";
 import { findArbitrage } from "~/lib/arbitrage";
+import { ARBITRAGE_VOLUME_FILTERS } from "~/lib/arbitrage-volume-filters";
 import { calculateClusterRecipe } from "~/lib/cluster-recipe";
 import {
     ArbitrageOptionsSchema,
@@ -59,6 +68,21 @@ export function ArbitragePage({
     const { game, leagues, league, recipes, snapshot, error } = data;
     const navigation = useNavigation();
     const pending = usePendingSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [volumeEdit, setVolumeEdit] = useState<{
+        base: URLSearchParams;
+        next: URLSearchParams;
+    } | null>(null);
+    const viewParams =
+        volumeEdit?.base === searchParams ? volumeEdit.next : (pending ?? searchParams);
+    function updateVolume(key: string, value: string) {
+        const next = new URLSearchParams(viewParams);
+        if (value) next.set(key, value);
+        else next.delete(key);
+        // Keep the typed value visible until the router commits the new search parameters.
+        setVolumeEdit({ base: searchParams, next });
+        setSearchParams(next, { replace: true, preventScrollReset: true });
+    }
     const selectedLeague = pending?.get("league") ?? league;
     const [options, setOptions] = useState(DEFAULT_ARBITRAGE_OPTIONS);
     const [buffer, setBuffer] = useState("0");
@@ -83,6 +107,8 @@ export function ArbitragePage({
         clusterResult?.sizes.flatMap(({ roi }) => (roi === null ? [] : [roi])) ?? [];
     const parsed = ArbitrageOptionsSchema.safeParse({
         ...options,
+        minimumInputUnits24h: Number(viewParams.get("minimumInputUnits24h")),
+        minimumOutputUnits24h: Number(viewParams.get("minimumOutputUnits24h")),
         buffer: buffer.trim() ? Number(buffer) : Number.NaN,
         minimumProfit: options.showUnprofitable
             ? 0
@@ -155,6 +181,7 @@ export function ArbitragePage({
         !options.showUnprofitable &&
             (invalidMinimum || Number(minimumProfit) !== DEFAULT_ARBITRAGE_OPTIONS.minimumProfit),
         options.sort !== DEFAULT_ARBITRAGE_OPTIONS.sort,
+        ...ARBITRAGE_VOLUME_FILTERS.map(({ key }) => Number(viewParams.get(key)) !== 0),
         options.showUnprofitable,
     ].filter(Boolean).length;
 
@@ -183,6 +210,7 @@ export function ArbitragePage({
             </div>
 
             <Form method="get" className="flex flex-wrap items-end gap-3">
+                <VolumeQueryFields />
                 {clusterRecipe ? (
                     <Input
                         type="hidden"
@@ -257,9 +285,11 @@ export function ArbitragePage({
                             <CardContent>
                                 <div
                                     id="arbitrage-filters"
-                                    className={`flex flex-col gap-6 ${filtersOpen ? "" : "max-sm:hidden"}`}
+                                    className={`flex flex-col gap-6 xl:grid xl:grid-cols-3 xl:gap-y-4 ${filtersOpen ? "" : "max-sm:hidden"}`}
                                 >
-                                    <FieldGroup className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                    <FieldGroup
+                                        className={`grid gap-4 sm:grid-cols-2 xl:col-span-2 ${tab === "upgrades" ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}
+                                    >
                                         {tab === "upgrades" && (
                                             <Field>
                                                 <FieldLabel htmlFor="category">
@@ -384,7 +414,39 @@ export function ArbitragePage({
                                             </Select>
                                         </Field>
                                     </FieldGroup>
-                                    <Field orientation="horizontal">
+                                    <FieldSet className="min-w-0">
+                                        <FieldLegend>Trade volume in the last 24 hours</FieldLegend>
+                                        <FieldGroup className="grid gap-4 sm:grid-cols-2">
+                                            {ARBITRAGE_VOLUME_FILTERS.map(({ key, label }) => {
+                                                const invalid = parsed.error?.issues.some(
+                                                    (issue) => issue.path[0] === key,
+                                                );
+                                                return (
+                                                    <Field key={key} data-invalid={invalid}>
+                                                        <FieldLabel htmlFor={key}>
+                                                            {label}
+                                                        </FieldLabel>
+                                                        <Input
+                                                            id={key}
+                                                            type="number"
+                                                            min="0"
+                                                            step="1"
+                                                            placeholder="0"
+                                                            value={viewParams.get(key) ?? ""}
+                                                            aria-invalid={invalid}
+                                                            onChange={(event) =>
+                                                                updateVolume(
+                                                                    key,
+                                                                    event.target.value,
+                                                                )
+                                                            }
+                                                        />
+                                                    </Field>
+                                                );
+                                            })}
+                                        </FieldGroup>
+                                    </FieldSet>
+                                    <Field orientation="horizontal" className="xl:col-span-full">
                                         <Checkbox
                                             id="show-unprofitable"
                                             checked={options.showUnprofitable}
@@ -422,8 +484,8 @@ export function ArbitragePage({
                             <Alert variant="destructive">
                                 <AlertTitle>Check the filters</AlertTitle>
                                 <AlertDescription>
-                                    Enter a price buffer from 0 to 99 and a non-negative minimum
-                                    profit.
+                                    Enter a price buffer from 0 to 99, a non-negative minimum
+                                    profit, and whole numbers of zero or more for trade volume.
                                 </AlertDescription>
                             </Alert>
                         ) : null}
@@ -502,7 +564,7 @@ export function ArbitragePage({
                                             </EmptyTitle>
                                             <EmptyDescription>
                                                 {results.pricedCount
-                                                    ? "An opportunity requires a full batch of inputs and outputs traded in the last 24 hours. Adjust the filters or show all priced recipes to inspect the volumes."
+                                                    ? "Try lowering the minimum trade volume or adjusting the profit filters."
                                                     : "Try another league or retry when more market prices are available."}
                                             </EmptyDescription>
                                         </EmptyHeader>

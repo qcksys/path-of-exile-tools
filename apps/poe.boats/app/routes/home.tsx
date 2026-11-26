@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { GAME_TOOLS } from "~/data/game-tools";
 import type { Route } from "./+types/home";
 
 export function meta(): Route.MetaDescriptors {
@@ -20,20 +21,40 @@ const Home = () => {
             <p className="text-muted-foreground text-lg">
                 Tools for Path of Exile 1 and Path of Exile 2.
             </p>
-            <nav className="flex gap-4">
-                <Link
-                    to="/1/"
-                    className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                    Path of Exile 1
-                </Link>
-                <Link
-                    to="/2/"
-                    className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                    Path of Exile 2
-                </Link>
-            </nav>
+            <div className="grid w-full max-w-2xl items-start gap-4 sm:grid-cols-2">
+                {(["1", "2"] as const).map((game) => (
+                    <nav
+                        key={game}
+                        aria-label={`Path of Exile ${game} tools`}
+                        className="rounded-xl border border-border bg-card p-2 text-left"
+                    >
+                        <h2>
+                            <Link
+                                to={`/${game}/`}
+                                className="block rounded-lg bg-primary px-4 py-3 font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                            >
+                                Path of Exile {game}
+                            </Link>
+                        </h2>
+                        <ul className="mt-2">
+                            {GAME_TOOLS[game].map((tool) => (
+                                <li key={tool.to}>
+                                    <Link
+                                        to={tool.to}
+                                        className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm hover:bg-muted hover:text-primary"
+                                    >
+                                        <tool.icon
+                                            aria-hidden="true"
+                                            className="size-4 text-primary"
+                                        />
+                                        {tool.label}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </nav>
+                ))}
+            </div>
         </main>
     );
 };

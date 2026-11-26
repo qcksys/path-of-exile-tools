@@ -85,6 +85,50 @@ describe("arbitrage calculations", () => {
         });
         expect(opportunities[0].recipe.id).toBe(oil.id);
     });
+    it.each([
+        [50, 0, true],
+        [51, 0, false],
+        [0, 10, true],
+        [0, 11, false],
+        [50, 10, true],
+        [51, 11, false],
+    ])(
+        "applies input and output unit minimums (%i, %i)",
+        (minimumInputUnits24h, minimumOutputUnits24h, qualifies) => {
+            const result = findArbitrage([oil], snapshot, {
+                ...DEFAULT_ARBITRAGE_OPTIONS,
+                minimumInputUnits24h,
+                minimumOutputUnits24h,
+            });
+            expect(result.opportunities).toHaveLength(qualifies ? 1 : 0);
+            expect(result.bestRoi !== null).toBe(qualifies);
+            expect(result.lowVolumeCount).toBe(qualifies ? 0 : 1);
+            expect(result.pricedCount).toBe(1);
+        },
+    );
+    it("applies explicit minimums to all priced recipes, including unknown volumes", () => {
+        const market = { ...snapshot, quotes: { ...snapshot.quotes, "clear-oil": { value: 1 } } };
+        const options = {
+            ...DEFAULT_ARBITRAGE_OPTIONS,
+            showUnprofitable: true,
+            minimumOutputUnits24h: 10,
+        };
+        expect(findArbitrage([oil], market, options).opportunities).toHaveLength(1);
+        expect(
+            findArbitrage([oil], market, { ...options, minimumInputUnits24h: 1 }).opportunities,
+        ).toEqual([]);
+    });
+    it("keeps volume minimums optional for existing calculation requests", () => {
+        expect(
+            findArbitrage([oil], snapshot, {
+                buffer: 0,
+                category: "all",
+                minimumProfit: 0,
+                sort: "profit",
+                showUnprofitable: false,
+            }),
+        ).toEqual(findArbitrage([oil], snapshot, DEFAULT_ARBITRAGE_OPTIONS));
+    });
     it("applies the buffer to both sides before filtering", () => {
         const options = { ...DEFAULT_ARBITRAGE_OPTIONS, buffer: 10 };
         const result = findArbitrage([oil], snapshot, options);
