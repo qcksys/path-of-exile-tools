@@ -104,6 +104,11 @@ export function marketClusterValue(skill: string, passives: number, band: Band) 
     return `${skill} · ${passives} passives · ${bandLabel(band)}`;
 }
 
+export function parseMarketClusterValue(value: string) {
+    const match = /^(.+) · (\d+) passives · ilvl (\d+(?:–\d+|\+)?)$/.exec(value);
+    return match ? { group: match[1]!, passives: Number(match[2]), ilvl: match[3]! } : null;
+}
+
 /** Equipment and Cluster Jewel filters narrow base markets by level, links and quality. */
 type MarketBaseVariantFilters = {
     category: string;

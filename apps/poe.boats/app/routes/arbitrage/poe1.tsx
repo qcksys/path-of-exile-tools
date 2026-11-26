@@ -25,11 +25,5 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function Poe1Arbitrage({ loaderData }: Route.ComponentProps) {
-    return (
-        <ArbitragePage
-            key={`1:${loaderData.market.league}`}
-            data={loaderData.market}
-            clusterRecipe={loaderData.clusterRecipe}
-        />
-    );
+    return <ArbitragePage data={loaderData.market} clusterRecipe={loaderData.clusterRecipe} />;
 }

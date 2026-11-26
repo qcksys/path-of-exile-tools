@@ -1,6 +1,6 @@
 # Vendor recipe arbitrage
 
-The game home pages link to `/1/arbitrage` and `/2/arbitrage`. Both pages load current PC trade leagues and market prices from poe.ninja. No account or database migration is required.
+The game home pages link to `/1/arbitrage` and `/2/arbitrage`. Both pages use captured PC currency exchange prices. PoE 1 has tabs for upgrades, currency exchanges, Cluster Jewel rerolls and manually priced item recipes. PoE 2 groups Reforging Bench upgrades together.
 
 ## Supported conversions
 
@@ -40,9 +40,7 @@ Each result links to the output item's recipe table on [PoE Wiki](https://www.po
 
 ## Prices and calculations
 
-The server requests the game-specific `/api/data/index-state` and `/api/economy/exchange/current/overview` endpoints on poe.ninja. It only requests leagues listed by that game. PoE 1 categories are `Oil`, `Essence`, and `Currency`; PoE 2 categories are `Delirium`, `Essences`, and `Runes`.
-
-Values are normalized to chaos orbs for PoE 1 and exalted orbs for PoE 2. `core.rates[target]` is the number of target currency units per primary unit, so a line's `primaryValue` is multiplied by that rate. Missing conversions, zero/negative/non-finite prices, and unpriced recipe ingredients are excluded. A failed category does not discard successful categories. Successful responses are cached in a bounded per-worker memory cache for five minutes; the displayed timestamp preserves the oldest retrieval time used in the snapshot.
+Prices use the season market's latest completed hour or its most recent priced day in the seven-day window. Values are in chaos orbs for PoE 1 and exalted orbs for PoE 2. Each quote also reports the units of that item traded across exchange pairs in the last 24 completed hours.
 
 For a price buffer `b` percent:
 
@@ -51,9 +49,9 @@ For a price buffer `b` percent:
 - Profit = sale value − input cost.
 - ROI = profit / input cost × 100.
 
-Only positive profits meeting the minimum are shown by default. Showing all priced recipes disables the minimum-profit filter. Calculations use unrounded values and suppress floating-point noise at break-even.
+By default, each side must have enough traded units for one complete recipe and profit must be positive and meet the minimum. The batch count is the smaller of input units divided by input quantity and output units divided by output quantity, rounded down. Showing all priced recipes also shows losses and recipes with insufficient or unknown volume. The best ROI in each automatic tab uses only recipes with at least one batch. Calculations use unrounded values and suppress floating-point noise at break-even.
 
-These are market estimates rather than live, executable offers. Prices do not establish available stock or liquidity; gold, trade time, and transaction costs are not priced. Use the price buffer and verify the linked trade listings before buying.
+Historical trades do not establish current stock at the quoted price. The captured exchange data omits gold fees. Check the linked trade listings before buying.
 
 ## Wiki validation
 

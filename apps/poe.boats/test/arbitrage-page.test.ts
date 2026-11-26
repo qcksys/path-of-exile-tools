@@ -23,9 +23,9 @@ const data: ArbitrageMarketData = {
         league: "Standard",
         fetchedAt: "2026-10-02T00:00:00.000Z",
         quotes: {
-            "clear-oil": { value: 1 },
-            "sepia-oil": { value: 5 },
-            "amber-oil": { value: 10 },
+            "clear-oil": { value: 1, units24h: 33 },
+            "sepia-oil": { value: 5, units24h: 7 },
+            "amber-oil": { value: 10, units24h: 1 },
         },
         unavailableCategories: [],
     },
@@ -41,6 +41,9 @@ describe("arbitrage page", () => {
     it("displays recipe quantities, estimates and trade links", () => {
         showPage();
         expect(screen.getByText("1 opportunity")).toBeTruthy();
+        expect(screen.getByRole("tab", { name: "Upgrades Best ROI 66.7%" })).toBeTruthy();
+        expect(screen.getByText("33 inputs traded in 24h")).toBeTruthy();
+        expect(screen.getByText("7 outputs traded in 24h")).toBeTruthy();
         expect(screen.getByRole("link", { name: "3 × Clear Oil → 1 × Sepia Oil" })).toBeTruthy();
         expect(screen.getByText(byText("2 chaos"))).toBeTruthy();
         expect(screen.getByRole("link", { name: "Buy Clear Oil" }).getAttribute("href")).toContain(
@@ -56,6 +59,39 @@ describe("arbitrage page", () => {
             screen.getByRole("checkbox", { name: "Show all priced recipes, including losses" }),
         );
         expect(screen.getByText("2 priced recipes")).toBeTruthy();
+    });
+
+    it("shows each type's best volume-backed return even when another type is selected", () => {
+        const currency = getVendorRecipes("1").find(({ category }) => category === "currency")!;
+        const essence = getVendorRecipes("1").find(({ category }) => category === "essences")!;
+        showPage({
+            ...data,
+            recipes: [...data.recipes, currency, essence],
+            snapshot: {
+                ...data.snapshot!,
+                quotes: {
+                    ...data.snapshot!.quotes,
+                    [currency.input.id]: { value: 1, units24h: 9 },
+                    [currency.output.id]: { value: 6, units24h: 1 },
+                    [essence.input.id]: { value: 1, units24h: 2 },
+                    [essence.output.id]: { value: 100, units24h: 8 },
+                },
+            },
+        });
+        expect(screen.getByRole("tab", { name: "Upgrades Best ROI 66.7%" })).toBeTruthy();
+        fireEvent.click(screen.getByRole("tab", { name: "Currency exchanges Best ROI 100%" }));
+        expect(
+            screen.getByRole("link", { name: "3 × Scroll of Wisdom → 1 × Portal Scroll" }),
+        ).toBeTruthy();
+        expect(screen.queryByRole("link", { name: /3 × Clear Oil/ })).toBeNull();
+        fireEvent.click(screen.getByRole("tab", { name: /^Item recipes/ }));
+        fireEvent.change(screen.getByLabelText("Total cost of 5 inputs (chaos)"), {
+            target: { value: "5" },
+        });
+        fireEvent.change(screen.getByLabelText("Estimated output sale price (chaos)"), {
+            target: { value: "10" },
+        });
+        expect(screen.getByRole("tab", { name: "Item recipes Scenario ROI 100%" })).toBeTruthy();
     });
 
     it("ignores a cleared minimum profit when all recipes are requested", () => {
@@ -91,11 +127,8 @@ describe("arbitrage page", () => {
         showPage({ ...data, snapshot: null, error: "Please retry shortly." });
         expect(screen.getByText("Market data unavailable")).toBeTruthy();
         expect(screen.getByRole("button", { name: "Load prices" })).toBeTruthy();
-        const sections = within(screen.getByRole("navigation", { name: "Arbitrage sections" }));
-        expect(sections.queryByRole("link", { name: "Opportunities" })).toBeNull();
-        expect(sections.getByRole("link", { name: "Item recipes" }).getAttribute("href")).toBe(
-            "#item-recipes",
-        );
+        fireEvent.click(screen.getByRole("tab", { name: "Item recipes Enter prices for ROI" }));
+        expect(screen.getByLabelText("Recipe to evaluate")).toBeTruthy();
     });
 });
 
@@ -118,7 +151,9 @@ describe("cluster jewel recipe calculator", () => {
     function showCluster(market = clusterRecipe) {
         const Component = () => createElement(ArbitragePage, { data, clusterRecipe: market });
         const Routes = createRoutesStub([{ path: "/1/arbitrage", Component }]);
-        return render(createElement(Routes, { initialEntries: ["/1/arbitrage"] }));
+        const view = render(createElement(Routes, { initialEntries: ["/1/arbitrage"] }));
+        fireEvent.click(screen.getByRole("tab", { name: /Cluster Jewel rerolls/ }));
+        return view;
     }
 
     it("shows each size's expected value, unpriced outcomes counting as nothing", () => {
@@ -146,6 +181,9 @@ describe("cluster jewel recipe calculator", () => {
         fireEvent.change(screen.getByLabelText("Cluster recipe buffer (%)"), {
             target: { value: "10" },
         });
+        expect(
+            screen.getByRole("tab", { name: /Cluster Jewel rerolls Best expected ROI -18%/ }),
+        ).toBeTruthy();
         expect(screen.getByText(byText("9.021 chaos"))).toBeTruthy();
         fireEvent.change(screen.getByLabelText("Cluster recipe buffer (%)"), {
             target: { value: "100" },

@@ -14,7 +14,11 @@ const snapshot: MarketSnapshot = {
     league: "Standard",
     fetchedAt: "2026-10-02T00:00:00.000Z",
     unavailableCategories: [],
-    quotes: { "clear-oil": { value: 1 }, "sepia-oil": { value: 5 }, "amber-oil": { value: 18 } },
+    quotes: {
+        "clear-oil": { value: 1, units24h: 50 },
+        "sepia-oil": { value: 5, units24h: 10 },
+        "amber-oil": { value: 18, units24h: 1 },
+    },
 };
 
 describe("recipe catalogue", () => {
@@ -43,11 +47,35 @@ describe("recipe catalogue", () => {
 });
 
 describe("arbitrage calculations", () => {
+    it.each([
+        [2, 10],
+        [30, 0],
+        [30, undefined],
+    ])(
+        "excludes an essence upgrade without a traded batch on both sides (%s, %s)",
+        (inputUnits, outputUnits) => {
+            const recipe = getVendorRecipes("1").find((entry) => entry.category === "essences")!;
+            const quotes = {
+                [recipe.input.id]: { value: 1, units24h: inputUnits },
+                [recipe.output.id]: { value: 10, units24h: outputUnits },
+            };
+            expect(
+                findArbitrage([recipe], { ...snapshot, quotes }, DEFAULT_ARBITRAGE_OPTIONS)
+                    .opportunities,
+            ).toEqual([]);
+        },
+    );
     it("accounts for all three inputs and sorts by net profit", () => {
         const result = findArbitrage([oil, secondOil], snapshot, DEFAULT_ARBITRAGE_OPTIONS);
         expect(result.pricedCount).toBe(2);
         expect(result.opportunities.map(({ profit }) => profit)).toEqual([3, 2]);
-        expect(result.opportunities[1]).toMatchObject({ cost: 3, revenue: 5 });
+        expect(result.opportunities[1]).toMatchObject({
+            cost: 3,
+            revenue: 5,
+            inputUnits24h: 50,
+            outputUnits24h: 10,
+            batches24h: 10,
+        });
         expect(result.opportunities[1].roi).toBeCloseTo(66.6667);
     });
     it("can sort by return on cost instead of absolute profit", () => {
@@ -70,7 +98,10 @@ describe("arbitrage calculations", () => {
     it("excludes break-even and losses unless requested", () => {
         const market = {
             ...snapshot,
-            quotes: { "clear-oil": { value: 1 }, "sepia-oil": { value: 3 } },
+            quotes: {
+                "clear-oil": { value: 1, units24h: 3 },
+                "sepia-oil": { value: 3, units24h: 1 },
+            },
         };
         expect(findArbitrage([oil], market, DEFAULT_ARBITRAGE_OPTIONS).opportunities).toEqual([]);
         const result = findArbitrage([oil], market, {
@@ -118,7 +149,10 @@ describe("arbitrage calculations", () => {
         const market = {
             ...snapshot,
             game: "2" as const,
-            quotes: { [recipe.input.id]: { value: 2 }, [recipe.output.id]: { value: 9 } },
+            quotes: {
+                [recipe.input.id]: { value: 2, units24h: 4 },
+                [recipe.output.id]: { value: 9, units24h: 1 },
+            },
         };
         expect(
             findArbitrage([recipe], market, DEFAULT_ARBITRAGE_OPTIONS).opportunities[0],

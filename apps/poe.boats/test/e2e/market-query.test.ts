@@ -2516,6 +2516,7 @@ it("prices requested exchange items as the list does, bridging through divine an
     await upsertStashCurrencyHourly(db as unknown as TDatabase, [
         snapshot(`${divineId}|${chaosId}`, hour, { [divineId]: 10, [chaosId]: 2000 }),
         snapshot(`${scarabId}|${divineId}`, hour, { [scarabId]: 10, [divineId]: 1 }),
+        snapshot(`${wisdomId}|${chaosId}`, hour - 86400, { [wisdomId]: 1000, [chaosId]: 2 }),
         snapshot(`${wisdomId}|${chaosId}`, hour, { [wisdomId]: 0, [chaosId]: 0 }),
         snapshot(`${wisdomId}|${chaosId}`, hour - 7200, { [wisdomId]: 500, [chaosId]: 1 }),
         snapshot(`${portalId}|${chaosId}`, hour, { [portalId]: 0, [chaosId]: 0 }),
@@ -2525,10 +2526,11 @@ it("prices requested exchange items as the list does, bridging through divine an
         realm: "pc",
         league: "ExchangePrices",
         itemIds: [scarabId, wisdomId, portalId],
+        includeVolume: true,
     });
     expect(result.latestHour).toBe(hour);
-    expect(result.prices.get(scarabId)).toEqual({ price: 20, hour });
-    expect(result.prices.get(wisdomId)).toEqual({ price: 0.002, hour: hour - 7200 });
+    expect(result.prices.get(scarabId)).toEqual({ price: 20, hour, units24h: 10 });
+    expect(result.prices.get(wisdomId)).toEqual({ price: 0.002, hour: hour - 7200, units24h: 500 });
     expect(result.prices.has(portalId)).toBe(false);
     expect(await getMarketExchangeLeagues(db as unknown as TDatabase, "pc")).toContain(
         "ExchangePrices",

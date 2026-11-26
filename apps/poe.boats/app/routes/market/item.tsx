@@ -12,8 +12,9 @@ import {
     mapValueMeets,
     mapVariantConditions,
     parseMapVariantValue,
+    parseMarketClusterValue,
 } from "@poe-tools/market";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, type ShouldRevalidateFunctionArgs, useSearchParams } from "react-router";
 import { CurrencyLabel } from "~/components/currency-label";
 import { DataTable, dataTableColumns } from "~/components/data-table";
@@ -135,11 +136,13 @@ type VariantLinks = {
     label: (variant: VariantRow) => string;
     link: (variant: VariantRow) => string;
     isCurrent: (variant: VariantRow) => boolean;
+    expanded: boolean;
+    setExpanded: (expanded: boolean) => void;
 };
 
 function VariantLink({
     variant,
-    links: { label, link, isCurrent },
+    links: { label, link, isCurrent, setExpanded },
     children,
 }: {
     variant: VariantRow;
@@ -149,6 +152,13 @@ function VariantLink({
     return (
         <Link
             to={link(variant)}
+            onClick={(event) => {
+                if (
+                    !(event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) &&
+                    event.button === 0
+                )
+                    setExpanded(false);
+            }}
             aria-label={label(variant)}
             aria-current={isCurrent(variant) ? "page" : undefined}
             className={`text-primary hover:underline ${isCurrent(variant) ? "font-semibold" : ""}`}
@@ -166,6 +176,7 @@ function VariantTable({
     prices,
     game,
     search = false,
+    className = "text-sm",
 }: {
     variants: VariantRow[];
     identity: ReturnType<typeof variantColumn.columns>;
@@ -173,6 +184,7 @@ function VariantTable({
     prices: Prices;
     game: "poe1" | "poe2";
     search?: boolean;
+    className?: string;
 }) {
     const columns = useMemo(() => {
         const count = { sortDescFirst: true, meta: { filter: "range" } } as const;
@@ -214,9 +226,69 @@ function VariantTable({
             columns={columns}
             getRowId={links.link}
             search={search}
-            maxRows={SHOWN_TABLE_VARIANTS}
+            limit={{
+                maxRows: SHOWN_TABLE_VARIANTS,
+                expanded: links.expanded,
+                setExpanded: links.setExpanded,
+            }}
             keepRow={links.isCurrent}
-            className="text-sm"
+            className={className}
+        />
+    );
+}
+
+function ClusterVariantTable({
+    variants,
+    links,
+    prices,
+    game,
+}: {
+    variants: VariantRow[];
+    links: VariantLinks;
+    prices: Prices;
+    game: "poe1" | "poe2";
+}) {
+    const identity = useMemo(
+        () =>
+            variantColumn.columns([
+                variantColumn.accessor(
+                    (row) => parseMarketClusterValue(row.signatureValue)!.group,
+                    {
+                        id: "group",
+                        header: "Group",
+                        meta: { filter: "text", className: "w-full min-w-48 whitespace-normal" },
+                        cell: ({ getValue, row }) => (
+                            <VariantLink variant={row.original} links={links}>
+                                {getValue()}
+                            </VariantLink>
+                        ),
+                    },
+                ),
+                variantColumn.accessor(
+                    (row) => parseMarketClusterValue(row.signatureValue)!.passives,
+                    {
+                        id: "passives",
+                        header: "Passives",
+                        meta: { filter: "range" },
+                    },
+                ),
+                variantColumn.accessor((row) => parseMarketClusterValue(row.signatureValue)!.ilvl, {
+                    id: "ilvl",
+                    header: "ilvl range",
+                    meta: { filter: "text", className: "whitespace-nowrap" },
+                }),
+            ]),
+        [links],
+    );
+    return (
+        <VariantTable
+            variants={variants}
+            identity={identity}
+            links={links}
+            prices={prices}
+            game={game}
+            search
+            className="text-sm [&_td]:px-2 [&_th]:px-2 [&_th:not(:first-child)_input]:w-16"
         />
     );
 }
@@ -584,7 +656,11 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
         [variants],
     );
     const link = useCallback((variant: VariantRow) => marketLink(filters, variant), [filters]);
-    const links = useMemo(() => ({ label, link, isCurrent }), [label, link, isCurrent]);
+    const [expanded, setExpanded] = useState(false);
+    const links = useMemo(
+        () => ({ label, link, isCurrent, expanded, setExpanded }),
+        [label, link, isCurrent, expanded],
+    );
     const variantLink = (variant: VariantRow) => (
         <li key={link(variant)}>
             <Link
@@ -636,7 +712,18 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                             ({variants.length})
                         </span>
                     </h2>
-                    {variants.length > SHOWN_VARIANTS ? (
+                    {variants.every(
+                        (variant) =>
+                            variant.signatureKind === "base" &&
+                            parseMarketClusterValue(variant.signatureValue),
+                    ) ? (
+                        <ClusterVariantTable
+                            variants={variants}
+                            links={links}
+                            prices={prices}
+                            game={game}
+                        />
+                    ) : variants.length > SHOWN_VARIANTS ? (
                         variants.every(mapFields) ? (
                             <MapVariantTable
                                 variants={variants}

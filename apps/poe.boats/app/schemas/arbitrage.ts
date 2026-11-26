@@ -58,7 +58,10 @@ export const DEFAULT_ARBITRAGE_OPTIONS: ArbitrageOptions = {
     showUnprofitable: false,
 };
 
-export const MarketQuoteSchema = z.object({ value: z.number().positive() });
+export const MarketQuoteSchema = z.object({
+    value: z.number().positive(),
+    units24h: z.number().int().nonnegative().optional(),
+});
 export type MarketQuote = z.infer<typeof MarketQuoteSchema>;
 
 export const MarketSnapshotSchema = z.object({

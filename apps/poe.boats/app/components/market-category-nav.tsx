@@ -7,7 +7,7 @@ import { useItemPresentations } from "~/hooks/use-item-presentations";
 import { findItemPresentation } from "~/lib/item-presentation";
 import { cn } from "~/lib/utils";
 
-type CategoryDefinition = { label: string; group: string; icon: string };
+type CategoryDefinition = { label: string; group: string | null; icon: string };
 
 /** A category's item art, or an empty slot of the same size until the art catalog loads. */
 function CategoryIcon({ art }: { art: string | undefined }) {
@@ -44,7 +44,7 @@ export function MarketCategoryNav<Category extends string>({
     const items = useItemPresentations(game);
     const art = (name: string) => findItemPresentation(items, undefined, name)?.art;
     const entries = Object.entries(categories) as [Category, CategoryDefinition][];
-    const groups = [...new Set(entries.map(([, category]) => category.group))];
+    const groups = [...new Set(entries.flatMap(([, category]) => category.group ?? []))];
     const pending = entries.find(
         ([id]) => id !== current && link(id).split("?")[0] === pendingPath,
     )?.[0];
