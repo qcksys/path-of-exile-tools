@@ -305,6 +305,60 @@ describe("home's lease", () => {
         expect(await importing).toBe(writer.durable()!.segment);
         expect((await archived()).map((p) => p.item)).toEqual(["h10", "h11", "h12", "h13", "x"]);
     });
+
+    it("keeps asking for the lease while an import waits for sealing, then takes it", async () => {
+        const worker = fakeLeaseWorker();
+        await worker.api.lease({ holder: "home", cursor: "s0" });
+        worker.check(120_000, false);
+        const { epoch } = (await worker.api.lease({ holder: "fallback" })) as { epoch: number };
+        const writer = createSegmentWriter({
+            dir: fallbackDir,
+            epoch,
+            api: worker.api,
+            maxBytes: 1,
+        });
+        await writer.append({ capturedAt: at(14, 1), cursor: "s0", page: page("s1", "x") });
+        await writer.flush();
+        // The fallback has stopped and reported its final segment and cursor.
+        await worker.api.lease({
+            holder: "fallback",
+            epoch,
+            cursor: "s1",
+            segment: writer.durable()!.segment,
+            released: true,
+        });
+        for (const hour of [10, 11, 12, 13])
+            await appendRawPage(dir, { capturedAt: at(hour, 1), page: page("p", `h${hour}`) });
+
+        const stop = new AbortController();
+        const lease = createHomeLease({
+            api: worker.api,
+            dir,
+            renewMs: 5,
+            importPollMs: 5,
+            importWaitMs: 5,
+            maxSpooledHours: 4,
+        });
+        const log = vi.spyOn(console, "log").mockImplementation(() => {});
+        const renewing = lease.run(stop.signal);
+        await until(() => worker.state().homeWaiting);
+        const firstSeen = worker.state().homeSeenAt;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        // Four hours wait to be sealed, so nothing is imported, but home still asks: the Worker
+        // waits for it instead of starting another fallback.
+        expect((await archived()).map((p) => p.item)).toEqual(["h10", "h11", "h12", "h13"]);
+        expect(worker.state().homeSeenAt).toBeGreaterThan(firstSeen);
+        expect(worker.check(0, false).start).toBe(false);
+
+        await sealRawHours(dir, at(12));
+        await until(() => lease.holding());
+        stop.abort();
+        await renewing;
+        log.mockRestore();
+        expect(worker.state()).toMatchObject({ holder: "home", released: false });
+        expect(lease.takeHandover()).toBe("s1");
+        expect((await archived()).map((p) => p.item)).toEqual(["h10", "h11", "h12", "h13", "x"]);
+    });
 });
 
 describe("the fallback", () => {

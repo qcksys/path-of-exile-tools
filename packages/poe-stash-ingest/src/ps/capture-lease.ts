@@ -222,16 +222,29 @@ export function createHomeLease(options: {
     async function run(signal: AbortSignal) {
         const pause = (ms: number) => setTimeout(ms, undefined, { signal }).catch(() => undefined);
         let imported = (await readImportState(dir)).imported;
+        const request = () => ({
+            holder: "home" as const,
+            ...(epoch !== undefined && { epoch }),
+            ...(cursor !== undefined && { cursor }),
+            imported,
+        });
+        const hold = async (response: { epoch: number; from?: string | null }, sentAt: number) => {
+            if (response.from !== undefined) {
+                // The fallback handed the stream back: continue where it stopped.
+                await writeCaptureState(dir, { cursor: response.from });
+                handover = response.from;
+                cursor = response.from;
+                console.log(`capture lease: holding again from the fallback's last page`);
+            } else if (state !== "hold") console.log("capture lease: holding");
+            epoch = response.epoch;
+            expiresAt = sentAt + leaseMs;
+            state = "hold";
+        };
         while (!signal.aborted) {
             const sentAt = Date.now();
             let response: Awaited<ReturnType<LeaseApi["lease"]>>;
             try {
-                response = await api.lease({
-                    holder: "home",
-                    ...(epoch !== undefined && { epoch }),
-                    ...(cursor !== undefined && { cursor }),
-                    imported,
-                });
+                response = await api.lease(request());
                 if (failing) console.log("capture lease: renewals resumed");
                 failing = false;
             } catch (error) {
@@ -254,16 +267,7 @@ export function createHomeLease(options: {
                 });
 
             if (response.state === "hold") {
-                if (response.from !== undefined) {
-                    // The fallback handed the stream back: continue where it stopped.
-                    await writeCaptureState(dir, { cursor: response.from });
-                    handover = response.from;
-                    cursor = response.from;
-                    console.log(`capture lease: holding again from the fallback's last page`);
-                } else if (state !== "hold") console.log("capture lease: holding");
-                epoch = response.epoch;
-                expiresAt = sentAt + leaseMs;
-                state = "hold";
+                await hold(response, sentAt);
                 await pause(renewMs);
                 continue;
             }
@@ -276,14 +280,33 @@ export function createHomeLease(options: {
                 console.log("capture lease: a fallback holds the lease; importing its pages");
             state = "import";
             const before = imported;
-            if (response.segment !== null)
+            if (response.segment !== null) {
+                // An import can wait minutes for sealing. Home keeps asking meanwhile, so the Worker
+                // knows it is still here; it answers `hold` once home has imported every segment.
+                const importing = new AbortController();
+                const stopImport = () => importing.abort();
+                signal.addEventListener("abort", stopImport, { once: true });
+                let held: { epoch: number; from?: string | null; sentAt: number } | undefined;
+                const checkIns = (async () => {
+                    while (!importing.signal.aborted) {
+                        await setTimeout(renewMs, undefined, { signal: importing.signal }).catch(
+                            () => undefined,
+                        );
+                        if (importing.signal.aborted) return;
+                        const askedAt = Date.now();
+                        const answer = await api.lease(request()).catch(() => undefined);
+                        if (answer?.state !== "hold") continue;
+                        held = { ...answer, sentAt: askedAt };
+                        importing.abort();
+                    }
+                })();
                 try {
                     imported = await importSegments({
                         api,
                         dir,
                         after: imported,
                         upTo: response.segment,
-                        signal,
+                        signal: importing.signal,
                         onImported: (key) => {
                             imported = key;
                             toDelete.push(key);
@@ -294,7 +317,18 @@ export function createHomeLease(options: {
                 } catch (error) {
                     console.error(`capture lease: import failed: ${failureMessage(error)}`);
                     await pause(renewMs);
+                } finally {
+                    importing.abort();
+                    signal.removeEventListener("abort", stopImport);
+                    // A check-in still in flight may bring the lease back.
+                    await checkIns;
                 }
+                if (held) {
+                    await hold(held, held.sentAt);
+                    await pause(renewMs);
+                    continue;
+                }
+            }
             await pause(imported !== before ? 0 : (options.importPollMs ?? IMPORT_POLL_MS));
         }
     }
