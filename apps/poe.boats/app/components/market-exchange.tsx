@@ -130,19 +130,23 @@ export function ExchangePrice({
     price: value,
     rates,
     game,
+    itemsPerCurrency = false,
 }: {
     price: number;
     rates: MarketPriceRates;
     game: Game;
+    itemsPerCurrency?: boolean;
 }) {
     const [display] = useMarketDisplay();
     const price = exchangePrice(value, rates, display, game);
+    const formatAmount = (amount: number) =>
+        itemsPerCurrency && amount > 0 && amount < 1 ? `${number(1 / amount)} per` : number(amount);
     return (
         <>
-            {number(price.amount)} <CurrencyLabel currency={price.currency} game={game} />
+            {formatAmount(price.amount)} <CurrencyLabel currency={price.currency} game={game} />
             {price.equivalent ? (
                 <span className="ml-2 text-xs font-normal text-muted-foreground">
-                    ≈ {number(price.equivalent.amount)}{" "}
+                    ≈ {formatAmount(price.equivalent.amount)}{" "}
                     <CurrencyLabel currency={price.equivalent.currency} game={game} iconOnly />
                 </span>
             ) : null}

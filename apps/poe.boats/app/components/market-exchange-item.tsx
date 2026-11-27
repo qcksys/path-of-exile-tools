@@ -108,7 +108,12 @@ export function MarketExchangeItem({
                                 "No rate"
                             )
                         ) : (
-                            <ExchangePrice price={item.price} rates={priceRates} game={game} />
+                            <ExchangePrice
+                                price={item.price}
+                                rates={priceRates}
+                                game={game}
+                                itemsPerCurrency
+                            />
                         ),
                         <>
                             {item.price === null ? null : item.current ? (

@@ -314,7 +314,9 @@ market layout, so it carries between that game's list, item and exchange pages a
 separate for `/1` and `/2`. Exchange rows, stash listing prices (each listing currency's median
 converted through chaos, noting the listed amount when shown in another currency), the item
 history charts (plotted in the chosen currency at each hour's rate) and hourly tables all use
-it. Its rates are `priceRates` on `get_season_market` (stash rates at the season's latest hour,
+it. Exchange list and detail values show items per currency whenever one item is worth less than
+one unit of that currency, e.g. `30 per chaos ≈ 4,500 per divine`.
+Display rates are `priceRates` on `get_season_market` (stash rates at the season's latest hour,
 else the exchange's), `get_season_exchange_item` and
 `get_poe2_season_exchange` (from the exchange rows' prices).
 The HTTP and MCP market operation exposes the same filters and category assignments, and still

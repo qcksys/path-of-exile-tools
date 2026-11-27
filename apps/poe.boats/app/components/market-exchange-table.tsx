@@ -65,7 +65,12 @@ function exchangeColumns(
                 return (
                     <>
                         <p className={row.current ? "font-semibold" : "text-muted-foreground"}>
-                            <ExchangePrice price={row.price} rates={rates} game={game} />
+                            <ExchangePrice
+                                price={row.price}
+                                rates={rates}
+                                game={game}
+                                itemsPerCurrency
+                            />
                         </p>
                         <MarketPriceChanges trend={exchangeTrend(row)} />
                         {row.current ? null : (
