@@ -1,4 +1,4 @@
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
@@ -19,6 +19,7 @@ import {
     rotaLogSchema,
     startRotaLog,
 } from "~/lib/boss-rota-log";
+import { rotaValueScale } from "~/lib/rota-value-scale";
 import type { BossRotaResult } from "~/schemas/boss-rota";
 import { bossMoney } from "./boss-money";
 
@@ -73,7 +74,60 @@ function useRotaStorage<T>(key: string, schema: z.ZodType<T>, initial: T) {
 }
 
 export function useBossPace(league: string) {
-    return useRotaStorage(`boss-rota:pace:${league}`, paceSchema, emptyPace);
+    const [pace, update] = useRotaStorage(`boss-rota:pace:${league}`, paceSchema, emptyPace);
+    function setPace(boss: string, seconds: number | null) {
+        update((previous) => {
+            const next = { ...previous };
+            if (seconds === null) delete next[boss];
+            else next[boss] = seconds;
+            return next;
+        });
+    }
+    return [pace, setPace] as const;
+}
+
+export function BossKillTime({
+    id,
+    label,
+    seconds,
+    setSeconds,
+}: {
+    id?: string;
+    label?: string;
+    seconds: number | null;
+    setSeconds: (seconds: number | null) => void;
+}) {
+    const [draft, setDraft] = useState<string | null>(null);
+    return (
+        <Input
+            id={id}
+            aria-label={label}
+            className="w-24"
+            type="number"
+            step="any"
+            min="0"
+            max="86400"
+            placeholder="e.g. 90"
+            value={draft ?? seconds ?? ""}
+            onChange={(event) => {
+                const { value, valueAsNumber, validity } = event.currentTarget;
+                setDraft(value);
+                if (validity.badInput) return;
+                if (!value) setSeconds(null);
+                else if (killSecondsSchema.safeParse(valueAsNumber).success)
+                    setSeconds(valueAsNumber);
+            }}
+            onBlur={(event) => {
+                if (
+                    event.currentTarget.validity.badInput ||
+                    (event.currentTarget.value &&
+                        !killSecondsSchema.safeParse(event.currentTarget.valueAsNumber).success)
+                )
+                    toast.error("Enter a positive kill time up to 86,400 seconds.");
+                setDraft(null);
+            }}
+        />
+    );
 }
 
 type Encounter = BossRotaResult["encounters"][number];
@@ -101,6 +155,24 @@ export function BossRotaTracker({
     const report = useMemo(
         () => (active ? analyzeRotaLog({ log: active.log, secondsPerKill: seconds }) : null),
         [active, seconds],
+    );
+    const logged = report?.drops ?? [];
+    const countScale = rotaValueScale(logged.flatMap((row) => [row.count, row.median]));
+    const differenceScale = rotaValueScale(
+        logged.map((row) => row.difference),
+        0,
+    );
+    const valueScale = rotaValueScale(logged.map((row) => row.valueChaos));
+    const expectedHourly = netPerHour(boss.perKill.profitFromPricedDropsChaos, seconds);
+    const hourlyScale = rotaValueScale([expectedHourly, report?.pricedNetPerHour], 0);
+    const netScale = rotaValueScale(
+        [
+            report?.pricedNetChaos,
+            active && boss.perKill.profitFromPricedDropsChaos !== null
+                ? boss.perKill.profitFromPricedDropsChaos * active.log.kills
+                : null,
+        ],
+        0,
     );
     function start() {
         const rota = {
@@ -130,31 +202,7 @@ export function BossRotaTracker({
             <div className="flex flex-wrap items-end gap-4">
                 <label htmlFor="boss-seconds" className="grid gap-1 text-sm">
                     Seconds per kill
-                    <Input
-                        id="boss-seconds"
-                        className="w-32"
-                        type="number"
-                        step="any"
-                        min="0"
-                        max="86400"
-                        placeholder="e.g. 90"
-                        defaultValue={seconds ?? ""}
-                        onChange={(event) => {
-                            const value = event.currentTarget.valueAsNumber;
-                            if (!event.currentTarget.value) setSeconds(null);
-                            else if (killSecondsSchema.safeParse(value).success) setSeconds(value);
-                        }}
-                        onBlur={(event) => {
-                            if (
-                                event.currentTarget.value &&
-                                !killSecondsSchema.safeParse(event.currentTarget.valueAsNumber)
-                                    .success
-                            ) {
-                                event.currentTarget.value = seconds === null ? "" : String(seconds);
-                                toast.error("Enter a positive kill time up to 86,400 seconds.");
-                            }
-                        }}
-                    />
+                    <BossKillTime id="boss-seconds" seconds={seconds} setSeconds={setSeconds} />
                 </label>
                 <div className="text-sm">
                     Expected net per hour{" "}
@@ -162,7 +210,8 @@ export function BossRotaTracker({
                         {bossMoney(
                             divine,
                             netPerHour(boss.perKill.profitChaos, seconds),
-                            netPerHour(boss.perKill.profitFromPricedDropsChaos, seconds),
+                            expectedHourly,
+                            hourlyScale,
                         )}
                     </strong>
                 </div>
@@ -202,7 +251,12 @@ export function BossRotaTracker({
                             ],
                             [
                                 "Logged net",
-                                bossMoney(active.divine, report.netChaos, report.pricedNetChaos),
+                                bossMoney(
+                                    active.divine,
+                                    report.netChaos,
+                                    report.pricedNetChaos,
+                                    netScale,
+                                ),
                             ],
                             [
                                 "Logged net per hour",
@@ -210,6 +264,7 @@ export function BossRotaTracker({
                                     active.divine,
                                     report.netPerHour,
                                     report.pricedNetPerHour,
+                                    hourlyScale,
                                 ),
                             ],
                         ].map(([label, amount]) => (
@@ -257,7 +312,10 @@ export function BossRotaTracker({
                                                 >
                                                     −
                                                 </Button>
-                                                <span className="min-w-5 text-center tabular-nums">
+                                                <span
+                                                    className="min-w-5 text-center tabular-nums"
+                                                    style={countScale(row.count)}
+                                                >
                                                     {row.count}
                                                 </span>
                                                 <Button
@@ -272,14 +330,21 @@ export function BossRotaTracker({
                                                 </Button>
                                             </div>
                                         </TableCell>
-                                        <TableCell>{row.median}</TableCell>
-                                        <TableCell>
+                                        <TableCell style={countScale(row.median)}>
+                                            {row.median}
+                                        </TableCell>
+                                        <TableCell style={differenceScale(row.difference)}>
                                             {row.difference === 0
                                                 ? "At median"
                                                 : `${Math.abs(row.difference)} ${row.difference > 0 ? "above" : "below"}`}
                                         </TableCell>
                                         <TableCell>
-                                            {bossMoney(active.divine, row.valueChaos)}
+                                            {bossMoney(
+                                                active.divine,
+                                                row.valueChaos,
+                                                null,
+                                                valueScale,
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 );

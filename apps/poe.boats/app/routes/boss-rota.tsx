@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Form, Link } from "react-router";
 import { bossMoney as money } from "~/components/boss-money";
-import { BossRotaTracker, useBossPace } from "~/components/boss-rota-tracker";
+import { BossKillTime, BossRotaTracker, useBossPace } from "~/components/boss-rota-tracker";
 import { CurrencyLabel } from "~/components/currency-label";
 import { DataTable, dataTableColumns } from "~/components/data-table";
 import { CatalogItemArt, ItemArt } from "~/components/item-art";
@@ -22,6 +22,7 @@ import { PROFIT_TRIALS } from "~/lib/boss-profit-chances";
 import { netPerHour } from "~/lib/boss-rota-log";
 import { marketItemArtUrl } from "~/lib/item-presentation";
 import { marketNumber } from "~/lib/market-number";
+import { fractionScale, type RotaValueScale, rotaValueScale } from "~/lib/rota-value-scale";
 import type { SiteHandle } from "~/routes/layouts/site";
 import {
     type BossOrder,
@@ -79,25 +80,43 @@ function BossArt({ boss }: { boss: Encounter }) {
     );
 }
 
-function QuoteActivity({ quote }: { quote: RotaItem["quote"] }) {
+function itemScales(items: RotaItem[]) {
+    return {
+        unit: rotaValueScale(items.map((item) => item.quote?.unitChaos)),
+        value: rotaValueScale(items.map((item) => item.valueChaos)),
+        quantity: rotaValueScale(items.map((item) => item.quantityPerKill)),
+        volume: rotaValueScale(items.map((item) => item.quote?.units24h)),
+        listings: rotaValueScale(items.map((item) => item.quote?.listings)),
+        sales: rotaValueScale(items.map((item) => item.quote?.likelySales24h)),
+    };
+}
+
+function QuoteActivity({
+    quote,
+    scales,
+}: {
+    quote: RotaItem["quote"];
+    scales: ReturnType<typeof itemScales>;
+}) {
     if (!quote) return <span className="text-muted-foreground">Unpriced</span>;
     const observed = new Date(quote.hour * 1000).toISOString();
     return (
         <div className="mt-1 grid gap-0.5 whitespace-normal text-xs text-muted-foreground">
             {quote.source === "exchange" ? (
-                <span>
+                <span style={scales.volume(quote.units24h)}>
                     {quote.units24h === undefined
                         ? "Volume unavailable"
                         : `${marketNumber(quote.units24h / 24)} units/h · ${marketNumber(quote.units24h)} traded / 24h`}
                 </span>
             ) : (
                 <>
-                    <span>
+                    <span style={scales.listings(quote.listings)}>
                         {quote.listings === undefined
                             ? "Listing count unavailable"
                             : `${marketNumber(quote.listings)} listed in quote hour`}
                     </span>
                     <span
+                        style={scales.sales(quote.likelySales24h)}
                         className={
                             quote.likelySales24h === 0 ? "font-medium text-foreground" : undefined
                         }
@@ -123,6 +142,8 @@ function ItemTable({
     divine,
     poolValue,
     pricedLoot,
+    scales,
+    poolScale,
 }: {
     entries?: boolean;
     items: RotaItem[];
@@ -130,6 +151,8 @@ function ItemTable({
     divine: number | null;
     poolValue?: Encounter["poolValues"][number];
     pricedLoot?: number | null;
+    scales: ReturnType<typeof itemScales>;
+    poolScale?: RotaValueScale;
 }) {
     const columns = useMemo(
         () =>
@@ -169,8 +192,11 @@ function ItemTable({
                     enableColumnFilter: false,
                     header: entries ? "Per kill" : "Chance",
                     sortDescFirst: true,
-                    cell: ({ getValue }) =>
-                        entries ? getValue() : `${marketNumber(getValue() * 100)}%`,
+                    cell: ({ getValue }) => (
+                        <span style={(entries ? scales.quantity : fractionScale)(getValue())}>
+                            {entries ? getValue() : `${marketNumber(getValue() * 100)}%`}
+                        </span>
+                    ),
                 }),
                 itemColumn.accessor((item) => item.quote?.unitChaos, {
                     id: "unit",
@@ -180,8 +206,8 @@ function ItemTable({
                     sortUndefined: "last",
                     cell: ({ row: { original: item } }) => (
                         <>
-                            {item.quote && money(divine, item.quote.unitChaos)}
-                            <QuoteActivity quote={item.quote} />
+                            {item.quote && money(divine, item.quote.unitChaos, null, scales.unit)}
+                            <QuoteActivity quote={item.quote} scales={scales} />
                         </>
                     ),
                 }),
@@ -193,9 +219,12 @@ function ItemTable({
                     sortUndefined: "last",
                     cell: ({ row: { original: item } }) => (
                         <>
-                            {money(divine, item.valueChaos)}
+                            {money(divine, item.valueChaos, null, scales.value)}
                             {!!pricedLoot && item.valueChaos !== null && (
-                                <small className="block text-muted-foreground">
+                                <small
+                                    className="block text-muted-foreground"
+                                    style={fractionScale(item.valueChaos / pricedLoot)}
+                                >
                                     {marketNumber((100 * item.valueChaos) / pricedLoot)}% of priced
                                     loot
                                 </small>
@@ -204,7 +233,7 @@ function ItemTable({
                     ),
                 }),
             ]),
-        [entries, divine, pricedLoot],
+        [entries, divine, pricedLoot, scales],
     );
     return (
         <section className="min-w-0">
@@ -215,10 +244,18 @@ function ItemTable({
                         divine,
                         poolValue.fullyPriced ? poolValue.pricedChaosPerKill : null,
                         poolValue.pricedChaosPerKill,
+                        poolScale,
                     )}{" "}
                     per kill
-                    {poolValue.shareOfPricedLoot !== null &&
-                        ` · ${marketNumber(100 * poolValue.shareOfPricedLoot)}% of priced loot`}
+                    {poolValue.shareOfPricedLoot !== null && (
+                        <>
+                            {" "}
+                            ·{" "}
+                            <span style={fractionScale(poolValue.shareOfPricedLoot)}>
+                                {marketNumber(100 * poolValue.shareOfPricedLoot)}% of priced loot
+                            </span>
+                        </>
+                    )}
                 </p>
             )}
             <DataTable label={title} data={items} columns={columns} getRowId={(row) => row.name} />
@@ -232,6 +269,33 @@ export default function BossRotaPage({
     const { leagues, league, runs, encounters, chaosPerDivine: divine } = result;
     const [pace, savePace] = useBossPace(league);
     const selected = boss === "all" ? undefined : encounters[0];
+    const details = useMemo(
+        () =>
+            selected && {
+                entries: itemScales(selected.entries),
+                drops: itemScales(selected.drops),
+                pool: rotaValueScale(selected.poolValues.map((row) => row.pricedChaosPerKill)),
+            },
+        [selected],
+    );
+    const costScale = rotaValueScale(encounters.map((b) => b.total.entryChaos));
+    const lootScale = rotaValueScale(encounters.map((b) => b.total.pricedLootChaos));
+    const netScale = rotaValueScale(
+        encounters.map((b) => b.perKill.profitFromPricedDropsChaos),
+        0,
+    );
+    const totalScale = rotaValueScale(
+        encounters.map((b) => b.total.profitFromPricedDropsChaos),
+        0,
+    );
+    const horizonScale = rotaValueScale(
+        encounters.flatMap((b) => b.profitChances.map((h) => h.pricedAverageNetChaos)),
+        0,
+    );
+    const hourlyScale = rotaValueScale(
+        encounters.map((b) => netPerHour(b.perKill.profitFromPricedDropsChaos, pace[b.id] ?? null)),
+        0,
+    );
     const link = (id: string, sort = order, dir = direction) => {
         const path = id === "all" ? "/1/boss-rota" : `/1/boss-rota/${id}`;
         return `${path}?${new URLSearchParams({ league, runs: String(runs), ...(q && { q }), pricing, order: sort, direction: dir })}`;
@@ -357,10 +421,25 @@ export default function BossRotaPage({
                         <h2 className="mb-2 font-heading text-xl font-semibold">
                             Expected return for {kills}
                         </h2>
+                        <p className="mb-3 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+                            Low{" "}
+                            <span
+                                aria-hidden="true"
+                                className="h-1.5 w-16 rounded-full bg-linear-to-r from-chart-5 via-foreground to-chart-3"
+                            />{" "}
+                            High
+                            <span>
+                                Each metric has its own range. Percentages use 0–100%. Net returns
+                                and differences centre on zero.
+                            </span>
+                        </p>
                         <Table className="tabular-nums">
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead colSpan={runs > 1 ? 6 : 5} scope="colgroup">
+                                    <TableHead
+                                        colSpan={5 + Number(runs > 1) + Number(boss === "all")}
+                                        scope="colgroup"
+                                    >
                                         Expected value
                                     </TableHead>
                                     <TableHead colSpan={PROFIT_RUNS.length} scope="colgroup">
@@ -369,6 +448,9 @@ export default function BossRotaPage({
                                 </TableRow>
                                 <TableRow>
                                     {heading("Boss", "name")}
+                                    {boss === "all" && (
+                                        <TableHead scope="col">Seconds per kill</TableHead>
+                                    )}
                                     {heading("Entry cost", "cost")}
                                     {heading("Loot value", "loot")}
                                     {heading("Net per kill", "profit")}
@@ -383,8 +465,9 @@ export default function BossRotaPage({
                                 {encounters.map((encounter) => {
                                     const { id, name, drops, perKill, total, profitChances } =
                                         encounter;
+                                    const pricedCount = drops.filter((row) => row.quote).length;
                                     return (
-                                        <TableRow key={id}>
+                                        <TableRow key={`${league}:${id}`}>
                                             <TableCell>
                                                 {selected ? (
                                                     name
@@ -398,12 +481,26 @@ export default function BossRotaPage({
                                                     </Link>
                                                 )}
                                             </TableCell>
-                                            <TableCell>{money(divine, total.entryChaos)}</TableCell>
+                                            {boss === "all" && (
+                                                <TableCell>
+                                                    <BossKillTime
+                                                        label={`Seconds per kill for ${name}`}
+                                                        seconds={pace[id] ?? null}
+                                                        setSeconds={(seconds) =>
+                                                            savePace(id, seconds)
+                                                        }
+                                                    />
+                                                </TableCell>
+                                            )}
+                                            <TableCell>
+                                                {money(divine, total.entryChaos, null, costScale)}
+                                            </TableCell>
                                             <TableCell>
                                                 {money(
                                                     divine,
                                                     total.lootChaos,
                                                     total.pricedLootChaos,
+                                                    lootScale,
                                                 )}
                                             </TableCell>
                                             <TableCell>
@@ -411,6 +508,7 @@ export default function BossRotaPage({
                                                     divine,
                                                     perKill.profitChaos,
                                                     perKill.profitFromPricedDropsChaos,
+                                                    netScale,
                                                 )}
                                                 {pace[id] && (
                                                     <small className="block text-muted-foreground">
@@ -424,6 +522,7 @@ export default function BossRotaPage({
                                                                 perKill.profitFromPricedDropsChaos,
                                                                 pace[id],
                                                             ),
+                                                            hourlyScale,
                                                         )}
                                                         /hour
                                                     </small>
@@ -435,12 +534,14 @@ export default function BossRotaPage({
                                                         divine,
                                                         total.profitChaos,
                                                         total.profitFromPricedDropsChaos,
+                                                        totalScale,
                                                     )}
                                                 </TableCell>
                                             )}
-                                            <TableCell>
-                                                {drops.filter((row) => row.quote).length} /{" "}
-                                                {drops.length}
+                                            <TableCell
+                                                style={fractionScale(pricedCount / drops.length)}
+                                            >
+                                                {pricedCount} / {drops.length}
                                             </TableCell>
                                             {profitChances.map(
                                                 ({
@@ -450,9 +551,11 @@ export default function BossRotaPage({
                                                     pricedAverageNetChaos,
                                                 }) => (
                                                     <TableCell key={horizon}>
-                                                        {chance === null
-                                                            ? "Unknown"
-                                                            : `${total.lootChaos === null ? "≥ " : ""}${marketNumber(100 * chance)}%`}
+                                                        <span style={fractionScale(chance)}>
+                                                            {chance === null
+                                                                ? "Unknown"
+                                                                : `${total.lootChaos === null ? "≥ " : ""}${marketNumber(100 * chance)}%`}
+                                                        </span>
                                                         <small
                                                             className="block text-muted-foreground"
                                                             title={`Average net for ${horizon} runs`}
@@ -461,6 +564,7 @@ export default function BossRotaPage({
                                                                 divine,
                                                                 averageNetChaos,
                                                                 pricedAverageNetChaos,
+                                                                horizonScale,
                                                             )}
                                                         </small>
                                                     </TableCell>
@@ -499,7 +603,7 @@ export default function BossRotaPage({
                             )}
                         </p>
                     </section>
-                    {selected && (
+                    {selected && details && (
                         <>
                             <BossRotaTracker
                                 key={league + selected.id}
@@ -508,19 +612,13 @@ export default function BossRotaPage({
                                 runs={runs}
                                 divine={divine}
                                 seconds={pace[selected.id] ?? null}
-                                setSeconds={(seconds) =>
-                                    savePace((previous) => {
-                                        const next = { ...previous };
-                                        if (seconds === null) delete next[selected.id];
-                                        else next[selected.id] = seconds;
-                                        return next;
-                                    })
-                                }
+                                setSeconds={(seconds) => savePace(selected.id, seconds)}
                             />
                             <ItemTable
                                 entries
                                 title="Entry set"
                                 items={selected.entries}
+                                scales={details.entries}
                                 divine={divine}
                             />
                             <h2 className="font-heading text-xl font-semibold">Expected drops</h2>
@@ -544,6 +642,8 @@ export default function BossRotaPage({
                                         key={value.pool}
                                         title={value.pool}
                                         poolValue={value}
+                                        poolScale={details.pool}
+                                        scales={details.drops}
                                         pricedLoot={selected.perKill.pricedLootChaos}
                                         items={selected.drops.filter(
                                             (item) => item.pool === value.pool,

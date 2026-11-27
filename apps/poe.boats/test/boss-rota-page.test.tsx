@@ -54,6 +54,12 @@ it("opens a boss breakdown and reprices the requested number of solo kills", asy
     ]);
     render(<Routes initialEntries={["/1/boss-rota"]} />);
     const filter = await screen.findByRole("searchbox", { name: "Filter bosses" });
+    const shaperTime = screen.getByRole("spinbutton", { name: "Seconds per kill for Shaper" });
+    fireEvent.change(shaperTime, { target: { value: "72" } });
+    expect(within(screen.getByRole("row", { name: /^Shaper / })).getByText("/hour")).toBeTruthy();
+    expect(
+        (screen.getByLabelText("Seconds per kill for Uber Shaper") as HTMLInputElement).value,
+    ).toBe("");
     fireEvent.change(filter, { target: { value: "Shaper" } });
     fireEvent.click(screen.getByRole("button", { name: "Calculate" }));
     await vi.waitFor(() => expect(screen.queryByRole("link", { name: "Maven" })).toBeNull());
@@ -66,9 +72,10 @@ it("opens a boss breakdown and reprices the requested number of solo kills", asy
     expect(screen.getByRole("link", { name: "Sort by 100 runs" })).toBeTruthy();
     fireEvent.click(await screen.findByRole("link", { name: "Shaper" }));
     expect(await screen.findByRole("heading", { name: "Shaper rota" })).toBeTruthy();
+    expect((screen.getByLabelText("Seconds per kill") as HTMLInputElement).value).toBe("72");
     const unknown = screen.getByRole("row", { name: /Dying Sun/ });
-    expect(within(unknown).getByText("2%")).toBeTruthy();
-    expect(within(unknown).getByText("Unpriced")).toBeTruthy();
+    expect(within(unknown).getByText("2%").style.color).toContain("--chart-5");
+    expect(within(unknown).getByText("Unpriced").style.color).toBe("");
     expect(screen.getByRole("heading", { name: "Unique Pool" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Guaranteed" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Additional Drops" })).toBeTruthy();
@@ -108,6 +115,7 @@ it("opens a boss breakdown and reprices the requested number of solo kills", asy
         name: /Fragment of Shape/,
     });
     expect(within(row).getByText("3 below")).toBeTruthy();
+    expect(within(row).getByText("3 below").style.color).toContain("--chart-5");
     expect(within(row).getAllByRole("cell")[1]?.textContent).toContain("2");
     expect(screen.getByText("Logged net").nextElementSibling?.textContent).toContain("-38");
     cleanup();
@@ -122,4 +130,12 @@ it("opens a boss breakdown and reprices the requested number of solo kills", asy
     expect(screen.getByRole("link", { name: "All bosses" }).getAttribute("href")).toContain(
         "q=Shaper",
     );
+    fireEvent.click(screen.getByRole("link", { name: "All bosses" }));
+    const saved = await screen.findByLabelText("Seconds per kill for Shaper");
+    expect((saved as HTMLInputElement).value).toBe("90");
+    fireEvent.change(saved, { target: { value: "0" } });
+    fireEvent.blur(saved);
+    expect((saved as HTMLInputElement).value).toBe("90");
+    fireEvent.change(saved, { target: { value: "" } });
+    expect(within(screen.getByRole("row", { name: /^Shaper / })).queryByText("/hour")).toBeNull();
 });
