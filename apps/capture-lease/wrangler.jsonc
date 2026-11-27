@@ -11,7 +11,7 @@
     // workers.dev subdomain, so a deploy with this route also turns workers.dev off.
     "routes": [
         {
-            "pattern": "poe-capture-lease-dev-capturelease.poe.boats",
+            "pattern": "poe-capture-lease-dev.poe.boats",
             "custom_domain": true
         }
     ],
