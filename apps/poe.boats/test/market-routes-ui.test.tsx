@@ -189,7 +189,7 @@ it("shows exchange-traded items with their value, trend, volume and most traded 
     const cells = [...row.querySelectorAll("td")].map((cell) => cell.textContent);
     expect(cells).toEqual([
         "Scroll of Wisdom",
-        "0.002 chaos≈ 0.00001333 divine-5% 24h · — 3d · +25% 7d",
+        "500 per chaos≈ 75,000 per divine-5% 24h · — 3d · +25% 7d",
         // Units traded in the latest 6 hours, day and 7 days, as the stash rows chart likely sales.
         "6h2K1d2K7d6K",
         "1.5K chaos",
@@ -201,26 +201,38 @@ it("shows exchange-traded items with their value, trend, volume and most traded 
     ).toMatch(/^\/1\/market\/exchange\/Currency\/CurrencyIdentification\?.*category=armour/);
 });
 
-it("switches exchange values between adaptive, chaos and divine", async () => {
-    vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
-        const fixture = marketFixture(filters);
-        return {
-            ...fixture,
-            exchange: fixture.exchange.map((row) => ({ ...row, price: 300 })),
-        };
-    });
-    showMarket("/1/market?league=Allflame&category=armour");
-    const table = await screen.findByRole("table", { name: "Unique armour exchange" });
-    const value = () => exchangeRow(table, "Scroll of Wisdom").cells[1]!.querySelector("p")!;
-    expect(value().textContent).toBe("2 divine≈ 300 chaos");
-    fireEvent.click(screen.getByRole("button", { name: "Chaos Orb" }));
-    expect(value().textContent).toBe("300 chaos");
-    fireEvent.click(screen.getByRole("button", { name: "Divine Orb" }));
-    expect(value().textContent).toBe("2 divine");
-    expect(screen.getByRole("button", { name: "Divine Orb" }).getAttribute("aria-pressed")).toBe(
-        "true",
-    );
-});
+it.each([
+    { price: 300, adaptive: "2 divine≈ 300 chaos", chaos: "300 chaos", divine: "2 divine" },
+    { price: 1, adaptive: "1 chaos≈ 150 per divine", chaos: "1 chaos", divine: "150 per divine" },
+    {
+        price: 1 / 30,
+        adaptive: "30 per chaos≈ 4,500 per divine",
+        chaos: "30 per chaos",
+        divine: "4,500 per divine",
+    },
+])(
+    "switches exchange values between adaptive, chaos and divine for a $price chaos item",
+    async ({ price, adaptive, chaos, divine }) => {
+        vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
+            const fixture = marketFixture(filters);
+            return {
+                ...fixture,
+                exchange: fixture.exchange.map((row) => ({ ...row, price })),
+            };
+        });
+        showMarket("/1/market?league=Allflame&category=armour");
+        const table = await screen.findByRole("table", { name: "Unique armour exchange" });
+        const value = () => exchangeRow(table, "Scroll of Wisdom").cells[1]!.querySelector("p")!;
+        expect(value().textContent).toBe(adaptive);
+        fireEvent.click(screen.getByRole("button", { name: "Chaos Orb" }));
+        expect(value().textContent).toBe(chaos);
+        fireEvent.click(screen.getByRole("button", { name: "Divine Orb" }));
+        expect(value().textContent).toBe(divine);
+        expect(
+            screen.getByRole("button", { name: "Divine Orb" }).getAttribute("aria-pressed"),
+        ).toBe("true");
+    },
+);
 
 it("marks an exchange price from an earlier day and names its conversion", async () => {
     vi.mocked(getMarketData).mockImplementation(async (_db, filters) => {
@@ -277,6 +289,7 @@ it("opens an exchange item's page with its history and returns to the list", asy
         itemId: "Metadata/Items/Currency/CurrencyIdentification",
     });
     expect(page.textContent).toContain("Traded in the latest hour");
+    expect(page.textContent).toContain("500 per chaos≈ 75,000 per divine");
     // Each window charts its prices beside its change; 3 days needs a second priced day.
     const change = within(page).getByText("Price change").closest("div")!;
     expect([...change.querySelectorAll("dt")].map((term) => term.textContent)).toEqual([
