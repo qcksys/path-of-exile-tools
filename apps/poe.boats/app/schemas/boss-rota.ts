@@ -71,6 +71,11 @@ export const bossRotaResultSchema = z.object({
     rates: z.object({ source: z.url(), capturedOn: z.iso.date() }),
     league: z.string(),
     leagues: z.array(z.string()),
+    priorLeagues: z
+        .array(z.string())
+        .describe(
+            "Earlier leagues for inheriting per-boss kill times, in preference order, with the permanent league as a fallback.",
+        ),
     runs: z.number().int(),
     chaosPerDivine: z.number().positive().nullable(),
     encounters: z.array(

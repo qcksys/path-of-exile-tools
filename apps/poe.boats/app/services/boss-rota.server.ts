@@ -1,3 +1,4 @@
+import { marketLeagueTracked } from "@poe-tools/market";
 import {
     BOSS_ENCOUNTERS,
     BOSS_RATES,
@@ -6,7 +7,11 @@ import {
     type BossItem,
 } from "~/data/boss-encounters";
 import type { TDatabase } from "~/db/client";
-import { findBossItemArt, findBossStashQuotes } from "~/db/queries/boss-rota.queries";
+import {
+    findBossItemArt,
+    findBossLeagues,
+    findBossStashQuotes,
+} from "~/db/queries/boss-rota.queries";
 import { getMarketExchangePrices, getMarketSeasons } from "~/db/queries/market.queries";
 import { bossItemLabel, calculateBossRota } from "~/lib/boss-rota";
 import { marketCategory } from "~/lib/market-categories.server";
@@ -29,13 +34,57 @@ const fragmentIds: Readonly<Record<string, string>> = {
     "Screaming Invitation": "Primordial/CurrencyTangleBossKey",
 };
 
+function priorBossLeagues(
+    league: string,
+    seasons: { league: string; firstHour: number | null }[],
+    calendar: Awaited<ReturnType<typeof findBossLeagues>>,
+) {
+    const starts = new Map<string, number>();
+    for (const { league: name, firstHour } of seasons) {
+        if (firstHour !== null && marketLeagueTracked(name)) starts.set(name, firstHour);
+    }
+    const hardcore = new Set<string>();
+    for (const row of calendar) {
+        if (!marketLeagueTracked(row.league)) continue;
+        starts.set(
+            row.league,
+            row.startAt ?? Math.min(starts.get(row.league) ?? Infinity, row.firstListedAt),
+        );
+        if (row.rules.includes("Hardcore")) hardcore.add(row.league);
+    }
+    // Legacy market captures can predate collection of GGG's league list.
+    const isHardcore = (name: string) => hardcore.has(name) || /^(Hardcore|HC)\b/i.test(name);
+    const permanent = isHardcore(league) ? "Hardcore" : "Standard";
+    const start = starts.get(league);
+    if (league === permanent || start === undefined) return [];
+    return [...starts]
+        .filter(
+            ([name, at]) =>
+                name !== permanent && at < start && isHardcore(name) === isHardcore(league),
+        )
+        .sort(([a, first], [b, second]) => second - first || a.localeCompare(b))
+        .map(([name]) => name)
+        .concat(permanent);
+}
+
 export async function loadBossRota(db: TDatabase, input: BossRotaInput): Promise<BossRotaResult> {
-    const { seasons } = await getMarketSeasons(db, "pc");
+    const [{ seasons }, calendar] = await Promise.all([
+        getMarketSeasons(db, "pc"),
+        findBossLeagues(db),
+    ]);
     const leagues = seasons.map(({ league }) => league);
     const league = input.league || leagues[0] || "";
     const runs = input.runs;
     if (!leagues.includes(league))
-        return { rates: BOSS_RATES, leagues, league, runs, chaosPerDivine: null, encounters: [] };
+        return {
+            rates: BOSS_RATES,
+            leagues,
+            league,
+            priorLeagues: [],
+            runs,
+            chaosPerDivine: null,
+            encounters: [],
+        };
 
     const bosses = (Object.entries(BOSS_ENCOUNTERS) as [BossId, BossEncounter][]).filter(
         ([id, boss]) =>
@@ -143,6 +192,7 @@ export async function loadBossRota(db: TDatabase, input: BossRotaInput): Promise
         rates: BOSS_RATES,
         league,
         leagues,
+        priorLeagues: priorBossLeagues(league, seasons, calendar),
         runs,
         chaosPerDivine: prices.get(divineId)?.price || null,
         encounters,

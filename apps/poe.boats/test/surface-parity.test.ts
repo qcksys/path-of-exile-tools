@@ -3165,8 +3165,21 @@ it("reads the PoE 2 exchange market alike over HTTP and MCP", async () => {
 
 it("prices solo boss runs alike over HTTP and MCP and rejects invalid runs", async () => {
     const art = vi.spyOn(bossQueries, "findBossItemArt").mockResolvedValue(new Map());
+    const calendar = vi.spyOn(bossQueries, "findBossLeagues").mockResolvedValue([
+        { league: "Covens", startAt: 3000, firstListedAt: 4000, rules: [] },
+        { league: "Old", startAt: 2000, firstListedAt: 5000, rules: [] },
+        { league: "Older", startAt: 1000, firstListedAt: 5000, rules: [] },
+        { league: "Hard event", startAt: 1000, firstListedAt: 5000, rules: ["Hardcore"] },
+        { league: "SSF Old", startAt: 2000, firstListedAt: 5000, rules: [] },
+        { league: "Concurrent", startAt: 3000, firstListedAt: 4000, rules: [] },
+        { league: "Future", startAt: 6000, firstListedAt: 5000, rules: [] },
+    ]);
     const leagues = vi.spyOn(marketQueries, "getMarketSeasons").mockResolvedValue({
-        seasons: [{ league: "Covens", firstHour: 3600, latestHour: 3600 }],
+        seasons: ["Covens", "Hardcore Covens", "Standard"].map((league) => ({
+            league,
+            firstHour: 3600,
+            latestHour: 3600,
+        })),
         exchangeSeasons: [],
     });
     const exchange = vi
@@ -3189,6 +3202,7 @@ it("prices solo boss runs alike over HTTP and MCP and rejects invalid runs", asy
         expect(market).toMatchObject({
             league: "Covens",
             chaosPerDivine: 5,
+            priorLeagues: ["Old", "Older", "Standard"],
             runs: 3,
             encounters: [
                 {
@@ -3223,8 +3237,20 @@ it("prices solo boss runs alike over HTTP and MCP and rejects invalid runs", asy
         expect((await api.request(`${url}0`, {}, { runtime })).status).toBe(400);
         expect((await call(0)).isError).toBe(true);
         expect(exchange).toHaveBeenCalledTimes(2);
+        for (const [league, priorLeagues] of [
+            ["Hardcore Covens", ["Hard event", "Hardcore"]],
+            ["Standard", []],
+        ] as const) {
+            const read = await api.request(
+                `${url}1&league=${encodeURIComponent(league)}`,
+                {},
+                { runtime },
+            );
+            expect(await read.json()).toMatchObject({ league, priorLeagues });
+        }
     } finally {
         art.mockRestore();
+        calendar.mockRestore();
         leagues.mockRestore();
         stash.mockRestore();
         exchange.mockRestore();

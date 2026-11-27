@@ -1,8 +1,17 @@
 // @vitest-environment jsdom
 // biome-ignore-all lint/style/useNamingConvention: React Router components use PascalCase.
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import {
+    act,
+    cleanup,
+    fireEvent,
+    render,
+    renderHook,
+    screen,
+    within,
+} from "@testing-library/react";
 import { createRoutesStub, RouterContextProvider, useLoaderData } from "react-router";
 import { afterEach, expect, it, vi } from "vite-plus/test";
+import { useBossPace } from "~/components/boss-rota-tracker";
 import { dbContext } from "~/context";
 import { createDbConnection } from "~/db/client";
 import { findBossStashQuotes } from "~/db/queries/boss-rota.queries";
@@ -13,6 +22,7 @@ vi.mock("~/components/route-error", () => ({ RouteError: () => null }));
 vi.mock("~/db/queries/boss-rota.queries", () => ({
     findBossStashQuotes: vi.fn(),
     findBossItemArt: vi.fn().mockResolvedValue(new Map()),
+    findBossLeagues: vi.fn().mockResolvedValue([]),
 }));
 vi.mock("~/db/queries/market.queries", () => ({
     getMarketSeasons: vi.fn(),
@@ -23,9 +33,37 @@ afterEach(() => {
     localStorage.clear();
 });
 
+it("inherits each boss's most recent saved time and keeps league overrides and clears after reload", () => {
+    localStorage.setItem("boss-rota:pace:Standard", JSON.stringify({ atziri: 75, shaper: 150 }));
+    localStorage.setItem("boss-rota:pace:Older", JSON.stringify({ shaper: 120, maven: 60 }));
+    localStorage.setItem("boss-rota:pace:Previous", JSON.stringify({ shaper: 90 }));
+    localStorage.setItem("boss-rota:pace:Damaged", "invalid");
+    localStorage.setItem("boss-rota:pace:Current", JSON.stringify({ elder: 70 }));
+    const prior = ["Damaged", "Previous", "Older", "Standard"];
+    const current = renderHook(() => useBossPace("Current", prior));
+    expect(current.result.current[0]).toEqual({ shaper: 90, maven: 60, atziri: 75, elder: 70 });
+    act(() => current.result.current[1]("shaper", 45));
+    act(() => current.result.current[1]("maven", null));
+    current.unmount();
+    expect(JSON.parse(localStorage.getItem("boss-rota:pace:Previous")!)).toEqual({ shaper: 90 });
+    const next = renderHook(() => useBossPace("Next", ["Current", ...prior]));
+    expect(next.result.current[0]).toEqual({ shaper: 45, maven: null, atziri: 75, elder: 70 });
+    act(() => {
+        localStorage.setItem(
+            "boss-rota:pace:Current",
+            JSON.stringify({ shaper: 55, maven: null, elder: 70 }),
+        );
+        window.dispatchEvent(new Event("storage"));
+    });
+    expect(next.result.current[0].shaper).toBe(55);
+});
+
 it("opens a boss breakdown and reprices the requested number of solo kills", async () => {
     vi.mocked(getMarketSeasons).mockResolvedValue({
-        seasons: [{ league: "Standard", firstHour: 3600, latestHour: 3600 }],
+        seasons: [
+            { league: "Standard", firstHour: 3600, latestHour: 3600 },
+            { league: "New season", firstHour: 7200, latestHour: 7200 },
+        ],
         exchangeSeasons: [],
     });
     vi.mocked(getMarketExchangePrices).mockImplementation(async (_, { itemIds }) => ({
@@ -138,4 +176,11 @@ it("opens a boss breakdown and reprices the requested number of solo kills", asy
     expect((saved as HTMLInputElement).value).toBe("90");
     fireEvent.change(saved, { target: { value: "" } });
     expect(within(screen.getByRole("row", { name: /^Shaper / })).queryByText("/hour")).toBeNull();
+    fireEvent.change(saved, { target: { value: "64" } });
+    cleanup();
+    render(<Routes initialEntries={["/1/boss-rota/shaper?league=New+season"]} />);
+    expect(((await screen.findByLabelText("Seconds per kill")) as HTMLInputElement).value).toBe(
+        "64",
+    );
+    expect(screen.queryByRole("table", { name: "Recorded drops" })).toBeNull();
 });

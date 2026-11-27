@@ -267,7 +267,7 @@ export default function BossRotaPage({
     loaderData: { boss, result, q, pricing, order, direction },
 }: Pick<Route.ComponentProps, "loaderData">) {
     const { leagues, league, runs, encounters, chaosPerDivine: divine } = result;
-    const [pace, savePace] = useBossPace(league);
+    const [pace, savePace] = useBossPace(league, result.priorLeagues);
     const selected = boss === "all" ? undefined : encounters[0];
     const details = useMemo(
         () =>

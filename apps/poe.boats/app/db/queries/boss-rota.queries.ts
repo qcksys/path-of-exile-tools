@@ -2,6 +2,7 @@ import { gemVariantValues, marketObservationRange } from "@poe-tools/market";
 import { and, eq, gt, gte, inArray, like, lte, notInArray, or, sql } from "drizzle-orm";
 import type { BossItem } from "~/data/boss-encounters";
 import type { TDatabase } from "~/db/client";
+import { tStashPoe1League as leagueCalendar } from "~/db/schema/stash.league";
 import {
     tStashPoe1Market as catalog,
     tStashPoe1UniqueHourly as market,
@@ -11,6 +12,22 @@ import { MOD_POOL_KINDS } from "~/lib/mod-pools";
 import type { LocatedBossQuote } from "~/schemas/boss-rota";
 import { marketFiltersSchema, marketLink } from "~/schemas/market";
 import { traceQuery } from "~/services/tracing.server";
+
+/** Includes ended leagues whose market history may no longer be available. */
+export function findBossLeagues(db: TDatabase) {
+    return traceQuery(
+        "boss_rota.leagues",
+        db
+            .select({
+                league: leagueCalendar.league,
+                startAt: leagueCalendar.startAt,
+                firstListedAt: leagueCalendar.firstListedAt,
+                rules: leagueCalendar.rules,
+            })
+            .from(leagueCalendar)
+            .where(eq(leagueCalendar.realm, "pc")),
+    );
+}
 
 /** Lowest matching variant's locked chaos median in the newest listed merchant hour. */
 export async function findBossStashQuotes(db: TDatabase, league: string, items: BossItem[]) {

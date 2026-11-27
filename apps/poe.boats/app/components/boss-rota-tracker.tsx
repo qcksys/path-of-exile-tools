@@ -31,7 +31,7 @@ const savedRota = z.object({
 });
 const bookSchema = z.object({ selected: z.string(), rotas: z.array(savedRota) });
 const emptyBook: z.infer<typeof bookSchema> = { selected: "", rotas: [] };
-const paceSchema = z.record(z.string(), killSecondsSchema);
+const paceSchema = z.record(z.string(), killSecondsSchema.nullable());
 const emptyPace: z.infer<typeof paceSchema> = {};
 
 function subscribe(notify: () => void) {
@@ -73,17 +73,39 @@ function useRotaStorage<T>(key: string, schema: z.ZodType<T>, initial: T) {
     return [stored, update] as const;
 }
 
-export function useBossPace(league: string) {
+export function useBossPace(league: string, priorLeagues: string[]) {
     const [pace, update] = useRotaStorage(`boss-rota:pace:${league}`, paceSchema, emptyPace);
+    const sources = useSyncExternalStore(
+        subscribe,
+        () => {
+            try {
+                return JSON.stringify(
+                    priorLeagues.map((source) => localStorage.getItem(`boss-rota:pace:${source}`)),
+                );
+            } catch {
+                return "[]";
+            }
+        },
+        () => "[]",
+    );
+    const times = useMemo(() => {
+        const inherited = { ...emptyPace };
+        const records: (string | null)[] = JSON.parse(sources);
+        for (const record of records.reverse()) {
+            if (record === null) continue;
+            try {
+                Object.assign(inherited, paceSchema.parse(JSON.parse(record)));
+            } catch {
+                // Skip an unreadable league while retaining other saved times.
+            }
+        }
+        return { ...inherited, ...pace };
+    }, [sources, pace]);
     function setPace(boss: string, seconds: number | null) {
-        update((previous) => {
-            const next = { ...previous };
-            if (seconds === null) delete next[boss];
-            else next[boss] = seconds;
-            return next;
-        });
+        // An explicitly cleared time also overrides an inherited time.
+        update((previous) => ({ ...previous, [boss]: seconds }));
     }
-    return [pace, setPace] as const;
+    return [times, setPace] as const;
 }
 
 export function BossKillTime({
@@ -220,8 +242,9 @@ export function BossRotaTracker({
                 </Button>
             </div>
             <p className="text-sm text-muted-foreground">
-                Kill times and rotas are saved in this browser. Logged loot uses the prices captured
-                when you start a rota. Hourly returns use your seconds per kill.
+                Kill times carry forward from earlier leagues in this browser. Editing a time sets
+                it for this league. Logged loot uses the prices captured when you start a rota.
+                Hourly returns use your seconds per kill.
             </p>
             {active && report && (
                 <>
