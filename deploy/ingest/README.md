@@ -133,7 +133,8 @@ To turn the fallback on:
 1. Deploy the Worker and check that `GET /status` answers.
 2. Write its `CAPTURE_LEASE_TOKEN` to the secret file from a machine that has it, for example
    `printf %s "$TOKEN" | ssh <host> 'umask 077; cat > ~/poe-ingest/secrets/pc_capture_lease_token'`.
-3. Add `CAPTURE_LEASE_URL=https://<worker>` to `config/pc.env`.
+3. Add `CAPTURE_LEASE_URL=https://<custom domain>` to `config/pc.env`, using the Worker's custom
+   domain rather than its `workers.dev` address, which changes if the account's subdomain does.
 4. `docker compose -f ~/poe-ingest/compose.yaml up -d --no-deps pc-capture`.
 5. Check the capture log for `capture lease: holding`, and `GET /status` for `"holder": "home"` and a
    cursor.
