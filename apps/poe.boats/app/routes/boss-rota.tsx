@@ -217,8 +217,8 @@ export default function BossRotaPage({
                 method="get"
                 className="flex flex-wrap items-end gap-3"
             >
-                <input type="hidden" name="order" value={order} />
-                <input type="hidden" name="direction" value={direction} />
+                <Input type="hidden" name="order" value={order} />
+                <Input type="hidden" name="direction" value={direction} />
                 {boss === "all" ? (
                     <label htmlFor="boss-pricing" className="grid gap-1 text-sm">
                         Price coverage
@@ -230,7 +230,7 @@ export default function BossRotaPage({
                         </FormSelect>
                     </label>
                 ) : (
-                    <input type="hidden" name="pricing" value={pricing} />
+                    <Input type="hidden" name="pricing" value={pricing} />
                 )}
                 {boss === "all" ? (
                     <label htmlFor="boss-filter" className="grid gap-1 text-sm">
@@ -245,7 +245,7 @@ export default function BossRotaPage({
                         />
                     </label>
                 ) : (
-                    <input type="hidden" name="q" value={q} />
+                    <Input type="hidden" name="q" value={q} />
                 )}
                 <label htmlFor="boss-league" className="grid gap-1 text-sm">
                     PC league
