@@ -18,7 +18,10 @@ vi.mock("~/db/queries/market.queries", () => ({
     getMarketSeasons: vi.fn(),
     getMarketExchangePrices: vi.fn(),
 }));
-afterEach(cleanup);
+afterEach(() => {
+    cleanup();
+    localStorage.clear();
+});
 
 it("opens a boss breakdown and reprices the requested number of solo kills", async () => {
     vi.mocked(getMarketSeasons).mockResolvedValue({
@@ -28,7 +31,7 @@ it("opens a boss breakdown and reprices the requested number of solo kills", asy
     vi.mocked(getMarketExchangePrices).mockImplementation(async (_, { itemIds }) => ({
         latestHour: 3600,
         unit: "chaos",
-        prices: new Map(itemIds.map((id) => [id, { price: 2, hour: 3600 }])),
+        prices: new Map(itemIds.map((id) => [id, { price: 2, hour: 3600, units24h: 48 }])),
     }));
     vi.mocked(findBossStashQuotes).mockResolvedValue(new Map());
     const context = new RouterContextProvider();
@@ -90,8 +93,32 @@ it("opens a boss breakdown and reprices the requested number of solo kills", asy
     expect(
         await screen.findByRole("heading", { name: "Expected return for 10 kills" }),
     ).toBeTruthy();
-    const summary = screen.getByRole("row", { name: /^Shaper 40 div/ });
-    expect(within(summary).getByText("≥ -28.5 div")).toBeTruthy();
+    const summary = screen.getByRole("row", { name: /^Shaper / });
+    expect(within(summary).getByTitle("Average net for 10 runs").textContent).toContain("≥ -28.5");
+    expect(summary.querySelector('[data-currency="divine"]')).toBeTruthy();
+    expect(screen.getAllByText("2 units/h · 48 traded / 24h").length).toBeGreaterThan(0);
+    const seconds = screen.getByRole("spinbutton", { name: "Seconds per kill" });
+    fireEvent.change(seconds, { target: { value: "90" } });
+    fireEvent.blur(seconds);
+    fireEvent.click(screen.getByRole("button", { name: "Track 10 kills" }));
+    const add = await screen.findByRole("button", { name: "Add one Fragment of Shape" });
+    fireEvent.click(add);
+    fireEvent.click(add);
+    const row = within(screen.getByRole("table", { name: "Recorded drops" })).getByRole("row", {
+        name: /Fragment of Shape/,
+    });
+    expect(within(row).getByText("3 below")).toBeTruthy();
+    expect(within(row).getAllByRole("cell")[1]?.textContent).toContain("2");
+    expect(screen.getByText("Logged net").nextElementSibling?.textContent).toContain("-38");
+    cleanup();
+    render(<Routes initialEntries={["/1/boss-rota/shaper?league=Standard&runs=10&q=Shaper"]} />);
+    expect(
+        await screen.findByRole("button", { name: "Remove one Fragment of Shape" }),
+    ).toBeTruthy();
+    expect((screen.getByLabelText("Seconds per kill") as HTMLInputElement).value).toBe("90");
+    expect(screen.getByText("Logged net per hour").nextElementSibling?.textContent).toContain(
+        "-152",
+    );
     expect(screen.getByRole("link", { name: "All bosses" }).getAttribute("href")).toContain(
         "q=Shaper",
     );

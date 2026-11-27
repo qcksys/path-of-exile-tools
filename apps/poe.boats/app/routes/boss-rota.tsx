@@ -1,5 +1,8 @@
 import { useMemo } from "react";
 import { Form, Link } from "react-router";
+import { bossMoney as money } from "~/components/boss-money";
+import { BossRotaTracker, useBossPace } from "~/components/boss-rota-tracker";
+import { CurrencyLabel } from "~/components/currency-label";
 import { DataTable, dataTableColumns } from "~/components/data-table";
 import { CatalogItemArt, ItemArt } from "~/components/item-art";
 import { RouteError } from "~/components/route-error";
@@ -16,6 +19,7 @@ import {
 } from "~/components/ui/table";
 import { dbContext } from "~/context";
 import { PROFIT_TRIALS } from "~/lib/boss-profit-chances";
+import { netPerHour } from "~/lib/boss-rota-log";
 import { marketItemArtUrl } from "~/lib/item-presentation";
 import { marketNumber } from "~/lib/market-number";
 import type { SiteHandle } from "~/routes/layouts/site";
@@ -23,7 +27,6 @@ import {
     type BossOrder,
     type BossRotaResult,
     bossRotaInputSchema,
-    DROP_POOLS,
     PROFIT_RUNS,
 } from "~/schemas/boss-rota";
 import { loadBossRota } from "~/services/boss-rota.server";
@@ -49,33 +52,84 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     };
 }
 
-function money(divine: number | null, value: number | null, priced: number | null = null) {
-    const amount = value ?? priced;
-    if (amount === null) return "Unknown";
-    const prefix = value === null ? "≥ " : "";
-    if (divine && Math.abs(amount) >= divine)
+type Encounter = BossRotaResult["encounters"][number];
+type RotaItem = Encounter["entries"][number];
+const itemColumn = dataTableColumns<RotaItem>();
+
+function BossArt({ boss }: { boss: Encounter }) {
+    if (boss.icon)
         return (
-            <span title={`${marketNumber(amount)} c`}>
-                {prefix}
-                {marketNumber(amount / divine)} div
-            </span>
+            <img src={boss.icon} alt="" width={32} height={32} className="size-8 object-contain" />
         );
-    return `${prefix}${marketNumber(amount)} c`;
+    const entry = boss.entries[0];
+    if (!entry) return null;
+    return entry.market?.iconAsset ? (
+        <ItemArt
+            src={marketItemArtUrl(entry.market.iconAsset)}
+            name={entry.name}
+            className="size-8"
+            decorative
+        />
+    ) : (
+        <CatalogItemArt
+            id={entry.market?.itemId}
+            name={entry.market?.artName ?? entry.name}
+            game="poe1"
+        />
+    );
 }
 
-type RotaItem = BossRotaResult["encounters"][number]["entries"][number];
-const itemColumn = dataTableColumns<RotaItem>();
+function QuoteActivity({ quote }: { quote: RotaItem["quote"] }) {
+    if (!quote) return <span className="text-muted-foreground">Unpriced</span>;
+    const observed = new Date(quote.hour * 1000).toISOString();
+    return (
+        <div className="mt-1 grid gap-0.5 whitespace-normal text-xs text-muted-foreground">
+            {quote.source === "exchange" ? (
+                <span>
+                    {quote.units24h === undefined
+                        ? "Volume unavailable"
+                        : `${marketNumber(quote.units24h / 24)} units/h · ${marketNumber(quote.units24h)} traded / 24h`}
+                </span>
+            ) : (
+                <>
+                    <span>
+                        {quote.listings === undefined
+                            ? "Listing count unavailable"
+                            : `${marketNumber(quote.listings)} listed in quote hour`}
+                    </span>
+                    <span
+                        className={
+                            quote.likelySales24h === 0 ? "font-medium text-foreground" : undefined
+                        }
+                    >
+                        {quote.likelySales24h === undefined
+                            ? "Sales unavailable"
+                            : `${marketNumber(quote.likelySales24h)} likely sales / 24h`}
+                    </span>
+                </>
+            )}
+            <time dateTime={observed}>
+                {quote.source === "exchange" ? "Exchange" : "Merchant ask"} ·{" "}
+                {observed.slice(0, 16).replace("T", " ")} UTC
+            </time>
+        </div>
+    );
+}
 
 function ItemTable({
     entries,
     items,
     title,
     divine,
+    poolValue,
+    pricedLoot,
 }: {
     entries?: boolean;
     items: RotaItem[];
     title: string;
     divine: number | null;
+    poolValue?: Encounter["poolValues"][number];
+    pricedLoot?: number | null;
 }) {
     const columns = useMemo(
         () =>
@@ -105,7 +159,7 @@ function ItemTable({
                                         name={item.market.artName}
                                     />
                                 )}
-                                {item.name}
+                                <span className="whitespace-normal">{item.name}</span>
                             </Link>
                         ) : (
                             item.name
@@ -113,7 +167,7 @@ function ItemTable({
                 }),
                 itemColumn.accessor("quantityPerKill", {
                     enableColumnFilter: false,
-                    header: entries ? "Required per kill" : "Drop chance",
+                    header: entries ? "Per kill" : "Chance",
                     sortDescFirst: true,
                     cell: ({ getValue }) =>
                         entries ? getValue() : `${marketNumber(getValue() * 100)}%`,
@@ -124,7 +178,12 @@ function ItemTable({
                     header: "Unit price",
                     sortDescFirst: true,
                     sortUndefined: "last",
-                    cell: ({ getValue }) => money(divine, getValue() ?? null),
+                    cell: ({ row: { original: item } }) => (
+                        <>
+                            {item.quote && money(divine, item.quote.unitChaos)}
+                            <QuoteActivity quote={item.quote} />
+                        </>
+                    ),
                 }),
                 itemColumn.accessor((item) => item.valueChaos ?? undefined, {
                     id: "value",
@@ -132,29 +191,36 @@ function ItemTable({
                     header: "Value per kill",
                     sortDescFirst: true,
                     sortUndefined: "last",
-                    cell: ({ getValue }) => money(divine, getValue() ?? null),
-                }),
-                itemColumn.accessor((item) => item.quote?.hour, {
-                    id: "hour",
-                    enableColumnFilter: false,
-                    header: "Quote observed (UTC)",
-                    sortDescFirst: true,
-                    sortUndefined: "last",
-                    cell: ({
-                        row: {
-                            original: { quote },
-                        },
-                    }) =>
-                        quote
-                            ? `${quote.source === "exchange" ? "Exchange" : "Merchant ask"} · ${new Date(quote.hour * 1000).toISOString().slice(0, 16).replace("T", " ")}`
-                            : "Unpriced",
+                    cell: ({ row: { original: item } }) => (
+                        <>
+                            {money(divine, item.valueChaos)}
+                            {!!pricedLoot && item.valueChaos !== null && (
+                                <small className="block text-muted-foreground">
+                                    {marketNumber((100 * item.valueChaos) / pricedLoot)}% of priced
+                                    loot
+                                </small>
+                            )}
+                        </>
+                    ),
                 }),
             ]),
-        [entries, divine],
+        [entries, divine, pricedLoot],
     );
     return (
-        <section>
-            <h3 className="mb-2 font-heading text-lg font-semibold">{title}</h3>
+        <section className="min-w-0">
+            <h3 className="mb-1 font-heading text-lg font-semibold">{title}</h3>
+            {poolValue && (
+                <p className="mb-2 text-sm text-muted-foreground">
+                    {money(
+                        divine,
+                        poolValue.fullyPriced ? poolValue.pricedChaosPerKill : null,
+                        poolValue.pricedChaosPerKill,
+                    )}{" "}
+                    per kill
+                    {poolValue.shareOfPricedLoot !== null &&
+                        ` · ${marketNumber(100 * poolValue.shareOfPricedLoot)}% of priced loot`}
+                </p>
+            )}
             <DataTable label={title} data={items} columns={columns} getRowId={(row) => row.name} />
         </section>
     );
@@ -164,6 +230,7 @@ export default function BossRotaPage({
     loaderData: { boss, result, q, pricing, order, direction },
 }: Pick<Route.ComponentProps, "loaderData">) {
     const { leagues, league, runs, encounters, chaosPerDivine: divine } = result;
+    const [pace, savePace] = useBossPace(league);
     const selected = boss === "all" ? undefined : encounters[0];
     const link = (id: string, sort = order, dir = direction) => {
         const path = id === "all" ? "/1/boss-rota" : `/1/boss-rota/${id}`;
@@ -203,9 +270,10 @@ export default function BossRotaPage({
     }
     const kills = runs === 1 ? "1 kill" : `${marketNumber(runs)} kills`;
     return (
-        <main className="container mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8">
+        <main className="mx-auto flex w-full min-w-0 max-w-[104rem] flex-1 flex-col gap-6 px-4 py-8">
             <header className="space-y-2">
-                <h1 className="font-heading text-3xl font-bold">
+                <h1 className="flex items-center gap-2 font-heading text-3xl font-bold">
+                    {selected && <BossArt boss={selected} />}
                     {selected ? `${selected.name} rota` : "Boss rota profits"}
                 </h1>
                 <p className="text-muted-foreground">
@@ -296,7 +364,7 @@ export default function BossRotaPage({
                                         Expected value
                                     </TableHead>
                                     <TableHead colSpan={PROFIT_RUNS.length} scope="colgroup">
-                                        Chance to profit
+                                        Chance to profit · average net return
                                     </TableHead>
                                 </TableRow>
                                 <TableRow>
@@ -312,8 +380,10 @@ export default function BossRotaPage({
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {encounters.map(
-                                    ({ id, name, drops, perKill, total, profitChances }) => (
+                                {encounters.map((encounter) => {
+                                    const { id, name, drops, perKill, total, profitChances } =
+                                        encounter;
+                                    return (
                                         <TableRow key={id}>
                                             <TableCell>
                                                 {selected ? (
@@ -321,8 +391,9 @@ export default function BossRotaPage({
                                                 ) : (
                                                     <Link
                                                         to={link(id)}
-                                                        className="font-medium text-primary underline"
+                                                        className="inline-flex items-center gap-2 font-medium text-primary underline"
                                                     >
+                                                        <BossArt boss={encounter} />
                                                         {name}
                                                     </Link>
                                                 )}
@@ -341,6 +412,22 @@ export default function BossRotaPage({
                                                     perKill.profitChaos,
                                                     perKill.profitFromPricedDropsChaos,
                                                 )}
+                                                {pace[id] && (
+                                                    <small className="block text-muted-foreground">
+                                                        {money(
+                                                            divine,
+                                                            netPerHour(
+                                                                perKill.profitChaos,
+                                                                pace[id],
+                                                            ),
+                                                            netPerHour(
+                                                                perKill.profitFromPricedDropsChaos,
+                                                                pace[id],
+                                                            ),
+                                                        )}
+                                                        /hour
+                                                    </small>
+                                                )}
                                             </TableCell>
                                             {runs > 1 && (
                                                 <TableCell className="font-medium">
@@ -355,28 +442,81 @@ export default function BossRotaPage({
                                                 {drops.filter((row) => row.quote).length} /{" "}
                                                 {drops.length}
                                             </TableCell>
-                                            {profitChances.map(({ runs: horizon, chance }) => (
-                                                <TableCell key={horizon}>
-                                                    {chance === null
-                                                        ? "Unknown"
-                                                        : `${total.lootChaos === null ? "≥ " : ""}${marketNumber(100 * chance)}%`}
-                                                </TableCell>
-                                            ))}
+                                            {profitChances.map(
+                                                ({
+                                                    runs: horizon,
+                                                    chance,
+                                                    averageNetChaos,
+                                                    pricedAverageNetChaos,
+                                                }) => (
+                                                    <TableCell key={horizon}>
+                                                        {chance === null
+                                                            ? "Unknown"
+                                                            : `${total.lootChaos === null ? "≥ " : ""}${marketNumber(100 * chance)}%`}
+                                                        <small
+                                                            className="block text-muted-foreground"
+                                                            title={`Average net for ${horizon} runs`}
+                                                        >
+                                                            {money(
+                                                                divine,
+                                                                averageNetChaos,
+                                                                pricedAverageNetChaos,
+                                                            )}
+                                                        </small>
+                                                    </TableCell>
+                                                ),
+                                            )}
                                         </TableRow>
-                                    ),
-                                )}
+                                    );
+                                })}
                             </TableBody>
                         </Table>
                         <p className="mt-3 text-sm text-muted-foreground">
                             ≥ counts only priced drops. A missing entry price leaves net profit
                             unknown. Chance to profit means total loot exceeds the full entry cost.
                             One-run odds use the drop distribution. Longer rotas use{" "}
-                            {marketNumber(PROFIT_TRIALS)} simulated rotas each.
-                            {divine && ` 1 div = ${marketNumber(divine)} c.`}
+                            {marketNumber(PROFIT_TRIALS)} simulated rotas each. Average net is the
+                            expected total after entry costs for that many runs.
+                            {divine !== null && (
+                                <>
+                                    {" "}
+                                    1{" "}
+                                    <CurrencyLabel
+                                        currency="divine"
+                                        label="Divine Orb"
+                                        game="poe1"
+                                        iconOnly
+                                    />{" "}
+                                    = {marketNumber(divine)}{" "}
+                                    <CurrencyLabel
+                                        currency="chaos"
+                                        label="Chaos Orbs"
+                                        game="poe1"
+                                        iconOnly
+                                    />
+                                    .
+                                </>
+                            )}
                         </p>
                     </section>
                     {selected && (
                         <>
+                            <BossRotaTracker
+                                key={league + selected.id}
+                                boss={selected}
+                                league={league}
+                                runs={runs}
+                                divine={divine}
+                                seconds={pace[selected.id] ?? null}
+                                setSeconds={(seconds) =>
+                                    savePace((previous) => {
+                                        const next = { ...previous };
+                                        if (seconds === null) delete next[selected.id];
+                                        else next[selected.id] = seconds;
+                                        return next;
+                                    })
+                                }
+                            />
                             <ItemTable
                                 entries
                                 title="Entry set"
@@ -384,23 +524,34 @@ export default function BossRotaPage({
                                 divine={divine}
                             />
                             <h2 className="font-heading text-xl font-semibold">Expected drops</h2>
+                            {selected.perKill.pricedLootChaos !== null && (
+                                <p className="text-sm">
+                                    {money(divine, selected.perKill.pricedLootChaos)} of priced loot
+                                    per kill. {money(divine, selected.askOnlyChaosPerKill)} comes
+                                    from merchant asks with zero likely sales in the observed 24
+                                    hours.
+                                </p>
+                            )}
                             {selected.quantityBonus > 0 && (
                                 <p className="text-sm">
                                     Extra drop chances include the source's {selected.quantityBonus}
                                     % invitation quantity bonus.
                                 </p>
                             )}
-                            {DROP_POOLS.map((pool) => {
-                                const items = selected.drops.filter((item) => item.pool === pool);
-                                return items.length ? (
+                            <div className="grid items-start gap-x-6 gap-y-6 [grid-template-columns:repeat(auto-fit,minmax(min(100%,38rem),1fr))]">
+                                {selected.poolValues.map((value) => (
                                     <ItemTable
-                                        key={pool}
-                                        title={pool}
-                                        items={items}
+                                        key={value.pool}
+                                        title={value.pool}
+                                        poolValue={value}
+                                        pricedLoot={selected.perKill.pricedLootChaos}
+                                        items={selected.drops.filter(
+                                            (item) => item.pool === value.pool,
+                                        )}
                                         divine={divine}
                                     />
-                                ) : null;
-                            })}
+                                ))}
+                            </div>
                         </>
                     )}
                 </>
@@ -415,8 +566,9 @@ export default function BossRotaPage({
             )}
             <p className="max-w-3xl text-sm text-muted-foreground">
                 Prices use this league’s exchange trades and merchant asking prices. Merchant quotes
-                use the newest listed hour in the last 24 completed hours. Drop rates use the{" "}
-                {result.rates.capturedOn} estimates from{" "}
+                use the newest listed hour in the last 24 completed hours. Likely sales are inferred
+                from stash changes. Exchange volume shows units traded across its observed 24-hour
+                window. Drop rates use the {result.rates.capturedOn} estimates from{" "}
                 <a href={result.rates.source} className="text-primary underline">
                     Perandus Ledger
                 </a>

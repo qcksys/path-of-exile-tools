@@ -750,3 +750,14 @@ export const BOSS_ENCOUNTERS = {
 } satisfies Record<string, BossEncounter>;
 
 export type BossId = keyof typeof BOSS_ENCOUNTERS;
+
+// Available artwork in Perandus Ledger's encounter catalog. Uber encounters share the base art.
+const encounterArt = new Set([
+    "shaper", "elder", "sirus", "cortex", "maven", "atziri", "mora", "zorath",
+    "forbidden-shako", "light-of-meaning",
+]);
+export function bossIcon(id: BossId) {
+    const family = id.replace(/^(uber-)+/, "");
+    const icon = family === "oshabi" ? "forbidden-shako" : family === "king-in-the-mists" ? "light-of-meaning" : family;
+    return encounterArt.has(icon) ? `/images/bosses/${icon}.png` : null;
+}

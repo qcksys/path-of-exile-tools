@@ -3194,7 +3194,11 @@ it("prices solo boss runs alike over HTTP and MCP and rejects invalid runs", asy
                 {
                     id: "shaper",
                     total: { entryChaos: 60, profitChaos: null },
-                    profitChances: [1, 5, 10, 50, 100].map((runs) => ({ runs })),
+                    profitChances: [1, 5, 10, 50, 100].map((runs) => ({
+                        runs,
+                        averageNetChaos: null,
+                        pricedAverageNetChaos: expect.any(Number),
+                    })),
                 },
             ],
         });
@@ -3225,6 +3229,48 @@ it("prices solo boss runs alike over HTTP and MCP and rejects invalid runs", asy
         stash.mockRestore();
         exchange.mockRestore();
     }
+});
+
+it("analyzes a manual rota log alike over HTTP and MCP", async () => {
+    const input = {
+        log: {
+            kills: 10,
+            entryPerKill: 2,
+            drops: [{ name: "Example", pool: "Unique Pool", count: 4, chance: 0.5, unitChaos: 10 }],
+        },
+        secondsPerKill: 90,
+    };
+    const url = "https://poe.boats/api/v1/boss-rota/analyze";
+    const post = () =>
+        api.request(
+            url,
+            {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify(input),
+            },
+            { runtime },
+        );
+    const call = async () =>
+        CallToolResultSchema.parse(
+            RpcSchema.parse(
+                await (
+                    await mcp("tools/call", { name: "analyze_boss_rota_log", arguments: input })
+                ).json(),
+            ).result,
+        );
+    const response = await post();
+    expect(response.status).toBe(200);
+    const report = await response.json();
+    expect(report).toMatchObject({
+        netChaos: 20,
+        netPerHour: 80,
+        drops: [{ median: 5, difference: -1 }],
+    });
+    expect((await call()).structuredContent).toEqual(report);
+    input.log.drops[0]!.count = 11;
+    expect((await post()).status).toBe(400);
+    expect((await call()).isError).toBe(true);
 });
 
 it("reads and calculates the Cluster Jewel recipe alike over HTTP and MCP", async () => {

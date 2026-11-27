@@ -5,6 +5,7 @@ import {
     getPoe2MarketExchange,
 } from "~/db/queries/market.queries";
 import { sStashUniqueHourlyS } from "~/db/schema/stash.unique-hourly";
+import { analyzeRotaLog, analyzeRotaSchema, rotaAnalysisSchema } from "~/lib/boss-rota-log";
 import {
     ArbitrageGameSchema,
     ClusterRecipeItemLevelSchema,
@@ -125,6 +126,20 @@ const watchersEyeModValues = z
 
 export const operations = [
     serverStatusOperation,
+    defineOperation({
+        family: "boss-rota",
+        path: "/analyze",
+        name: "analyze_boss_rota_log",
+        description:
+            "Value manually counted drops against a solo rota's starting prices and entry bill. Compare each count with its lower binomial median and estimate net per hour using the supplied kill time in seconds.",
+        ui: "/1/boss-rota",
+        method: "post",
+        access: "public",
+        readOnly: true,
+        input: analyzeRotaSchema,
+        output: rotaAnalysisSchema,
+        execute: analyzeRotaLog,
+    }),
     defineOperation({
         family: "boss-rota",
         path: "/profits",

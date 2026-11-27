@@ -38,6 +38,9 @@ const quoteSchema = z.object({
     source: z.enum(["exchange", "stash"]),
     unitChaos: z.number().positive(),
     hour: z.number().int(),
+    listings: z.number().int().nonnegative().optional(),
+    likelySales24h: z.number().int().nonnegative().optional(),
+    units24h: z.number().nonnegative().optional(),
 });
 export type BossQuote = z.infer<typeof quoteSchema>;
 
@@ -74,12 +77,27 @@ export const bossRotaResultSchema = z.object({
         z.object({
             id: z.string(),
             name: z.string(),
+            icon: z.string().nullable(),
             quantityBonus: z.number(),
             entries: z.array(itemSchema),
             drops: z.array(itemSchema.extend({ pool: z.enum(DROP_POOLS) })),
             profitChances: z.array(
-                z.object({ runs: z.number().int(), chance: z.number().min(0).max(1).nullable() }),
+                z.object({
+                    runs: z.number().int(),
+                    chance: z.number().min(0).max(1).nullable(),
+                    averageNetChaos: z.number().nullable(),
+                    pricedAverageNetChaos: z.number().nullable(),
+                }),
             ),
+            poolValues: z.array(
+                z.object({
+                    pool: z.enum(DROP_POOLS),
+                    pricedChaosPerKill: z.number().nullable(),
+                    shareOfPricedLoot: z.number().nullable(),
+                    fullyPriced: z.boolean(),
+                }),
+            ),
+            askOnlyChaosPerKill: z.number().nonnegative(),
             perKill: totalsSchema,
             total: totalsSchema,
         }),

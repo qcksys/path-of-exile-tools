@@ -69,6 +69,7 @@ export async function loadBossRota(db: TDatabase, input: BossRotaInput): Promise
         realm: "pc",
         league,
         itemIds: [...new Set([...ids.values(), divineId])],
+        includeVolume: true,
     });
     const quotes = await findBossStashQuotes(
         db,
@@ -83,7 +84,12 @@ export async function loadBossRota(db: TDatabase, input: BossRotaInput): Promise
     for (const [name, id] of ids) {
         const quote = prices.get(id);
         if (quote && quote.price > 0)
-            quotes.set(name, { source: "exchange", unitChaos: quote.price, hour: quote.hour });
+            quotes.set(name, {
+                source: "exchange",
+                unitChaos: quote.price,
+                hour: quote.hour,
+                units24h: quote.units24h,
+            });
     }
     const filters = marketFiltersSchema.parse({ league, currency: "chaos" });
     const markets = new Map<string, BossItemMarket>();

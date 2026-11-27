@@ -1,5 +1,10 @@
-import type { BossEncounter, BossId, BossItem } from "~/data/boss-encounters";
-import type { BossItemMarket, DropPool, LocatedBossQuote } from "~/schemas/boss-rota";
+import { type BossEncounter, type BossId, type BossItem, bossIcon } from "~/data/boss-encounters";
+import {
+    type BossItemMarket,
+    DROP_POOLS,
+    type DropPool,
+    type LocatedBossQuote,
+} from "~/schemas/boss-rota";
 import { bossProfitChances } from "./boss-profit-chances";
 
 export function bossItemLabel([name, , market]: BossItem) {
@@ -17,7 +22,14 @@ export function calculateBossRota(
         const name = bossItemLabel(item);
         const located = item[2] === "unpriced" ? null : quotes.get(name);
         const quote = located
-            ? { source: located.source, unitChaos: located.unitChaos, hour: located.hour }
+            ? {
+                  source: located.source,
+                  unitChaos: located.unitChaos,
+                  hour: located.hour,
+                  units24h: located.units24h,
+                  listings: located.listings,
+                  likelySales24h: located.likelySales24h,
+              }
             : null;
         return {
             name,
@@ -59,6 +71,20 @@ export function calculateBossRota(
     const priced = drops.flatMap((row) => row.valueChaos ?? []);
     const pricedLoot = priced.length ? priced.reduce((sum, amount) => sum + amount, 0) : null;
     const loot = priced.length === drops.length ? pricedLoot : null;
+    const poolValues = DROP_POOLS.flatMap((pool) => {
+        const group = drops.filter((row) => row.pool === pool);
+        if (!group.length) return [];
+        const amounts = group.flatMap((row) => row.valueChaos ?? []);
+        const subtotal = amounts.length ? amounts.reduce((sum, amount) => sum + amount, 0) : null;
+        return [
+            {
+                pool,
+                pricedChaosPerKill: subtotal,
+                shareOfPricedLoot: subtotal !== null && pricedLoot ? subtotal / pricedLoot : null,
+                fullyPriced: group.length === amounts.length,
+            },
+        ];
+    });
     function totals(kills: number) {
         return {
             entryChaos: entry === null ? null : entry * kills,
@@ -72,10 +98,23 @@ export function calculateBossRota(
     return {
         id,
         name: boss.name,
+        icon: bossIcon(id),
         quantityBonus,
         entries,
         drops,
-        profitChances: bossProfitChances(entry, drops),
+        profitChances: bossProfitChances(entry, drops).map((horizon) => {
+            const average = totals(horizon.runs);
+            return {
+                ...horizon,
+                averageNetChaos: average.profitChaos,
+                pricedAverageNetChaos: average.profitFromPricedDropsChaos,
+            };
+        }),
+        poolValues,
+        askOnlyChaosPerKill: drops.reduce(
+            (sum, row) => sum + (row.quote?.likelySales24h === 0 ? (row.valueChaos ?? 0) : 0),
+            0,
+        ),
         perKill: totals(1),
         total: totals(runs),
     };

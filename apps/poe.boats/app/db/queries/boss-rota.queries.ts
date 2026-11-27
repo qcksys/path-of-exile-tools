@@ -26,6 +26,8 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
     const { earliestHour, latestHour } = marketObservationRange();
     const label = sql<string>`case when ${market.signatureKind} = 'gem' then ${market.baseType}
         when ${market.identified} then ${market.itemKey} else concat('Unidentified ', ${market.name}) end`;
+    // The locked merchant quote pools link counts for the same item state and signature.
+    const variant = sql`${market.itemKey}, ${market.identified}, ${market.corrupted}, ${market.signatureKind}, ${market.signatureValue}`;
     const ranked = db
         .select({
             label: label.as("boss_item"),
@@ -40,7 +42,15 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
             identified: market.identified,
             hour: market.hour,
             unitChaos: market.priceChaos,
+            listings:
+                sql<number>`sum(${market.listingCount}) over (partition by ${variant}, ${market.hour})`
+                    .mapWith(Number)
+                    .as("quote_listings"),
+            likelySales24h: sql<number>`sum(${market.likelySales}) over (partition by ${variant})`
+                .mapWith(Number)
+                .as("variant_sales"),
             rank: sql<number>`row_number() over (partition by ${label} order by
+                    case when ${market.listingCount} > 0 then 0 else 1 end,
                     ${market.hour} desc, case when ${market.priceChaos} > 0 then 0 else 1 end,
                     ${market.priceChaos}, ${market.itemKey}, ${market.corrupted},
                     ${market.links}, ${market.signatureKind}, ${market.signatureValue})`.as(
@@ -55,7 +65,7 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
                 eq(market.tab, "merchant"),
                 gte(market.hour, earliestHour),
                 lte(market.hour, latestHour),
-                gt(market.listingCount, 0),
+                or(gt(market.listingCount, 0), gt(market.likelySales, 0)),
                 or(
                     and(eq(market.identified, true), inArray(market.itemKey, mapEntries)),
                     and(
@@ -101,12 +111,14 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
 
     const filters = marketFiltersSchema.parse({ league, currency: "chaos" });
     for (const row of rows) {
-        if (row.unitChaos === null || row.unitChaos <= 0) continue;
+        if (!row.listings || row.unitChaos === null || row.unitChaos <= 0) continue;
         const category = marketCategory("pc", row.baseType, row.signatureKind, row.name);
         quotes.set(row.label, {
             source: "stash",
             hour: row.hour,
             unitChaos: row.unitChaos,
+            listings: row.listings,
+            likelySales24h: row.likelySales24h,
             market: {
                 artName: row.name || row.baseType,
                 iconAsset: row.iconAsset,

@@ -2633,8 +2633,10 @@ it("prices boss drops from the latest eligible merchant hour and exact item stat
         });
     await upsertStashUniqueHourly(db as unknown as TDatabase, [
         ask("Dying Sun", 60, { hour: hour - 3600 }),
-        ask("Dying Sun", 90),
-        ask("Dying Sun", 10, { corrupted: true }),
+        ask("Dying Sun", 90, { listingCount: 4, likelySales: 1 }),
+        ask("Dying Sun", 90, { hour: hour - 7200, listingCount: 0, likelySales: 2 }),
+        ask("Dying Sun", 95, { links: 6, listingCount: 7, likelySales: 12 }),
+        ask("Dying Sun", 10, { corrupted: true, likelySales: 8 }),
         ask("Dying Sun", 1, { league: "OtherBossRota" }),
         ask("Dying Sun", 1, { tab: "other" }),
         ask("Cortex", 100, { baseType: "Map (Tier 16)", corrupted: true }),
@@ -2667,6 +2669,7 @@ it("prices boss drops from the latest eligible merchant hour and exact item stat
         ["Unidentified Watcher's Eye (2-mod)", 40, "unpriced"],
     ]);
     const gemMarket = quotes.get("Voidstorm Support")!.market!;
+    expect(quotes.get("Dying Sun")).toMatchObject({ listings: 11, likelySales24h: 15 });
     const gem = new URL(gemMarket.href, "https://example.invalid");
     expect(gem.pathname).toBe("/1/market/items/Voidstorm");
     expect(Object.fromEntries(gem.searchParams)).toMatchObject({
@@ -2742,6 +2745,7 @@ it("values a solo Shaper rota from both captured markets in the same league", as
     expect(result.encounters[0]?.entries.every((row) => row.quote?.source === "exchange")).toBe(
         true,
     );
+    expect(result.encounters[0]?.entries.every((row) => row.quote?.units24h === 100)).toBe(true);
 });
 
 it("reads Cluster Jewel base markets' latest merchant asks by their signature value", async () => {
