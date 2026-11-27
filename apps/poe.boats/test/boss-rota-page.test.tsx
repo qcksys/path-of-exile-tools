@@ -10,7 +10,10 @@ import { getMarketExchangePrices, getMarketSeasons } from "~/db/queries/market.q
 import BossRotaPage, { loader } from "~/routes/boss-rota";
 
 vi.mock("~/components/route-error", () => ({ RouteError: () => null }));
-vi.mock("~/db/queries/boss-rota.queries", () => ({ findBossStashQuotes: vi.fn() }));
+vi.mock("~/db/queries/boss-rota.queries", () => ({
+    findBossStashQuotes: vi.fn(),
+    findBossItemArt: vi.fn().mockResolvedValue(new Map()),
+}));
 vi.mock("~/db/queries/market.queries", () => ({
     getMarketSeasons: vi.fn(),
     getMarketExchangePrices: vi.fn(),
@@ -47,11 +50,39 @@ it("opens a boss breakdown and reprices the requested number of solo kills", asy
         },
     ]);
     render(<Routes initialEntries={["/1/boss-rota"]} />);
+    const filter = await screen.findByRole("searchbox", { name: "Filter bosses" });
+    fireEvent.change(filter, { target: { value: "Shaper" } });
+    fireEvent.click(screen.getByRole("button", { name: "Calculate" }));
+    await vi.waitFor(() => expect(screen.queryByRole("link", { name: "Maven" })).toBeNull());
+    fireEvent.click(screen.getByRole("link", { name: "Sort by Boss" }));
+    await vi.waitFor(() =>
+        expect(
+            screen.getByRole("columnheader", { name: "Sort by Boss" }).getAttribute("aria-sort"),
+        ).toBe("ascending"),
+    );
+    expect(screen.getByRole("link", { name: "Sort by 100 runs" })).toBeTruthy();
     fireEvent.click(await screen.findByRole("link", { name: "Shaper" }));
     expect(await screen.findByRole("heading", { name: "Shaper rota" })).toBeTruthy();
     const unknown = screen.getByRole("row", { name: /Dying Sun/ });
     expect(within(unknown).getByText("2%")).toBeTruthy();
     expect(within(unknown).getByText("Unpriced")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Unique Pool" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Guaranteed" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Additional Drops" })).toBeTruthy();
+    const pool = within(screen.getByRole("table", { name: "Unique Pool" }));
+    fireEvent.change(pool.getByRole("textbox", { name: "Filter Item" }), {
+        target: { value: "Dying" },
+    });
+    expect(pool.queryByRole("link", { name: "Voidwalker" })).toBeNull();
+    expect(pool.getByRole("link", { name: "Dying Sun" })).toBeTruthy();
+    expect(
+        screen.getByRole("link", { name: "Fragment of the Hydra" }).getAttribute("href"),
+    ).toContain("/1/market/exchange/MapFragments/CurrencyShaperFragment4");
+    expect(
+        screen
+            .getByRole("link", { name: "Fragment of the Hydra" })
+            .querySelector("[data-item-art]"),
+    ).toBeTruthy();
     fireEvent.change(screen.getByRole("spinbutton", { name: "Kills" }), {
         target: { value: "10" },
     });
@@ -59,6 +90,9 @@ it("opens a boss breakdown and reprices the requested number of solo kills", asy
     expect(
         await screen.findByRole("heading", { name: "Expected return for 10 kills" }),
     ).toBeTruthy();
-    const summary = screen.getByRole("row", { name: /^Shaper 80 c/ });
-    expect(within(summary).getByText("≥ -57 c")).toBeTruthy();
+    const summary = screen.getByRole("row", { name: /^Shaper 40 div/ });
+    expect(within(summary).getByText("≥ -28.5 div")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "All bosses" }).getAttribute("href")).toContain(
+        "q=Shaper",
+    );
 });

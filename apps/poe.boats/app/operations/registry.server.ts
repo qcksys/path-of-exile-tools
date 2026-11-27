@@ -130,7 +130,7 @@ export const operations = [
         path: "/profits",
         name: "get_boss_rota_profits",
         description:
-            "Estimate solo PoE 1 boss profit in chaos for one or more kills. Each kill consumes one entry set and awards one instance's loot. Uses Perandus Ledger baseline drop rates and the selected PC league's exchange prices and merchant asks. Null totals indicate missing prices. Priced-drop subtotals include only quoted outcomes.",
+            "Filter and sort solo PoE 1 boss profits. Each kill consumes one entry set and awards one instance's loot. Returns chaos values, the league's Divine Orb rate, drop pools, item markets, and the chance total loot exceeds cost after 1, 5, 10, 50 and 100 runs. Odds use priced drops only. A missing entry price leaves profit and odds unknown.",
         ui: "/1/boss-rota",
         method: "get",
         access: "public",

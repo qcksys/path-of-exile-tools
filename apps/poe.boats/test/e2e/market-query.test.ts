@@ -36,6 +36,7 @@ import {
 import { yellowBeastMarket } from "~/lib/crafting-yellow-beasts";
 import { marketExchangeItemId } from "~/lib/market-exchange.server";
 import { getServerStatus } from "~/operations/server-status.server";
+import { bossRotaInputSchema } from "~/schemas/boss-rota";
 import { marketFiltersSchema } from "~/schemas/market";
 import { loadBossRota } from "~/services/boss-rota.server";
 
@@ -2644,6 +2645,7 @@ it("prices boss drops from the latest eligible merchant hour and exact item stat
         ask("Sublime Vision", 2),
         ask("Voidstorm", 4, {
             baseType: "Voidstorm Support",
+            iconAsset: "2DItems/Gems/Voidstorm",
             signatureKind: "gem",
             signatureValue: "Level 1–2 · Quality 0–19%",
         }),
@@ -2664,7 +2666,27 @@ it("prices boss drops from the latest eligible merchant hour and exact item stat
         ["Voidwalker", 32],
         ["Unidentified Watcher's Eye (2-mod)", 40, "unpriced"],
     ]);
-    expect(quotes).toEqual(
+    const gemMarket = quotes.get("Voidstorm Support")!.market!;
+    const gem = new URL(gemMarket.href, "https://example.invalid");
+    expect(gem.pathname).toBe("/1/market/items/Voidstorm");
+    expect(Object.fromEntries(gem.searchParams)).toMatchObject({
+        league,
+        identified: "true",
+        corrupted: "false",
+        kind: "gem",
+        value: "Level 1–2 · Quality 0–19%",
+    });
+    expect(gemMarket.iconAsset).toBe("2DItems/Gems/Voidstorm");
+    expect(gem.searchParams.has("links")).toBe(false);
+    expect(quotes.get("Unidentified Sublime Vision")!.market!.href).toContain("unid%3AVision");
+    expect(
+        new Map(
+            [...quotes].map(([key, { source, unitChaos, hour }]) => [
+                key,
+                { source, unitChaos, hour },
+            ]),
+        ),
+    ).toEqual(
         new Map([
             ["Cortex", { source: "stash", unitChaos: 100, hour }],
             ["Doryani's Invitation", { source: "stash", unitChaos: 75, hour }],
@@ -2705,7 +2727,10 @@ it("values a solo Shaper rota from both captured markets in the same league", as
             prices: { chaos: { min: 50, median: 50, max: 50, count: 1 } },
         }),
     ]);
-    const result = await loadBossRota(database, { league, boss: "shaper", runs: 10 });
+    const result = await loadBossRota(
+        database,
+        bossRotaInputSchema.parse({ league, boss: "shaper", runs: 10 }),
+    );
     expect(result.encounters).toHaveLength(1);
     expect(result.encounters[0]?.total).toEqual({
         entryChaos: 120,

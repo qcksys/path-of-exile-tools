@@ -1,5 +1,6 @@
 import type { BossEncounter, BossId, BossItem } from "~/data/boss-encounters";
-import type { BossQuote } from "~/schemas/boss-rota";
+import type { BossItemMarket, DropPool, LocatedBossQuote } from "~/schemas/boss-rota";
+import { bossProfitChances } from "./boss-profit-chances";
 
 export function bossItemLabel([name, , market]: BossItem) {
     return market === "unidentified" ? `Unidentified ${name}` : name;
@@ -9,29 +10,47 @@ export function calculateBossRota(
     id: BossId,
     boss: BossEncounter,
     runs: number,
-    quotes: ReadonlyMap<string, BossQuote>,
+    quotes: ReadonlyMap<string, LocatedBossQuote>,
+    markets?: ReadonlyMap<string, BossItemMarket>,
 ) {
     function value(item: BossItem, quantityPerKill: number) {
         const name = bossItemLabel(item);
-        const quote = item[2] === "unpriced" ? null : (quotes.get(name) ?? null);
+        const located = item[2] === "unpriced" ? null : quotes.get(name);
+        const quote = located
+            ? { source: located.source, unitChaos: located.unitChaos, hour: located.hour }
+            : null;
         return {
             name,
             quantityPerKill,
             quote,
+            market: located?.market ?? markets?.get(name) ?? null,
             valueChaos: quote && quote.unitChaos * quantityPerKill,
         };
     }
     const entries = boss.entries.map((item) => value(item, item[1]));
     const quantityBonus = boss.quantityBonus ?? 0;
-    const drops = (boss.drops ?? []).map((item) => value(item, item[1] / 100));
+    const drop = (item: BossItem, chance: number, pool: DropPool) => ({
+        ...value(item, chance),
+        pool,
+    });
+    const drops = [
+        ...(boss.guaranteedDrops ?? []).map((item) => drop(item, item[1] / 100, "Guaranteed")),
+        ...(boss.drops ?? []).map((item) => drop(item, item[1] / 100, "Unique Pool")),
+    ];
     for (const item of boss.extraDrops ?? []) {
-        drops.push(value(item, Math.min(1, (item[1] / 100) * (1 + quantityBonus / 100))));
+        drops.push(
+            drop(
+                item,
+                Math.min(1, (item[1] / 100) * (1 + quantityBonus / 100)),
+                "Additional Drops",
+            ),
+        );
     }
     if (boss.gemPool) {
         const { chance, weights } = boss.gemPool;
         const totalWeight = weights.reduce((sum, [, weight]) => sum + weight, 0);
         for (const item of weights)
-            drops.push(value(item, (chance / 100) * (item[1] / totalWeight)));
+            drops.push(drop(item, (chance / 100) * (item[1] / totalWeight), "Awakened Gems"));
     }
 
     const entry = entries.every((row) => row.valueChaos !== null)
@@ -56,6 +75,7 @@ export function calculateBossRota(
         quantityBonus,
         entries,
         drops,
+        profitChances: bossProfitChances(entry, drops),
         perKill: totals(1),
         total: totals(runs),
     };

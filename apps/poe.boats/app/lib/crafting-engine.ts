@@ -128,6 +128,7 @@ import {
 } from "./crafting-sockets";
 import { strongbox, strongboxMethod } from "./crafting-strongboxes";
 import { cleanModText, scaledModValues } from "./crafting-text";
+import { seededFraction } from "./seeded-fraction";
 
 export type Weighted<T> = { value: T; weight: number };
 export { eldritchTier } from "./crafting-eldritch";
@@ -170,13 +171,7 @@ type PoolOptions = {
 };
 
 export function seededRandom(seed: number): CraftingRandom {
-    let state = seed >>> 0;
-    const next = () => {
-        state = (state + 0x6d2b79f5) >>> 0;
-        let value = Math.imul(state ^ (state >>> 15), 1 | state);
-        value ^= value + Math.imul(value ^ (value >>> 7), 61 | value);
-        return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
-    };
+    const next = seededFraction(seed);
     return {
         pick(choices) {
             const total = choices.reduce((sum, choice) => sum + choice.weight, 0);

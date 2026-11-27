@@ -11,6 +11,7 @@ export type BossItem = readonly [
 export interface BossEncounter {
     name: string;
     entries: readonly BossItem[];
+    guaranteedDrops?: readonly BossItem[];
     drops?: readonly BossItem[];
     extraDrops?: readonly BossItem[];
     quantityBonus?: number;
@@ -26,9 +27,11 @@ export const BOSS_ENCOUNTERS = {
             ["Fragment of the Chimera", 1],
             ["Fragment of the Minotaur", 1],
         ],
-        drops: [
+        guaranteedDrops: [
             ["Fragment of Shape", 50],
             ["Fragment of Knowledge", 50],
+        ],
+        drops: [
             ["Shaper's Touch", 55],
             ["Voidwalker", 32],
             ["Solstice Vigil", 11],
@@ -45,9 +48,11 @@ export const BOSS_ENCOUNTERS = {
         entries: [
             ["Cosmic Fragment", 4],
         ],
-        drops: [
+        guaranteedDrops: [
             ["Fragment of Shape", 50],
             ["Fragment of Knowledge", 50],
+        ],
+        drops: [
             ["Echoes of Creation", 33],
             ["Entropic Devastation", 30],
             ["The Tides of Time", 18],
@@ -70,9 +75,11 @@ export const BOSS_ENCOUNTERS = {
             ["Fragment of Enslavement", 1],
             ["Fragment of Eradication", 1],
         ],
-        drops: [
+        guaranteedDrops: [
             ["Fragment of Terror", 50],
             ["Fragment of Emptiness", 50],
+        ],
+        drops: [
             ["Cyclopean Coil", 30],
             ["Blasphemer's Grasp", 30],
             ["Nebuloch", 10],
@@ -217,7 +224,7 @@ export const BOSS_ENCOUNTERS = {
         entries: [
             ["Echo of Reverence", 1],
         ],
-        drops: [
+        guaranteedDrops: [
             ["Grasping Astrolabe", 14.29],
             ["Runic Astrolabe", 14.29],
             ["Chaotic Astrolabe", 14.29],
@@ -225,6 +232,8 @@ export const BOSS_ENCOUNTERS = {
             ["Nameless Astrolabe", 14.29],
             ["Timeless Astrolabe", 14.29],
             ["Lightless Astrolabe", 14.26],
+        ],
+        drops: [
             ["Bonemeld", 55],
             ["The Dark Monarch", 35],
             ["Seven Teachings", 8],
@@ -241,7 +250,7 @@ export const BOSS_ENCOUNTERS = {
         entries: [
             ["Reverent Fragment", 4],
         ],
-        drops: [
+        guaranteedDrops: [
             ["Grasping Astrolabe", 14.29],
             ["Runic Astrolabe", 14.29],
             ["Chaotic Astrolabe", 14.29],
@@ -249,6 +258,8 @@ export const BOSS_ENCOUNTERS = {
             ["Nameless Astrolabe", 14.29],
             ["Timeless Astrolabe", 14.29],
             ["Lightless Astrolabe", 14.26],
+        ],
+        drops: [
             ["The Hallowed Monarch", 54],
             ["Whispers of Infinity", 30],
             ["Wellwater Phylactery", 14],
@@ -266,7 +277,7 @@ export const BOSS_ENCOUNTERS = {
         entries: [
             ["Echo of Loneliness", 1],
         ],
-        drops: [
+        guaranteedDrops: [
             ["Grasping Astrolabe", 14.29],
             ["Runic Astrolabe", 14.29],
             ["Chaotic Astrolabe", 14.29],
@@ -274,6 +285,8 @@ export const BOSS_ENCOUNTERS = {
             ["Nameless Astrolabe", 14.29],
             ["Timeless Astrolabe", 14.29],
             ["Lightless Astrolabe", 14.26],
+        ],
+        drops: [
             ["Betrayal's Sting", 50],
             ["The Arkhon's Tools", 38],
             ["Venarius' Astrolabe", 10],
@@ -291,7 +304,7 @@ export const BOSS_ENCOUNTERS = {
         entries: [
             ["Lonely Fragment", 4],
         ],
-        drops: [
+        guaranteedDrops: [
             ["Grasping Astrolabe", 14.29],
             ["Runic Astrolabe", 14.29],
             ["Chaotic Astrolabe", 14.29],
@@ -299,6 +312,8 @@ export const BOSS_ENCOUNTERS = {
             ["Nameless Astrolabe", 14.29],
             ["Timeless Astrolabe", 14.29],
             ["Lightless Astrolabe", 14.26],
+        ],
+        drops: [
             ["Refuge in Isolation", 55],
             ["Bitter Instinct", 30],
             ["Haunting Memories", 13],
@@ -317,7 +332,7 @@ export const BOSS_ENCOUNTERS = {
         entries: [
             ["Echo of Trauma", 1],
         ],
-        drops: [
+        guaranteedDrops: [
             ["Grasping Astrolabe", 14.29],
             ["Runic Astrolabe", 14.29],
             ["Chaotic Astrolabe", 14.29],
@@ -325,6 +340,8 @@ export const BOSS_ENCOUNTERS = {
             ["Nameless Astrolabe", 14.29],
             ["Timeless Astrolabe", 14.29],
             ["Lightless Astrolabe", 14.26],
+        ],
+        drops: [
             ["Servant of Decay", 50],
             ["The Unseen Hue", 37],
             ["Enmity's Embrace", 11],
@@ -341,7 +358,7 @@ export const BOSS_ENCOUNTERS = {
         entries: [
             ["Traumatic Fragment", 4],
         ],
-        drops: [
+        guaranteedDrops: [
             ["Grasping Astrolabe", 14.29],
             ["Runic Astrolabe", 14.29],
             ["Chaotic Astrolabe", 14.29],
@@ -349,6 +366,8 @@ export const BOSS_ENCOUNTERS = {
             ["Nameless Astrolabe", 14.29],
             ["Timeless Astrolabe", 14.29],
             ["Lightless Astrolabe", 14.26],
+        ],
+        drops: [
             ["The Caged Mammoth", 60],
             ["Coiling Whisper", 36],
             ["Woespike", 2],
@@ -545,10 +564,12 @@ export const BOSS_ENCOUNTERS = {
         entries: [
             ["Syndicate Medallion", 1],
         ],
-        drops: [
+        guaranteedDrops: [
             ["Allflame Ember of Propagation", 33.34],
             ["Allflame Ember of Kulemak", 33.33],
             ["Allflame Ember of the Ethereal", 33.33],
+        ],
+        drops: [
             ["Veiled Cinderswallow Urn (Life)", 10, "unpriced"],
             ["Veiled Cinderswallow Urn (ES)", 10, "unpriced"],
             ["Veiled Cinderswallow Urn (Mana)", 10, "unpriced"],
@@ -610,7 +631,7 @@ export const BOSS_ENCOUNTERS = {
         entries: [
             ["Hivebrain Gland", 1],
         ],
-        drops: [
+        guaranteedDrops: [
             ["Foulborn Xoph's Inception", 11.11, "unpriced"],
             ["Foulborn Xoph's Nurture", 2.22, "unpriced"],
             ["Foulborn The Formless Flame", 4.17, "unpriced"],
@@ -644,6 +665,8 @@ export const BOSS_ENCOUNTERS = {
             ["Foulborn Severed in Sleep", 11.11, "unpriced"],
             ["Foulborn United in Dream", 2.22, "unpriced"],
             ["Foulborn Presence of Chayula", 1.67, "unpriced"],
+        ],
+        drops: [
             ["The Will of Xoph", 17],
             ["The Will of Tul", 17],
             ["The Will of Esh", 17],
@@ -714,9 +737,11 @@ export const BOSS_ENCOUNTERS = {
         entries: [
             ["Cursed Poppet", 1],
         ],
-        drops: [
+        guaranteedDrops: [
             ["Coven Queen's Crown (2-mod)", 82, "unpriced"],
             ["Coven Queen's Crown (3-mod)", 18, "unpriced"],
+        ],
+        drops: [
             ["Bane of the Apostate", 72],
             ["Veil of Flesh", 18],
             ["The Covetous Dark", 10],

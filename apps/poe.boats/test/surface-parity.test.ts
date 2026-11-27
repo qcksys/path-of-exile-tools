@@ -3164,6 +3164,7 @@ it("reads the PoE 2 exchange market alike over HTTP and MCP", async () => {
 });
 
 it("prices solo boss runs alike over HTTP and MCP and rejects invalid runs", async () => {
+    const art = vi.spyOn(bossQueries, "findBossItemArt").mockResolvedValue(new Map());
     const leagues = vi.spyOn(marketQueries, "getMarketSeasons").mockResolvedValue({
         seasons: [{ league: "Covens", firstHour: 3600, latestHour: 3600 }],
         exchangeSeasons: [],
@@ -3187,8 +3188,15 @@ it("prices solo boss runs alike over HTTP and MCP and rejects invalid runs", asy
         const market = await response.json();
         expect(market).toMatchObject({
             league: "Covens",
+            chaosPerDivine: 5,
             runs: 3,
-            encounters: [{ id: "shaper", total: { entryChaos: 60, profitChaos: null } }],
+            encounters: [
+                {
+                    id: "shaper",
+                    total: { entryChaos: 60, profitChaos: null },
+                    profitChances: [1, 5, 10, 50, 100].map((runs) => ({ runs })),
+                },
+            ],
         });
         expect(exchange.mock.calls[0]?.[1].itemIds).toContain(
             "Metadata/Items/MapFragments/CurrencyShaperFragment4",
@@ -3212,6 +3220,7 @@ it("prices solo boss runs alike over HTTP and MCP and rejects invalid runs", asy
         expect((await call(0)).isError).toBe(true);
         expect(exchange).toHaveBeenCalledTimes(2);
     } finally {
+        art.mockRestore();
         leagues.mockRestore();
         stash.mockRestore();
         exchange.mockRestore();
