@@ -5,6 +5,7 @@ import {
     CAPTURE_LEASE_MS,
     type CaptureLeaseRequest,
     type CaptureLeaseState,
+    captureLeaseStateSchema,
     captureSegmentKey,
     checkCaptureLease,
     decideCaptureLease,
@@ -179,24 +180,91 @@ describe("handing back", () => {
         expect(renewed.state.cursor).toBe("c9");
     });
 
-    it("counts a fallback that is gone while home waits as released", () => {
+    it("counts a fallback that is gone as released once home has imported every segment", () => {
         const waiting = run(failedOver(), [
             [{ holder: "fallback" }, 1_000],
             [{ holder: "fallback", epoch: 2, segment: first, cursor: "f1" }, 10_000],
-            [{ holder: "home", imported: null }, 20_000],
+            [{ holder: "home", imported: first }, 20_000],
         ]).state;
         // The Container exited: its pages since the first segment are lost.
         const check = checkCaptureLease(waiting, 21_000, false);
         expect(check).toMatchObject({ start: false, stop: null });
         expect(check.state.released).toBe(true);
+        const { responses } = run(check.state, [[{ holder: "home", imported: first }, 22_000]]);
+        expect(responses).toEqual([{ state: "hold", epoch: 3, from: "f1", stopFallback: true }]);
+    });
+
+    it("restarts a fallback that is gone while home still has segments to import", () => {
+        const waiting = run(failedOver(), [
+            [{ holder: "fallback" }, 1_000],
+            [{ holder: "fallback", epoch: 2, segment: second, cursor: "f2" }, 10_000],
+            [{ holder: "home", imported: null }, 20_000],
+        ]).state;
+        // Home has an outage's worth of segments to append: the stream must not wait for it.
+        const check = checkCaptureLease(waiting, 21_000, false);
+        expect(check).toMatchObject({ start: true, stop: null });
+        expect(check.state).toMatchObject({
+            holder: "fallback",
+            released: false,
+            homeWaiting: false,
+        });
         const { responses } = run(check.state, [
-            [{ holder: "home", imported: null }, 22_000],
+            [{ holder: "fallback" }, 22_000],
             [{ holder: "home", imported: first }, 23_000],
         ]);
+        // The new process continues from the last uploaded cursor; home keeps importing.
         expect(responses).toEqual([
-            { state: "import", segment: first },
-            { state: "hold", epoch: 3, from: "f1", stopFallback: true },
+            { state: "hold", epoch: 3, from: "f2" },
+            { state: "import", segment: second },
         ]);
+    });
+
+    it("restarts a fallback that stopped renewing while home, waiting, went quiet too", () => {
+        // Both lost the Worker: home's last request asked for the lease back.
+        const waiting = run(failedOver(), [
+            [{ holder: "fallback" }, 1_000],
+            [{ holder: "fallback", epoch: 2, segment: second, cursor: "f2" }, 10_000],
+            [{ holder: "home", imported: first }, 10_000],
+        ]).state;
+        const check = checkCaptureLease(waiting, 10_000 + silent, true);
+        expect(check).toMatchObject({ start: true, stop: "destroy" });
+        expect(check.state.released).toBe(false);
+    });
+
+    it("does not release a fallback to a home that has gone quiet", () => {
+        const { responses } = run(failedOver(), [
+            [{ holder: "fallback" }, 1_000],
+            [{ holder: "fallback", epoch: 2, segment: first, cursor: "f1" }, 10_000],
+            [{ holder: "home", imported: first }, 20_000],
+            [{ holder: "fallback", epoch: 2 }, 20_000 + silent],
+        ]);
+        expect(responses[3]).toEqual({ state: "hold", epoch: 2 });
+    });
+
+    it("starts a new fallback when home goes quiet after the fallback released", () => {
+        const released = run(failedOver(), [
+            [{ holder: "fallback" }, 1_000],
+            [{ holder: "fallback", epoch: 2, segment: first, cursor: "f1" }, 10_000],
+            [{ holder: "home", imported: first }, 20_000],
+            [{ holder: "fallback", epoch: 2, cursor: "f1", released: true }, 21_000],
+        ]).state;
+        expect(released).toMatchObject({ released: true, homeWaiting: true });
+        // While home keeps asking it takes the lease; nothing is started.
+        expect(checkCaptureLease(released, 30_000, false)).toMatchObject({ start: false });
+        // The released Container exits before its successor starts.
+        expect(checkCaptureLease(released, 20_000 + silent, true)).toMatchObject({
+            start: false,
+            stop: "signal",
+        });
+        const check = checkCaptureLease(released, 20_000 + silent, false);
+        expect(check).toMatchObject({ start: true, stop: null });
+        const { responses } = run(check.state, [[{ holder: "fallback" }, 21_000 + silent]]);
+        expect(responses).toEqual([{ state: "hold", epoch: 3, from: "f1" }]);
+    });
+
+    it("reads stored state from before home's last request was recorded", () => {
+        const { homeSeenAt: _, ...stored } = initialCaptureLeaseState;
+        expect(captureLeaseStateSchema.parse(stored).homeSeenAt).toBe(0);
     });
 
     it("hands back without a check once a silent fallback's lease has lapsed", () => {
