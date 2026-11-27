@@ -439,9 +439,11 @@ it("refuses a segment from a fallback that has lost the lease", async () => {
     await worker.api.lease({ holder: "home", cursor: "s0" });
     worker.check(120_000, false);
     const { epoch } = (await worker.api.lease({ holder: "fallback" })) as { epoch: number };
-    // The fallback stops renewing; home returns, and the Worker counts the fallback as gone.
+    // The fallback stops renewing; home returns and keeps asking, and with nothing left to import
+    // the Worker counts the fallback as gone.
+    worker.check(60_000, true);
     await worker.api.lease({ holder: "home", imported: null });
-    worker.check(120_000, false);
+    worker.check(30_000, false);
     await worker.api.lease({ holder: "home", imported: null });
     expect(worker.state().holder).toBe("home");
 

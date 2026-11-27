@@ -97,6 +97,8 @@ export const captureLeaseStateSchema = z.object({
     homeWaiting: z.boolean(),
     /** The fallback has stopped, or is gone, and will upload nothing more. */
     released: z.boolean(),
+    /** When home last asked for the lease; 0 for state stored before this was recorded. */
+    homeSeenAt: z.number().default(0),
 });
 export type CaptureLeaseState = z.infer<typeof captureLeaseStateSchema>;
 
@@ -109,7 +111,12 @@ export const initialCaptureLeaseState: CaptureLeaseState = {
     imported: null,
     homeWaiting: false,
     released: false,
+    homeSeenAt: 0,
 };
+
+/** Home waits for the lease only while it keeps asking: a home that went quiet is not coming. */
+const homeWaitingAt = (state: CaptureLeaseState, now: number) =>
+    state.homeWaiting && now <= state.homeSeenAt + CAPTURE_LEASE_MS + CAPTURE_LEASE_GRACE_MS;
 
 /** Answers one holder's request. `stopFallback` asks for the fallback Container to be stopped. */
 export function decideCaptureLease(
@@ -130,6 +137,7 @@ export function decideCaptureLease(
                     expiresAt: now + CAPTURE_LEASE_MS,
                     imported,
                     homeWaiting: false,
+                    homeSeenAt: now,
                 },
                 response: { state: "hold", epoch },
             };
@@ -146,13 +154,14 @@ export function decideCaptureLease(
                     imported,
                     homeWaiting: false,
                     released: false,
+                    homeSeenAt: now,
                 },
                 response: { state: "hold", epoch, from: state.cursor },
                 stopFallback: true,
             };
         }
         return {
-            state: { ...state, imported, homeWaiting: true },
+            state: { ...state, imported, homeWaiting: true, homeSeenAt: now },
             response: { state: "import", segment: state.segment },
         };
     }
@@ -176,15 +185,17 @@ export function decideCaptureLease(
     };
     if (request.released)
         return { state: { ...next, released: true }, response: { state: "stop" } };
-    if (next.homeWaiting && next.imported === next.segment)
+    if (homeWaitingAt(next, now) && next.imported === next.segment)
         return { state: next, response: { state: "release" } };
     return { state: next, response: { state: "hold", epoch: state.epoch } };
 }
 
 /**
  * Run on a timer: starts the fallback when home has gone silent, and restarts a fallback that
- * exited or stopped renewing. A fallback that is gone while home waits is counted as released;
- * the pages it had not uploaded are lost, and home continues from its last uploaded cursor.
+ * exited or stopped renewing. A fallback that is gone counts as released only while home is still
+ * asking and has imported every segment, so home takes the lease at its next request; otherwise a
+ * new fallback continues from the last uploaded cursor, as it does once a released fallback's home
+ * goes quiet. Either way the pages a gone fallback had not uploaded are lost.
  * `stop` is `signal` for a Container that should finish on its own, `destroy` for one that hung.
  */
 export function checkCaptureLease(
@@ -193,31 +204,35 @@ export function checkCaptureLease(
     fallbackRunning: boolean,
 ): { state: CaptureLeaseState; start: boolean; stop: "signal" | "destroy" | null } {
     const lapsed = now > state.expiresAt + CAPTURE_LEASE_GRACE_MS;
+    const restarted = {
+        ...state,
+        expiresAt: now + CAPTURE_FALLBACK_START_MS,
+        homeWaiting: false,
+        released: false,
+    };
     if (state.holder === "home") {
         // Without a known cursor, a fallback would read the stream from its start.
         if (lapsed && state.cursor !== null)
             return {
-                state: {
-                    ...state,
-                    holder: "fallback",
-                    expiresAt: now + CAPTURE_FALLBACK_START_MS,
-                    homeWaiting: false,
-                    released: false,
-                },
+                state: { ...restarted, holder: "fallback" },
                 // A Container still running belongs to an older epoch and is told to stop.
                 start: !fallbackRunning,
                 stop: null,
             };
         return { state, start: false, stop: fallbackRunning ? "signal" : null };
     }
-    if (state.holder !== "fallback" || state.released)
+    if (state.holder !== "fallback")
         return { state, start: false, stop: fallbackRunning ? "signal" : null };
+    const waiting = homeWaitingAt(state, now);
+    if (state.released) {
+        if (waiting) return { state, start: false, stop: fallbackRunning ? "signal" : null };
+        // Nobody captures: home went quiet after the fallback released. Let it exit first.
+        if (fallbackRunning) return { state, start: false, stop: "signal" };
+        return { state: restarted, start: true, stop: null };
+    }
     if (fallbackRunning && !lapsed) return { state, start: false, stop: null };
     const hung = fallbackRunning ? "destroy" : null;
-    if (state.homeWaiting) return { state: { ...state, released: true }, start: false, stop: hung };
-    return {
-        state: { ...state, expiresAt: now + CAPTURE_FALLBACK_START_MS },
-        start: true,
-        stop: hung,
-    };
+    if (waiting && state.imported === state.segment)
+        return { state: { ...state, released: true }, start: false, stop: hung };
+    return { state: restarted, start: true, stop: hung };
 }
