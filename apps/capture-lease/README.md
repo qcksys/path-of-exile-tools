@@ -79,16 +79,19 @@ done
 vp run deploy:dev
 ```
 
-`CAPTURE_LEASE_TOKEN` is a new random value, for example `openssl rand -hex 32`. Check the Worker
-before pointing home at it:
+`CAPTURE_LEASE_TOKEN` is a new random value, for example `openssl rand -hex 32`. The Worker is
+served only on the custom domain in `routes`: a `workers.dev` address follows the account's
+`workers.dev` subdomain, and renaming that subdomain once cut home off from the Worker, so neither
+home nor the Container could hold the lease. Check the Worker before pointing home at it:
 
 ```sh
-curl -H "Authorization: Bearer <token>" https://<worker>/status
+curl -H "Authorization: Bearer <token>" https://<custom domain>/status
 ```
 
 A new Worker answers with `"holder": null`. Then set up the home host as
-[the deployment runbook](../../deploy/ingest/README.md#capture-fallback) describes. The Worker
-learns the address home uses and gives it to the Container.
+[the deployment runbook](../../deploy/ingest/README.md#capture-fallback) describes, with the custom
+domain as `CAPTURE_LEASE_URL`. The Worker learns the address home uses and gives it to the
+Container.
 
 `vars` in `wrangler.jsonc` set the receiver URL and the worker ID that the Container reports its
 status under (`<INGEST_WORKER_ID>-capture`).

@@ -7,6 +7,14 @@
     "observability": {
         "enabled": true
     },
+    // Home and the Container reach the Worker here. A workers.dev address changes with the account's
+    // workers.dev subdomain, so a deploy with this route also turns workers.dev off.
+    "routes": [
+        {
+            "pattern": "poe-capture-lease-dev.poe.boats",
+            "custom_domain": true
+        }
+    ],
     "vars": {
         "POE_BOATS_INGEST_URL": "https://dev.poe.boats/api/stash-ingest",
         "INGEST_WORKER_ID": "cloudflare-dev-pc-fallback"
