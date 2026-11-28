@@ -1,10 +1,11 @@
 import { expect, test } from "@playwright/test";
+import { GAME_TOOLS } from "../../../app/data/game-tools";
 import { selectValue } from "./control-helpers";
 
 test("offers the season market alongside the other PoE 1 tools", async ({ page }) => {
     await page.goto("/1");
     const tools = page.getByRole("navigation", { name: "Path of Exile 1 tools" });
-    await expect(tools.getByRole("link")).toHaveCount(6);
+    await expect(tools.getByRole("link")).toHaveCount(GAME_TOOLS["1"].length);
     await expect(tools.getByRole("link", { name: "Boss Rota Profits" })).toHaveAttribute(
         "href",
         "/1/boss-rota",
