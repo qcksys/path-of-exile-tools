@@ -3035,7 +3035,7 @@ it("shares market categories, search, ordering and filters across HTTP and MCP",
             { runtime },
         );
         expect(history.status).toBe(200);
-        expect((await history.json()).history[0].soldAgeSeconds).toBe(156624.5);
+        expect(await history.json()).toMatchObject({ history: [{ soldAgeSeconds: 156624.5 }] });
         expect(query).toHaveBeenLastCalledWith(
             context.db,
             expect.objectContaining({ item: "Headhunter", category: "all" }),
