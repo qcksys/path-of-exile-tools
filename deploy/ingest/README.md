@@ -197,6 +197,24 @@ before switching. Do not use `down --volumes` or clear cursors.
 Image and data retention are separate: this updater deletes neither archives nor Docker
 images. Monitor free space and arrange off-host data backups as described in the runbook.
 
+### Image pruning
+
+Each deploy leaves the previous image on disk. Docker's containerd image store keeps it under its
+digest, so it is not dangling and `docker image prune` without `--all` keeps it. The images of
+every Compose project on the host build up this way until the root filesystem fills.
+`docker-image-prune.timer` runs `docker image prune --all --filter until=24h` every morning. It
+removes every image on the host, from any project, that no container uses (running or stopped) and
+that was built more than a day ago. A rollback to `previousImage` pulls it from the registry again,
+and an image that `docker run` starts on a schedule, such as the backup's rclone image, is pulled
+again on its next run. Install the two unit files with the updater's:
+
+```sh
+systemctl --user daemon-reload
+systemctl --user enable --now docker-image-prune.timer
+systemctl --user start docker-image-prune.service   # a first prune now
+journalctl --user -u docker-image-prune.service -n 20 --no-pager
+```
+
 ### Compacting a worker database
 
 Deleted rows free space inside the database file, which later writes reuse, but the file does not
