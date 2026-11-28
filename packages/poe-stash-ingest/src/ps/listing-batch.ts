@@ -123,9 +123,10 @@ export class ListingBatch {
     }
 
     /** Applies a page's changes seen at `at` (microseconds), as `applyStashChanges` would. */
-    applyPage(changes: readonly PublicStashChange[], at: number) {
+    applyPage(changes: readonly PublicStashChange[], at: number, standardCollectorsOnly = false) {
         const totals = { inserted: 0, updated: 0, removed: 0 };
-        for (const round of stashRounds(changes)) this.applyRound(round, at, totals);
+        for (const round of stashRounds(changes))
+            this.applyRound(round, at, totals, standardCollectorsOnly);
         this.pages++;
         return totals;
     }
@@ -143,6 +144,7 @@ export class ListingBatch {
         changes: readonly PublicStashChange[],
         at: number,
         totals: { inserted: number; updated: number; removed: number },
+        standardCollectorsOnly: boolean,
     ) {
         const state = this.state;
         const removed: number[] = [];
@@ -164,7 +166,12 @@ export class ListingBatch {
             const current = new Set(
                 change.items.flatMap((item) => (item.id ? [ListingState.idKeyOf(item.id)] : [])),
             );
-            for (const row of listingRows(change, account, change.league)) {
+            for (const row of listingRows(
+                change,
+                account,
+                change.league,
+                standardCollectorsOnly && change.league === "Standard",
+            )) {
                 const existing = state.find(change.id, account, row.itemId);
                 if (existing !== NONE && state.active[existing]) totals.updated++;
                 else totals.inserted++;

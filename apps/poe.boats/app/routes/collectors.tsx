@@ -5,7 +5,8 @@ import { RouteError } from "~/components/route-error";
 import { Button } from "~/components/ui/button";
 import { FormSelect, FormSelectItem } from "~/components/ui/form-select";
 import { Input } from "~/components/ui/input";
-import { collectorFilters, listCollectorItems } from "~/lib/collector-items.server";
+import { dbContext } from "~/context";
+import { collectorFilters, loadCollectorGallery } from "~/lib/collector-items.server";
 import type { SiteHandle } from "~/routes/layouts/site";
 import type { Route } from "./+types/collectors";
 
@@ -19,18 +20,68 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     return <RouteError error={error} />;
 }
 
-export function loader({ request }: Route.LoaderArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
     const parsed = collectorFilters.safeParse(
         Object.fromEntries(new URL(request.url).searchParams),
     );
     if (!parsed.success) throw new Response("Invalid gallery filters", { status: 400 });
-    return { filters: parsed.data, ...listCollectorItems(parsed.data) };
+    return {
+        filters: parsed.data,
+        ...(await loadCollectorGallery(context.get(dbContext), parsed.data)),
+    };
 }
 
 const linkStyle = "text-primary underline underline-offset-4 hover:no-underline";
 
+function utcHour(hour: number) {
+    return `${new Date(hour * 1000).toISOString().slice(0, 16).replace("T", " ")} UTC`;
+}
+
+type Artwork = Route.ComponentProps["loaderData"]["items"][number]["artworks"][number];
+
+function CollectorArtwork({ name, art }: { name: string; art: Artwork }) {
+    const { labels, icon, market, historicalAsk } = art;
+    let label = "Asking price";
+    let price = "Unavailable";
+    let observedAt: string | undefined;
+    if (market?.ask) {
+        label = "Lowest ask";
+        price = market.ask.prices
+            .map(({ amount, currency }) => `${amount} ${currency}`)
+            .join(" · ");
+        observedAt = utcHour(market.ask.hour);
+    } else if (historicalAsk) {
+        label = "Historical ask";
+        price = `${historicalAsk.mirrors} ${historicalAsk.mirrors === 1 ? "mirror" : "mirrors"}`;
+        observedAt = historicalAsk.date;
+    }
+    return (
+        <figure className="flex flex-col items-center gap-2 rounded-md bg-muted/40 px-1 py-3">
+            <ItemArt
+                src={icon}
+                name={`${name}, ${labels.join(", ")}`}
+                className="h-24 w-full border-0 bg-transparent"
+            />
+            <figcaption className="space-y-2 text-center text-xs">
+                <p className="font-medium">{labels.join(" · ")}</p>
+                <dl className="space-y-1.5 tabular-nums">
+                    <div>
+                        <dt className="text-muted-foreground">{label}</dt>
+                        <dd>{price}</dd>
+                        {observedAt && <dd className="text-muted-foreground">{observedAt}</dd>}
+                    </div>
+                    <div>
+                        <dt className="text-muted-foreground">Likely sales (30d)</dt>
+                        <dd>{market?.likelySales30d ?? "Unavailable"}</dd>
+                    </div>
+                </dl>
+            </figcaption>
+        </figure>
+    );
+}
+
 export default function CollectorGallery({ loaderData }: Route.ComponentProps) {
-    const { filters, items, provenanceNote } = loaderData;
+    const { filters, items, provenanceNote, latestHour, marketAvailable } = loaderData;
     const artworkCount = items.reduce((sum, item) => sum + item.artworks.length, 0);
     return (
         <main className="container mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-8">
@@ -87,8 +138,14 @@ export default function CollectorGallery({ loaderData }: Route.ComponentProps) {
                 )}
             </Form>
             <aside className="max-w-4xl border-l-2 border-primary/50 pl-3 text-sm text-muted-foreground">
-                Standard trade links show asking prices. An alternate-art search includes every
-                season for that item. {provenanceNote}
+                Prices are the lowest PC Standard merchant asks per currency in the latest priced
+                hour for each artwork. Historical asks come from{" "}
+                <a href="https://forbiddentrove.com/race-rewards" className={linkStyle}>
+                    The Forbidden Trove
+                </a>
+                . Volume counts likely sales inferred from merchant listings in the 30 days ending{" "}
+                {utcHour(latestHour + 3600)}. {provenanceNote}
+                {!marketAvailable && " Merchant market data is temporarily unavailable."}
             </aside>
             <section aria-label="Gallery results">
                 <p className="mb-3 text-sm font-medium tabular-nums" role="status">
@@ -119,21 +176,13 @@ export default function CollectorGallery({ loaderData }: Route.ComponentProps) {
                                         {item.group === "base" ? "Base item" : item.baseType}
                                     </p>
                                 </div>
-                                <div className="grid flex-1 grid-cols-[repeat(auto-fit,minmax(65px,1fr))] gap-1 px-3 pb-3">
-                                    {item.artworks.map(({ labels, icon }) => (
-                                        <figure
-                                            key={icon}
-                                            className="flex flex-col items-center gap-2 rounded-md bg-muted/40 px-1 py-3"
-                                        >
-                                            <ItemArt
-                                                src={icon}
-                                                name={`${item.name}, ${labels.join(", ")}`}
-                                                className="h-24 w-full border-0 bg-transparent"
-                                            />
-                                            <figcaption className="text-center text-xs font-medium">
-                                                {labels.join(" · ")}
-                                            </figcaption>
-                                        </figure>
+                                <div className="grid flex-1 grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] gap-2 px-3 pb-3">
+                                    {item.artworks.map((art) => (
+                                        <CollectorArtwork
+                                            key={art.asset}
+                                            name={item.name}
+                                            art={art}
+                                        />
                                     ))}
                                 </div>
                                 <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-border px-4 py-2 text-sm">

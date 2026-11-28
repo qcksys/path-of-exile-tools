@@ -9,7 +9,7 @@ import { analyzeRotaLog, analyzeRotaSchema, rotaAnalysisSchema } from "~/lib/bos
 import {
     collectorFilters,
     collectorResult,
-    listCollectorItems,
+    loadCollectorGallery,
 } from "~/lib/collector-items.server";
 import {
     ArbitrageGameSchema,
@@ -146,14 +146,14 @@ export const operations = [
         path: "/items",
         name: "list_collector_items",
         description:
-            "Browse PoE 1 alternate artwork and Demigod uniques by name, base type or artwork label. Returns inventory images and Standard listing searches. Alternate-art searches include every season and Garena origin for the item.",
+            "Browse PoE 1 alternate artwork and Demigods. Each artwork includes its latest observed PC Standard merchant asks per currency, likely sales observed over 30 days, and a dated historical asking price in mirrors when available. A null market means no observations are available. Garena copies share the artwork's market.",
         ui: "/1/collectors",
         method: "get",
         access: "public",
         readOnly: true,
         input: collectorFilters,
         output: collectorResult,
-        execute: listCollectorItems,
+        execute: (input, context) => loadCollectorGallery(context.db, input),
     }),
     defineOperation({
         family: "boss-rota",

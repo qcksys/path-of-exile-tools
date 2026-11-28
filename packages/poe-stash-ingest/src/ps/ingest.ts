@@ -37,6 +37,7 @@ import { params, stashRounds } from "#src/ps/rounds.ts";
 import { evaluateSales, recordRemovals } from "#src/ps/sales.ts";
 import { REALM } from "#src/shared/auth.ts";
 import { learnBasemap } from "#src/shared/basemap.ts";
+import { collectStandardAlongsideLeague } from "#src/shared/collector-art.ts";
 import { getCursor, setCursor } from "#src/shared/cursor.ts";
 import { queryAll, sqlTimestamp, TransactionRollbackError } from "#src/shared/db.ts";
 import { Laps } from "#src/shared/laps.ts";
@@ -342,6 +343,7 @@ export async function ingestPs(
     if (REALM === "poe2")
         throw new Error("PoE 2 equipment uses manual prices; public-stash capture is unavailable.");
     const realm = REALM ?? "pc";
+    const collectStandard = collectStandardAlongsideLeague(realm, opts.league);
     await configureSource(conn, REALM ?? "pc", opts.league ?? null);
     const equipment = opts.equipment ?? (await defaultEquipmentClassifier());
     const accepts = await defaultCraftingCapture(equipment.manifest);
@@ -507,7 +509,15 @@ export async function ingestPs(
                     result.leagues.set(lg, acc);
                 }
             }
-            const r = batch.applyPage(changes, listingsUs);
+            const listingChanges = collectStandard
+                ? page.stashes.filter(
+                      (change) =>
+                          !change.public ||
+                          change.league === opts.league ||
+                          change.league === "Standard",
+                  )
+                : changes;
+            const r = batch.applyPage(listingChanges, listingsUs, collectStandard);
             const prepared = await classified;
             if (prepared) primeClassifications(equipment, prepared);
             result.equipmentObserved += equipmentBatch.applyPage(

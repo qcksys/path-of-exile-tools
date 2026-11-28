@@ -1,0 +1,2595 @@
+[
+    {
+        "name": "Alpha's Howl",
+        "baseType": "Sinner Tricorne",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 10"
+                ],
+                "icon": "https://www.poewiki.net/images/6/69/Alpha%27s_Howl_race_season_10_inventory_icon.png",
+                "asset": "2DItems/Armours/Helmets/AlphasHowlAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 400
+                }
+            }
+        ]
+    },
+    {
+        "name": "Amethyst Ring",
+        "baseType": "Amethyst Ring",
+        "group": "base",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 6"
+                ],
+                "icon": "https://www.poewiki.net/images/6/6c/Amethyst_Ring_race_season_6_inventory_icon.png",
+                "asset": "2DItems/Rings/AmethystAlt"
+            }
+        ]
+    },
+    {
+        "name": "Andvarius",
+        "baseType": "Gold Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 2"
+                ],
+                "icon": "https://www.poewiki.net/images/c/ce/Andvarius_race_season_2_inventory_icon.png",
+                "asset": "2DItems/Rings/andvariusAlt",
+                "historicalAsk": {
+                    "date": "2025-11-05",
+                    "mirrors": 80
+                }
+            },
+            {
+                "labels": [
+                    "Race season 6"
+                ],
+                "icon": "https://www.poewiki.net/images/0/0c/Andvarius_race_season_6_inventory_icon.png",
+                "asset": "2DItems/Rings/RingUnique1",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Asphyxia's Wrath",
+        "baseType": "Feathered Arrow Quiver",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Winterheart"
+                ],
+                "icon": "https://www.poewiki.net/images/0/02/Asphyxia%27s_Wrath_winterheart_inventory_icon.png",
+                "asset": "2DItems/Quivers/AsphyxiasWrathRaceAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 2
+                }
+            }
+        ]
+    },
+    {
+        "name": "Astramentis",
+        "baseType": "Onyx Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 2"
+                ],
+                "icon": "https://www.poewiki.net/images/9/95/Astramentis_race_season_2_inventory_icon.png",
+                "asset": "2DItems/Amulets/AstramentisAlt"
+            }
+        ]
+    },
+    {
+        "name": "Atziri's Foible",
+        "baseType": "Paua Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 4"
+                ],
+                "icon": "https://www.poewiki.net/images/9/9d/Atziri%27s_Foible_race_season_4_inventory_icon.png",
+                "asset": "2DItems/Amulets/AtzirisFoibleAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 8
+                }
+            },
+            {
+                "labels": [
+                    "PvP season 2"
+                ],
+                "icon": "https://www.poewiki.net/images/1/1e/Atziri%27s_Foible_pvp_season_2_inventory_icon.png",
+                "asset": "2DItems/Amulets/AtzirisFoibleAlt2",
+                "historicalAsk": {
+                    "date": "2026-03-29",
+                    "mirrors": 800
+                }
+            }
+        ]
+    },
+    {
+        "name": "Atziri's Mirror",
+        "baseType": "Golden Buckler",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 1"
+                ],
+                "icon": "https://www.poewiki.net/images/e/e8/Atziri%27s_Mirror_race_season_1_inventory_icon.png",
+                "asset": "2DItems/Armours/Shields/Atzirismirror2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 380
+                }
+            }
+        ]
+    },
+    {
+        "name": "Aurumvorax",
+        "baseType": "Basket Rapier",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 6"
+                ],
+                "icon": "https://www.poewiki.net/images/d/d8/Aurumvorax_race_season_6_inventory_icon.png",
+                "asset": "2DItems/Weapons/OneHandWeapons/Rapiers/AurumvoraxAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Auxium",
+        "baseType": "Crystal Belt",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 5"
+                ],
+                "icon": "https://www.poewiki.net/images/4/47/Auxium_race_season_5_inventory_icon.png",
+                "asset": "2DItems/Belts/AuxiumAlt",
+                "historicalAsk": {
+                    "date": "2026-03-29",
+                    "mirrors": 600
+                }
+            }
+        ]
+    },
+    {
+        "name": "Berek's Grip",
+        "baseType": "Two-Stone Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 8"
+                ],
+                "icon": "https://www.poewiki.net/images/6/68/Berek%27s_Grip_race_season_8_inventory_icon.png",
+                "asset": "2DItems/Rings/BereksGripAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 20
+                }
+            }
+        ]
+    },
+    {
+        "name": "Berek's Pass",
+        "baseType": "Two-Stone Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 8"
+                ],
+                "icon": "https://www.poewiki.net/images/9/98/Berek%27s_Pass_race_season_8_inventory_icon.png",
+                "asset": "2DItems/Rings/BereksPassAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Berek's Respite",
+        "baseType": "Two-Stone Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 8"
+                ],
+                "icon": "https://www.poewiki.net/images/7/73/Berek%27s_Respite_race_season_8_inventory_icon.png",
+                "asset": "2DItems/Rings/BereksRespiteAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 80
+                }
+            }
+        ]
+    },
+    {
+        "name": "Bino's Kitchen Knife",
+        "baseType": "Slaughter Knife",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 11"
+                ],
+                "icon": "https://www.poewiki.net/images/c/cc/Bino%27s_Kitchen_Knife_race_season_11_inventory_icon.png",
+                "asset": "2DItems/Weapons/OneHandWeapons/Daggers/BinosKitchenKnifeAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 23
+                }
+            }
+        ]
+    },
+    {
+        "name": "Blackgleam",
+        "baseType": "Blazing Arrow Quiver",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 7"
+                ],
+                "icon": "https://www.poewiki.net/images/2/26/Blackgleam_race_season_7_inventory_icon.png",
+                "asset": "2DItems/Quivers/BlackgleamAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Blackheart",
+        "baseType": "Iron Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 3"
+                ],
+                "icon": "https://www.poewiki.net/images/7/7b/Blackheart_race_season_3_inventory_icon.png",
+                "asset": "2DItems/Rings/BlackheartAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Blood of Corruption",
+        "baseType": "Amber Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Medallion"
+                ],
+                "icon": "https://www.poewiki.net/images/a/af/Blood_of_Corruption_medallion_inventory_icon.png",
+                "asset": "2DItems/Amulets/TearofPurityAltArtCorrupt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 4
+                }
+            }
+        ]
+    },
+    {
+        "name": "Bloodgrip",
+        "baseType": "Marble Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Bloodgrip"
+                ],
+                "icon": "https://www.poewiki.net/images/2/2f/Bloodgrip_bloodgrip_inventory_icon.png",
+                "asset": "2DItems/Amulets/BloodAmuletALT",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 40
+                }
+            }
+        ]
+    },
+    {
+        "name": "Brightbeak",
+        "baseType": "War Hammer",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 4"
+                ],
+                "icon": "https://www.poewiki.net/images/e/e3/Brightbeak_race_season_4_inventory_icon.png",
+                "asset": "2DItems/Weapons/OneHandWeapons/OneHandMaces/BrightbeakAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 4
+                }
+            }
+        ]
+    },
+    {
+        "name": "Call of the Brotherhood",
+        "baseType": "Two-Stone Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Winterheart"
+                ],
+                "icon": "https://www.poewiki.net/images/a/a9/Call_of_the_Brotherhood_winterheart_inventory_icon.png",
+                "asset": "2DItems/Rings/CallOfTheBrotherhoodRaceAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 4
+                }
+            }
+        ]
+    },
+    {
+        "name": "Carcass Jack",
+        "baseType": "Varnished Coat",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 4"
+                ],
+                "icon": "https://www.poewiki.net/images/9/91/Carcass_Jack_race_season_4_inventory_icon.png",
+                "asset": "2DItems/Armours/BodyArmours/CarcassJackAlt",
+                "historicalAsk": {
+                    "date": "2026-03-29",
+                    "mirrors": 3000
+                }
+            }
+        ]
+    },
+    {
+        "name": "Carnage Heart",
+        "baseType": "Onyx Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 2"
+                ],
+                "icon": "https://www.poewiki.net/images/d/d2/Carnage_Heart_race_season_2_inventory_icon.png",
+                "asset": "2DItems/Amulets/CarnageHeartAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 2
+                }
+            }
+        ]
+    },
+    {
+        "name": "Cloak of Flame",
+        "baseType": "Scholar's Robe",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 4"
+                ],
+                "icon": "https://www.poewiki.net/images/8/83/Cloak_of_Flame_race_season_4_inventory_icon.png",
+                "asset": "2DItems/Armours/BodyArmours/CloakofFlameAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 75
+                }
+            }
+        ]
+    },
+    {
+        "name": "Coral Ring",
+        "baseType": "Coral Ring",
+        "group": "base",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 1"
+                ],
+                "icon": "https://www.poewiki.net/images/9/9e/Coral_Ring_race_season_1_inventory_icon.png",
+                "asset": "2DItems/Rings/Ring2b"
+            },
+            {
+                "labels": [
+                    "PvP season 2"
+                ],
+                "icon": "https://www.poewiki.net/images/6/6b/Coral_Ring_pvp_season_2_inventory_icon.png",
+                "asset": "2DItems/Rings/CoralRingAlt"
+            }
+        ]
+    },
+    {
+        "name": "Crest of Perandus",
+        "baseType": "Pine Buckler",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Soulthirst"
+                ],
+                "icon": "https://www.poewiki.net/images/b/b5/Crest_of_Perandus_soulthirst_inventory_icon.png",
+                "asset": "2DItems/Armours/Shields/Perandus",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 4
+                }
+            }
+        ]
+    },
+    {
+        "name": "Crimson Jewel",
+        "baseType": "Crimson Jewel",
+        "group": "base",
+        "artworks": [
+            {
+                "labels": [
+                    "Bloodgrip"
+                ],
+                "icon": "https://www.poewiki.net/images/7/71/Crimson_Jewel_bloodgrip_inventory_icon.png",
+                "asset": "2DItems/Jewels/BloodJewel"
+            }
+        ]
+    },
+    {
+        "name": "Cybil's Paw",
+        "baseType": "Thresher Claw",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 10"
+                ],
+                "icon": "https://www.poewiki.net/images/e/e1/Cybil%27s_Paw_race_season_10_inventory_icon.png",
+                "asset": "2DItems/Weapons/OneHandWeapons/Claws/CybilsClawAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 3
+                }
+            }
+        ]
+    },
+    {
+        "name": "Daresso's Salute",
+        "baseType": "Citrine Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "PvP season 1"
+                ],
+                "icon": "https://www.poewiki.net/images/8/86/Daresso%27s_Salute_pvp_season_1_inventory_icon.png",
+                "asset": "2DItems/Amulets/DaressosSaluteAlt",
+                "historicalAsk": {
+                    "date": "2025-10-06",
+                    "mirrors": 80
+                }
+            }
+        ]
+    },
+    {
+        "name": "Death Rush",
+        "baseType": "Amethyst Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 6"
+                ],
+                "icon": "https://www.poewiki.net/images/8/87/Death_Rush_race_season_6_inventory_icon.png",
+                "asset": "2DItems/Rings/DeathRushAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 2
+                }
+            },
+            {
+                "labels": [
+                    "Bloodgrip"
+                ],
+                "icon": "https://www.poewiki.net/images/5/54/Death_Rush_bloodgrip_inventory_icon.png",
+                "asset": "2DItems/Rings/BloodRIng",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Death's Harp",
+        "baseType": "Death Bow",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 2"
+                ],
+                "icon": "https://www.poewiki.net/images/2/25/Death%27s_Harp_race_season_2_inventory_icon.png",
+                "asset": "2DItems/Weapons/TwoHandWeapons/Bows/DeathsharpAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 4
+                }
+            }
+        ]
+    },
+    {
+        "name": "Demigod's Authority",
+        "baseType": "Golden Blade",
+        "group": "demigod",
+        "artworks": [
+            {
+                "labels": [
+                    "Original"
+                ],
+                "icon": "https://www.poewiki.net/images/7/75/Demigod%27s_Authority_inventory_icon.png",
+                "asset": "2DItems/Weapons/OneHandWeapons/OneHandSwords/DemigodsAuthority",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 40
+                }
+            }
+        ]
+    },
+    {
+        "name": "Demigod's Beacon",
+        "baseType": "Golden Flame",
+        "group": "demigod",
+        "artworks": [
+            {
+                "labels": [
+                    "Original"
+                ],
+                "icon": "https://www.poewiki.net/images/5/5d/Demigod%27s_Beacon_inventory_icon.png",
+                "asset": "2DItems/Armours/Shields/DemigodsShield",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 5
+                }
+            },
+            {
+                "labels": [
+                    "Emberwake",
+                    "Bloodgrip",
+                    "Soulthirst"
+                ],
+                "icon": "https://www.poewiki.net/images/a/a4/Demigod%27s_Beacon_emberwake_inventory_icon.png",
+                "asset": "2DItems/Armours/Shields/DemigodsShieldAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 99
+                }
+            }
+        ]
+    },
+    {
+        "name": "Demigod's Bounty",
+        "baseType": "Golden Obi",
+        "group": "demigod",
+        "artworks": [
+            {
+                "labels": [
+                    "Original"
+                ],
+                "icon": "https://www.poewiki.net/images/8/8c/Demigod%27s_Bounty_inventory_icon.png",
+                "asset": "2DItems/Belts/Demibelt1",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 34
+                }
+            },
+            {
+                "labels": [
+                    "Race season 7",
+                    "Race season 8"
+                ],
+                "icon": "https://www.poewiki.net/images/d/de/Demigod%27s_Bounty_race_season_7_inventory_icon.png",
+                "asset": "2DItems/Belts/Demibelt2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 50
+                }
+            }
+        ]
+    },
+    {
+        "name": "Demigod's Dominance",
+        "baseType": "Golden Mantle",
+        "group": "demigod",
+        "artworks": [
+            {
+                "labels": [
+                    "Original"
+                ],
+                "icon": "https://www.poewiki.net/images/5/52/Demigod%27s_Dominance_inventory_icon.png",
+                "asset": "2DItems/Armours/BodyArmours/DemigodsArmour",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 3
+                }
+            },
+            {
+                "labels": [
+                    "Winterheart",
+                    "Medallion"
+                ],
+                "icon": "https://www.poewiki.net/images/0/0f/Demigod%27s_Dominance_winterheart_inventory_icon.png",
+                "asset": "2DItems/Armours/BodyArmours/DemiGodsArmourAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 51
+                }
+            }
+        ]
+    },
+    {
+        "name": "Demigod's Eye",
+        "baseType": "Golden Hoop",
+        "group": "demigod",
+        "artworks": [
+            {
+                "labels": [
+                    "Original"
+                ],
+                "icon": "https://www.poewiki.net/images/1/1a/Demigod%27s_Eye_inventory_icon.png",
+                "asset": "2DItems/Rings/DemigodsBand",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 22
+                }
+            },
+            {
+                "labels": [
+                    "Race season 9",
+                    "Race season 10"
+                ],
+                "icon": "https://www.poewiki.net/images/4/4b/Demigod%27s_Eye_race_season_9_inventory_icon.png",
+                "asset": "2DItems/Rings/DemigodsBand2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 33
+                }
+            }
+        ]
+    },
+    {
+        "name": "Demigod's Immortality",
+        "baseType": "Golden Visage",
+        "group": "demigod",
+        "artworks": [
+            {
+                "labels": [
+                    "Original"
+                ],
+                "icon": "https://www.poewiki.net/images/5/5f/Demigod%27s_Immortality_inventory_icon.png",
+                "asset": "2DItems/Armours/Helmets/DemigodsImmortality",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 98
+                }
+            },
+            {
+                "labels": [
+                    "Synthesis Flashback"
+                ],
+                "icon": "https://www.poewiki.net/images/6/62/Demigod%27s_Immortality_synthesis_flashback_inventory_icon.png",
+                "asset": "2DItems/Armours/Helmets/DemigodsImmortalityAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 199
+                }
+            }
+        ]
+    },
+    {
+        "name": "Demigod's Presence",
+        "baseType": "Gold Amulet",
+        "group": "demigod",
+        "artworks": [
+            {
+                "labels": [
+                    "Original"
+                ],
+                "icon": "https://www.poewiki.net/images/7/72/Demigod%27s_Presence_inventory_icon.png",
+                "asset": "2DItems/Amulets/Amulet7Unique2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 500
+                }
+            }
+        ]
+    },
+    {
+        "name": "Demigod's Stride",
+        "baseType": "Golden Caligae",
+        "group": "demigod",
+        "artworks": [
+            {
+                "labels": [
+                    "Original"
+                ],
+                "icon": "https://www.poewiki.net/images/4/4f/Demigod%27s_Stride_inventory_icon.png",
+                "asset": "2DItems/Armours/Boots/DemigodsStride",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 350
+                }
+            },
+            {
+                "labels": [
+                    "Race season 3",
+                    "Race season 4"
+                ],
+                "icon": "https://www.poewiki.net/images/0/06/Demigod%27s_Stride_race_season_3_inventory_icon.png",
+                "asset": "2DItems/Armours/Boots/DemigodsStrideAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 350
+                }
+            }
+        ]
+    },
+    {
+        "name": "Demigod's Touch",
+        "baseType": "Golden Bracers",
+        "group": "demigod",
+        "artworks": [
+            {
+                "labels": [
+                    "Original"
+                ],
+                "icon": "https://www.poewiki.net/images/1/16/Demigod%27s_Touch_inventory_icon.png",
+                "asset": "2DItems/Armours/Gloves/DemigodsTouch",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 20
+                }
+            },
+            {
+                "labels": [
+                    "Race season 5",
+                    "Race season 6"
+                ],
+                "icon": "https://www.poewiki.net/images/1/12/Demigod%27s_Touch_race_season_5_inventory_icon.png",
+                "asset": "2DItems/Armours/Gloves/DemigodsTouchAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 145
+                }
+            }
+        ]
+    },
+    {
+        "name": "Demigod's Triumph",
+        "baseType": "Golden Wreath",
+        "group": "demigod",
+        "artworks": [
+            {
+                "labels": [
+                    "Original"
+                ],
+                "icon": "https://www.poewiki.net/images/2/20/Demigod%27s_Triumph_inventory_icon.png",
+                "asset": "2DItems/Armours/Helmets/Demigodstriumph",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 24
+                }
+            },
+            {
+                "labels": [
+                    "Race season 1",
+                    "Race season 2"
+                ],
+                "icon": "https://www.poewiki.net/images/1/16/Demigod%27s_Triumph_race_season_1_inventory_icon.png",
+                "asset": "2DItems/Armours/Helmets/Demigodstriumph2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 45
+                }
+            }
+        ]
+    },
+    {
+        "name": "Divinarius",
+        "baseType": "Imperial Skean",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 4"
+                ],
+                "icon": "https://www.poewiki.net/images/9/9a/Divinarius_race_season_4_inventory_icon.png",
+                "asset": "2DItems/Weapons/OneHandWeapons/Daggers/DivinariusAltNew",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 79
+                }
+            }
+        ]
+    },
+    {
+        "name": "Divination Distillate",
+        "baseType": "Large Hybrid Flask",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 5"
+                ],
+                "icon": "https://www.poewiki.net/images/f/f1/Divination_Distillate_race_season_5_inventory_icon.png",
+                "asset": "2DItems/Flasks/DivinationDistillateAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 5
+                }
+            }
+        ]
+    },
+    {
+        "name": "Doedre's Damning",
+        "baseType": "Paua Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 10"
+                ],
+                "icon": "https://www.poewiki.net/images/7/7f/Doedre%27s_Damning_race_season_10_inventory_icon.png",
+                "asset": "2DItems/Rings/DoedresDamningAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 3
+                }
+            }
+        ]
+    },
+    {
+        "name": "Dream Fragments",
+        "baseType": "Sapphire Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 8"
+                ],
+                "icon": "https://www.poewiki.net/images/d/d5/Dream_Fragments_race_season_8_inventory_icon.png",
+                "asset": "2DItems/Rings/DreamFragmentsAlt2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 2
+                }
+            },
+            {
+                "labels": [
+                    "PvP season 1"
+                ],
+                "icon": "https://www.poewiki.net/images/c/cc/Dream_Fragments_pvp_season_1_inventory_icon.png",
+                "asset": "2DItems/Rings/DreamFragmentsAlt"
+            }
+        ]
+    },
+    {
+        "name": "Dyadian Dawn",
+        "baseType": "Heavy Belt",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Winterheart"
+                ],
+                "icon": "https://www.poewiki.net/images/4/4a/Dyadian_Dawn_winterheart_inventory_icon.png",
+                "asset": "2DItems/Belts/DyadianDawnRaceAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 12
+                }
+            }
+        ]
+    },
+    {
+        "name": "Eclipse Staff",
+        "baseType": "Eclipse Staff",
+        "group": "base",
+        "artworks": [
+            {
+                "labels": [
+                    "Soulthirst"
+                ],
+                "icon": "https://www.poewiki.net/images/f/f0/Eclipse_Staff_soulthirst_inventory_icon.png",
+                "asset": "2DItems/Weapons/TwoHandWeapons/Staves/EclipseStaff"
+            }
+        ]
+    },
+    {
+        "name": "Edge of Madness",
+        "baseType": "Etched Greatsword",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Emberwake"
+                ],
+                "icon": "https://www.poewiki.net/images/b/b4/Edge_of_Madness_emberwake_race_season_inventory_icon.png",
+                "asset": "2DItems/Weapons/TwoHandWeapons/TwoHandSwords/EdgeOfMadnessAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 10
+                }
+            }
+        ]
+    },
+    {
+        "name": "Emberwake",
+        "baseType": "Ruby Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Emberwake"
+                ],
+                "icon": "https://www.poewiki.net/images/8/80/Emberwake_emberwake_race_season_inventory_icon.png",
+                "asset": "2DItems/Rings/EmberwakeAlt",
+                "historicalAsk": {
+                    "date": "2026-03-29",
+                    "mirrors": 80
+                }
+            }
+        ]
+    },
+    {
+        "name": "Eye of Chayula",
+        "baseType": "Onyx Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 3"
+                ],
+                "icon": "https://www.poewiki.net/images/d/d2/Eye_of_Chayula_race_season_3_inventory_icon.png",
+                "asset": "2DItems/Amulets/EyeofChayulaAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 2.68
+                }
+            }
+        ]
+    },
+    {
+        "name": "Facebreaker",
+        "baseType": "Strapped Mitts",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 1"
+                ],
+                "icon": "https://www.poewiki.net/images/5/55/Facebreaker_race_season_1_inventory_icon.png",
+                "asset": "2DItems/Armours/Gloves/FaceBreaker2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 10
+                }
+            }
+        ]
+    },
+    {
+        "name": "Fairgraves' Tricorne",
+        "baseType": "Tricorne",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 5"
+                ],
+                "icon": "https://www.poewiki.net/images/e/e1/Fairgraves%27_Tricorne_race_season_5_inventory_icon.png",
+                "asset": "2DItems/Armours/Helmets/FairgravesTricorneAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 7
+                }
+            }
+        ]
+    },
+    {
+        "name": "Fencoil",
+        "baseType": "Gnarled Branch",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 9"
+                ],
+                "icon": "https://www.poewiki.net/images/a/ad/Fencoil_race_season_9_inventory_icon.png",
+                "asset": "2DItems/Weapons/TwoHandWeapons/Staves/Fencoil",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Geofri's Baptism",
+        "baseType": "Brass Maul",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "PvP season 2"
+                ],
+                "icon": "https://www.poewiki.net/images/5/5c/Geofri%27s_Baptism_pvp_season_2_inventory_icon.png",
+                "asset": "2DItems/Weapons/TwoHandWeapons/TwoHandMaces/GeofrisBaptismAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 17
+                }
+            }
+        ]
+    },
+    {
+        "name": "Gifts from Above",
+        "baseType": "Diamond Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 5"
+                ],
+                "icon": "https://www.poewiki.net/images/6/69/Gifts_from_Above_race_season_5_inventory_icon.png",
+                "asset": "2DItems/Rings/GiftsfromAboveAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1.77
+                }
+            }
+        ]
+    },
+    {
+        "name": "Goldrim",
+        "baseType": "Leather Cap",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 1"
+                ],
+                "icon": "https://www.poewiki.net/images/b/b2/Goldrim_race_season_1_inventory_icon.png",
+                "asset": "2DItems/Armours/Helmets/Goldrim2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 27
+                }
+            }
+        ]
+    },
+    {
+        "name": "Goldwyrm",
+        "baseType": "Nubuck Boots",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 6"
+                ],
+                "icon": "https://www.poewiki.net/images/3/3a/Goldwyrm_race_season_6_inventory_icon.png",
+                "asset": "2DItems/Armours/Boots/GoldwyrmAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 10
+                }
+            }
+        ]
+    },
+    {
+        "name": "Headhunter",
+        "baseType": "Leather Belt",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 7"
+                ],
+                "icon": "https://www.poewiki.net/images/2/29/Headhunter_race_season_7_inventory_icon.png",
+                "asset": "2DItems/Belts/Headhunter2",
+                "historicalAsk": {
+                    "date": "2026-03-29",
+                    "mirrors": 600
+                }
+            }
+        ]
+    },
+    {
+        "name": "Heatshiver",
+        "baseType": "Leather Hood",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 4"
+                ],
+                "icon": "https://www.poewiki.net/images/e/ee/Heatshiver_race_season_4_inventory_icon.png",
+                "asset": "2DItems/Armours/Helmets/HeatShiverAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 25
+                }
+            }
+        ]
+    },
+    {
+        "name": "Hrimnor's Resolve",
+        "baseType": "Samnite Helmet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 4"
+                ],
+                "icon": "https://www.poewiki.net/images/e/e5/Hrimnor%27s_Resolve_race_season_4_inventory_icon.png",
+                "asset": "2DItems/Armours/Helmets/HrimnorsResolveAlt"
+            }
+        ]
+    },
+    {
+        "name": "Immortal Flesh",
+        "baseType": "Leather Belt",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 8"
+                ],
+                "icon": "https://www.poewiki.net/images/b/b4/Immortal_Flesh_race_season_8_inventory_icon.png",
+                "asset": "2DItems/Belts/ImmortalFleshAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 15
+                }
+            }
+        ]
+    },
+    {
+        "name": "Kaom's Sign",
+        "baseType": "Coral Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 5"
+                ],
+                "icon": "https://www.poewiki.net/images/1/14/Kaom%27s_Sign_race_season_5_inventory_icon.png",
+                "asset": "2DItems/Rings/KaomsSignAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Karui Ward",
+        "baseType": "Jade Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 2"
+                ],
+                "icon": "https://www.poewiki.net/images/9/9c/Karui_Ward_race_season_2_inventory_icon.png",
+                "asset": "2DItems/Amulets/KaruiWardAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Kikazaru",
+        "baseType": "Topaz Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "PvP season 2"
+                ],
+                "icon": "https://www.poewiki.net/images/0/02/Kikazaru_pvp_season_2_inventory_icon.png",
+                "asset": "2DItems/Rings/KikazaruAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 7
+                }
+            }
+        ]
+    },
+    {
+        "name": "Lavianga's Spirit",
+        "baseType": "Sanctified Mana Flask",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 7"
+                ],
+                "icon": "https://www.poewiki.net/images/6/6e/Lavianga%27s_Spirit_race_season_7_inventory_icon.png",
+                "asset": "2DItems/Flasks/LaviangasOil2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 2.86
+                }
+            },
+            {
+                "labels": [
+                    "Soulthirst"
+                ],
+                "icon": "https://www.poewiki.net/images/2/21/Lavianga%27s_Spirit_soulthirst_inventory_icon.png",
+                "asset": "2DItems/Flasks/LaviangasOilAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 8
+                }
+            }
+        ]
+    },
+    {
+        "name": "Le Heup of All",
+        "baseType": "Iron Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 5"
+                ],
+                "icon": "https://www.poewiki.net/images/b/b8/Le_Heup_of_All_race_season_5_inventory_icon.png",
+                "asset": "2DItems/Rings/LeHeupofAllAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 4
+                }
+            }
+        ]
+    },
+    {
+        "name": "Leather Belt",
+        "baseType": "Leather Belt",
+        "group": "base",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 3"
+                ],
+                "icon": "https://www.poewiki.net/images/2/24/Leather_Belt_race_season_3_inventory_icon.png",
+                "asset": "2DItems/Belts/Belt3Alt"
+            }
+        ]
+    },
+    {
+        "name": "Lifesprig",
+        "baseType": "Driftwood Wand",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 8"
+                ],
+                "icon": "https://www.poewiki.net/images/e/eb/Lifesprig_race_season_8_inventory_icon.png",
+                "asset": "2DItems/Weapons/OneHandWeapons/Wands/LifesprigAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 3
+                }
+            }
+        ]
+    },
+    {
+        "name": "Malachai's Artifice",
+        "baseType": "Unset Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 11"
+                ],
+                "icon": "https://www.poewiki.net/images/8/8c/Malachai%27s_Artifice_race_season_11_inventory_icon.png",
+                "asset": "2DItems/Rings/MalachaisArtificeAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 0.91
+                }
+            }
+        ]
+    },
+    {
+        "name": "Maligaro's Virtuosity",
+        "baseType": "Deerskin Gloves",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 11"
+                ],
+                "icon": "https://www.poewiki.net/images/7/72/Maligaro%27s_Virtuosity_race_season_11_inventory_icon.png",
+                "asset": "2DItems/Armours/Gloves/MaligarosVirtuosityAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Meginord's Girdle",
+        "baseType": "Heavy Belt",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 6"
+                ],
+                "icon": "https://www.poewiki.net/images/b/b0/Meginord%27s_Girdle_race_season_6_inventory_icon.png",
+                "asset": "2DItems/Belts/MeginordsGirdleAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1.9
+                }
+            },
+            {
+                "labels": [
+                    "PvP season 2"
+                ],
+                "icon": "https://www.poewiki.net/images/6/67/Meginord%27s_Girdle_pvp_season_2_inventory_icon.png",
+                "asset": "2DItems/Belts/MeginordsGirdleAlt2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 100
+                }
+            }
+        ]
+    },
+    {
+        "name": "Mindspiral",
+        "baseType": "Aventail Helmet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "PvP season 1"
+                ],
+                "icon": "https://www.poewiki.net/images/c/c9/Mindspiral_pvp_season_1_inventory_icon.png",
+                "asset": "2DItems/Armours/Helmets/MindSpiralAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1.76
+                }
+            }
+        ]
+    },
+    {
+        "name": "Ming's Heart",
+        "baseType": "Amethyst Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 6"
+                ],
+                "icon": "https://www.poewiki.net/images/7/7d/Ming%27s_Heart_race_season_6_inventory_icon.png",
+                "asset": "2DItems/Rings/MingsHeartAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 18
+                }
+            }
+        ]
+    },
+    {
+        "name": "Mokou's Embrace",
+        "baseType": "Ruby Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 11"
+                ],
+                "icon": "https://www.poewiki.net/images/1/12/Mokou%27s_Embrace_race_season_11_inventory_icon.png",
+                "asset": "2DItems/Rings/MokousEmbraceAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Moonstone Ring",
+        "baseType": "Moonstone Ring",
+        "group": "base",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 5"
+                ],
+                "icon": "https://www.poewiki.net/images/b/b1/Moonstone_Ring_race_season_5_inventory_icon.png",
+                "asset": "2DItems/Rings/MoonstoneRingAlt"
+            }
+        ]
+    },
+    {
+        "name": "Natural Hierarchy",
+        "baseType": "Rhex Talisman",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Medallion"
+                ],
+                "icon": "https://www.poewiki.net/images/8/8b/Natural_Hierarchy_medallion_inventory_icon.png",
+                "asset": "2DItems/Amulets/NaturalHierarchyAltArt2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 6
+                }
+            }
+        ]
+    },
+    {
+        "name": "Ngamahu Tiki",
+        "baseType": "Coral Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Medallion"
+                ],
+                "icon": "https://www.poewiki.net/images/f/ff/Araku_Tiki_medallion_inventory_icon.png",
+                "asset": "2DItems/Amulets/NgamahuTikiALTART ",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Night's Hold",
+        "baseType": "Black Maw Talisman",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Medallion"
+                ],
+                "icon": "https://www.poewiki.net/images/1/1c/Night%27s_Hold_medallion_inventory_icon.png",
+                "asset": "2DItems/Amulets/NightsHoldAltArt2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Onyx Amulet",
+        "baseType": "Onyx Amulet",
+        "group": "base",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 2"
+                ],
+                "icon": "https://www.poewiki.net/images/0/09/Onyx_Amulet_race_season_2_inventory_icon.png",
+                "asset": "2DItems/Amulets/OnyxAmuletAlt"
+            }
+        ]
+    },
+    {
+        "name": "Perandus Blazon",
+        "baseType": "Cloth Belt",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 6"
+                ],
+                "icon": "https://www.poewiki.net/images/8/8a/Perandus_Blazon_race_season_6_inventory_icon.png",
+                "asset": "2DItems/Belts/PerandusBlazonAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Perandus Signet",
+        "baseType": "Paua Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 5"
+                ],
+                "icon": "https://www.poewiki.net/images/e/ee/Perandus_Signet_race_season_5_inventory_icon.png",
+                "asset": "2DItems/Rings/PerandusSignetAlt",
+                "historicalAsk": {
+                    "date": "2026-02-09",
+                    "mirrors": 100
+                }
+            }
+        ]
+    },
+    {
+        "name": "Pillar of the Caged God",
+        "baseType": "Iron Staff",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 8"
+                ],
+                "icon": "https://www.poewiki.net/images/0/0e/Pillar_of_the_Caged_God_race_season_8_inventory_icon.png",
+                "asset": "2DItems/Weapons/TwoHandWeapons/Staves/PillaroftheCagedGodAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Prismatic Eclipse",
+        "baseType": "Twilight Blade",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 7"
+                ],
+                "icon": "https://www.poewiki.net/images/3/37/Prismatic_Eclipse_race_season_7_inventory_icon.png",
+                "asset": "2DItems/Weapons/OneHandWeapons/OneHandSwords/PrismaticEclipseAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 25
+                }
+            }
+        ]
+    },
+    {
+        "name": "Prismatic Ring",
+        "baseType": "Prismatic Ring",
+        "group": "base",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 8"
+                ],
+                "icon": "https://www.poewiki.net/images/f/f9/Prismatic_Ring_race_season_8_inventory_icon.png",
+                "asset": "2DItems/Rings/PrismaticRingAlt"
+            }
+        ]
+    },
+    {
+        "name": "Pyre",
+        "baseType": "Sapphire Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 9"
+                ],
+                "icon": "https://www.poewiki.net/images/3/32/Pyre_race_season_9_inventory_icon.png",
+                "asset": "2DItems/Rings/Cherufe2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 2
+                }
+            }
+        ]
+    },
+    {
+        "name": "Queen's Decree",
+        "baseType": "Ornate Sword",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 5"
+                ],
+                "icon": "https://www.poewiki.net/images/f/f6/Queen%27s_Decree_race_season_5_inventory_icon.png",
+                "asset": "2DItems/Weapons/TwoHandWeapons/TwoHandSwords/QueensDecreeAlt",
+                "historicalAsk": {
+                    "date": "2026-03-26",
+                    "mirrors": 600
+                }
+            }
+        ]
+    },
+    {
+        "name": "Quill Rain",
+        "baseType": "Short Bow",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 2"
+                ],
+                "icon": "https://www.poewiki.net/images/b/bd/Quill_Rain_race_season_2_inventory_icon.png",
+                "asset": "2DItems/Weapons/TwoHandWeapons/Bows/QuillRainAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Rainbowstride",
+        "baseType": "Conjurer Boots",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 3"
+                ],
+                "icon": "https://www.poewiki.net/images/b/b4/Rainbowstride_race_season_3_inventory_icon.png",
+                "asset": "2DItems/Armours/Boots/RainbowStrideAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 200
+                }
+            }
+        ]
+    },
+    {
+        "name": "Rashkaldor's Patience",
+        "baseType": "Jade Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Emberwake"
+                ],
+                "icon": "https://www.poewiki.net/images/0/09/Rashkaldor%27s_Patience_emberwake_race_season_inventory_icon.png",
+                "asset": "2DItems/Amulets/RashkaldorsPatienceAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 5
+                }
+            }
+        ]
+    },
+    {
+        "name": "Rathpith Globe",
+        "baseType": "Titanium Spirit Shield",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Emberwake"
+                ],
+                "icon": "https://www.poewiki.net/images/2/2c/Rathpith_Globe_emberwake_race_season_inventory_icon.png",
+                "asset": "2DItems/Armours/Shields/RathpithGlobeAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 23
+                }
+            }
+        ]
+    },
+    {
+        "name": "Reaper's Pursuit",
+        "baseType": "Shadow Axe",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 3"
+                ],
+                "icon": "https://www.poewiki.net/images/f/f0/Reaper%27s_Pursuit_race_season_3_inventory_icon.png",
+                "asset": "2DItems/Weapons/TwoHandWeapons/Staves/ReapersPursuitAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 30
+                }
+            }
+        ]
+    },
+    {
+        "name": "Redbeak",
+        "baseType": "Rusted Sword",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 1"
+                ],
+                "icon": "https://www.poewiki.net/images/4/40/Redbeak_race_season_1_inventory_icon.png",
+                "asset": "2DItems/Weapons/OneHandWeapons/OneHandSwords/RedBeak2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 2
+                }
+            }
+        ]
+    },
+    {
+        "name": "Ruby Ring",
+        "baseType": "Ruby Ring",
+        "group": "base",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 4"
+                ],
+                "icon": "https://www.poewiki.net/images/f/ff/Ruby_Ring_race_season_4_inventory_icon.png",
+                "asset": "2DItems/Rings/RubyRingAlt"
+            }
+        ]
+    },
+    {
+        "name": "Rumi's Concoction",
+        "baseType": "Granite Flask",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 9"
+                ],
+                "icon": "https://www.poewiki.net/images/1/1a/Rumi%27s_Concoction_race_season_9_inventory_icon.png",
+                "asset": "2DItems/Flasks/BlockFlask2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 20
+                }
+            }
+        ]
+    },
+    {
+        "name": "Rustic Sash",
+        "baseType": "Rustic Sash",
+        "group": "base",
+        "artworks": [
+            {
+                "labels": [
+                    "PvP season 1"
+                ],
+                "icon": "https://www.poewiki.net/images/e/e5/Rustic_Sash_pvp_season_1_inventory_icon.png",
+                "asset": "2DItems/Belts/RusticSashAlt"
+            },
+            {
+                "labels": [
+                    "Race season 11"
+                ],
+                "icon": "https://www.poewiki.net/images/0/09/Rustic_Sash_race_season_11_inventory_icon.png",
+                "asset": "2DItems/Belts/RusticSashAlt2"
+            }
+        ]
+    },
+    {
+        "name": "Saffell's Frame",
+        "baseType": "Branded Kite Shield",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 8"
+                ],
+                "icon": "https://www.poewiki.net/images/3/31/Saffell%27s_Frame_race_season_8_inventory_icon.png",
+                "asset": "2DItems/Armours/Shields/SaffellsFrameAlt",
+                "historicalAsk": {
+                    "date": "2026-03-30",
+                    "mirrors": 75
+                }
+            }
+        ]
+    },
+    {
+        "name": "Sapphire Ring",
+        "baseType": "Sapphire Ring",
+        "group": "base",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 10"
+                ],
+                "icon": "https://www.poewiki.net/images/9/9c/Sapphire_Ring_race_season_10_inventory_icon.png",
+                "asset": "2DItems/Rings/SapphireRingAlt"
+            },
+            {
+                "labels": [
+                    "Winterheart"
+                ],
+                "icon": "https://www.poewiki.net/images/3/32/Sapphire_Ring_winterheart_inventory_icon.png",
+                "asset": "2DItems/Rings/SapphireRingRaceAlt"
+            }
+        ]
+    },
+    {
+        "name": "Shadows and Dust",
+        "baseType": "Clasped Mitts",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Bloodgrip"
+                ],
+                "icon": "https://www.poewiki.net/images/4/45/Shadows_and_Dust_bloodgrip_inventory_icon.png",
+                "asset": "2DItems/Armours/Gloves/BloodGrip",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 18
+                }
+            }
+        ]
+    },
+    {
+        "name": "Shavronne's Pace",
+        "baseType": "Scholar Boots",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 3"
+                ],
+                "icon": "https://www.poewiki.net/images/4/43/Shavronne%27s_Pace_race_season_3_inventory_icon.png",
+                "asset": "2DItems/Armours/Boots/ShavronnesPaceAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Shiversting",
+        "baseType": "Bastard Sword",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 2"
+                ],
+                "icon": "https://www.poewiki.net/images/a/a1/Shiversting_race_season_2_inventory_icon.png",
+                "asset": "2DItems/Weapons/TwoHandWeapons/TwoHandSwords/ShiverstingAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 5
+                }
+            }
+        ]
+    },
+    {
+        "name": "Sidhebreath",
+        "baseType": "Paua Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 6"
+                ],
+                "icon": "https://www.poewiki.net/images/e/e7/Sidhebreath_race_season_6_inventory_icon.png",
+                "asset": "2DItems/Amulets/SidhebreathAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 8
+                }
+            }
+        ]
+    },
+    {
+        "name": "Sin Trek",
+        "baseType": "Stealth Boots",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 3"
+                ],
+                "icon": "https://www.poewiki.net/images/4/42/Sin_Trek_race_season_3_inventory_icon.png",
+                "asset": "2DItems/Armours/Boots/SinTrekAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 0.59
+                }
+            }
+        ]
+    },
+    {
+        "name": "Soul Taker",
+        "baseType": "Siege Axe",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Soulthirst"
+                ],
+                "icon": "https://www.poewiki.net/images/2/24/Soul_Taker_soulthirst_inventory_icon.png",
+                "asset": "2DItems/Weapons/OneHandWeapons/OneHandAxes/SoultakerAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 23
+                }
+            }
+        ]
+    },
+    {
+        "name": "Soulthirst",
+        "baseType": "Cloth Belt",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Soulthirst"
+                ],
+                "icon": "https://www.poewiki.net/images/5/54/Soulthirst_soulthirst_inventory_icon.png",
+                "asset": "2DItems/Belts/SoulthirstALT",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 222
+                }
+            }
+        ]
+    },
+    {
+        "name": "Starkonja's Head",
+        "baseType": "Silken Hood",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 7"
+                ],
+                "icon": "https://www.poewiki.net/images/1/1f/Starkonja%27s_Head_race_season_7_inventory_icon.png",
+                "asset": "2DItems/Armours/Helmets/FurryheadofstarkonjaAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 180
+                }
+            }
+        ]
+    },
+    {
+        "name": "Stone of Lazhwar",
+        "baseType": "Lapis Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 7"
+                ],
+                "icon": "https://www.poewiki.net/images/c/c3/Stone_of_Lazhwar_race_season_7_inventory_icon.png",
+                "asset": "2DItems/Amulets/Amulet5Unique2",
+                "historicalAsk": {
+                    "date": "2026-03-30",
+                    "mirrors": 35
+                }
+            },
+            {
+                "labels": [
+                    "Race season 10"
+                ],
+                "icon": "https://www.poewiki.net/images/1/1f/Stone_of_Lazhwar_race_season_10_inventory_icon.png",
+                "asset": "2DItems/Amulets/StoneofLazhwarAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 0.4
+                }
+            }
+        ]
+    },
+    {
+        "name": "Storm Cloud",
+        "baseType": "Long Bow",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 5"
+                ],
+                "icon": "https://www.poewiki.net/images/f/f9/Storm_Cloud_race_season_5_inventory_icon.png",
+                "asset": "2DItems/Weapons/TwoHandWeapons/Bows/StormcloudAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 19
+                }
+            }
+        ]
+    },
+    {
+        "name": "Sundance",
+        "baseType": "Clasped Boots",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 3"
+                ],
+                "icon": "https://www.poewiki.net/images/a/ac/Sundance_race_season_3_inventory_icon.png",
+                "asset": "2DItems/Armours/Boots/SundanceAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 4
+                }
+            }
+        ]
+    },
+    {
+        "name": "Tabula Rasa",
+        "baseType": "Simple Robe",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 2"
+                ],
+                "icon": "https://www.poewiki.net/images/a/ad/Tabula_Rasa_race_season_2_inventory_icon.png",
+                "asset": "2DItems/Armours/BodyArmours/TabulaRasaAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 150
+                }
+            }
+        ]
+    },
+    {
+        "name": "Talisman of the Victor",
+        "baseType": "Jet Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "PvP season 1",
+                    "PvP season 2"
+                ],
+                "icon": "https://www.poewiki.net/images/d/d9/Talisman_of_the_Victor_pvp_season_1_inventory_icon.png",
+                "asset": "2DItems/Amulets/TalismanoftheVictorAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 19
+                }
+            }
+        ]
+    },
+    {
+        "name": "Taryn's Shiver",
+        "baseType": "Maelström Staff",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 3"
+                ],
+                "icon": "https://www.poewiki.net/images/2/23/Taryn%27s_Shiver_race_season_3_inventory_icon.png",
+                "asset": "2DItems/Weapons/TwoHandWeapons/Staves/TarynsShiverAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 200
+                }
+            }
+        ]
+    },
+    {
+        "name": "Taste of Hate",
+        "baseType": "Sapphire Flask",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 10"
+                ],
+                "icon": "https://www.poewiki.net/images/1/19/Taste_of_Hate_race_season_10_inventory_icon.png",
+                "asset": "2DItems/Flasks/TasteOfHateAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 199
+                }
+            }
+        ]
+    },
+    {
+        "name": "Tear of Purity",
+        "baseType": "Lapis Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Medallion"
+                ],
+                "icon": "https://www.poewiki.net/images/f/f3/Tear_of_Purity_medallion_inventory_icon.png",
+                "asset": "2DItems/Amulets/TearofPurityAltArt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 2
+                }
+            }
+        ]
+    },
+    {
+        "name": "The Anvil",
+        "baseType": "Amber Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "PvP season 1"
+                ],
+                "icon": "https://www.poewiki.net/images/c/cf/The_Anvil_pvp_season_1_inventory_icon.png",
+                "asset": "2DItems/Amulets/TheAnvilAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 3
+                }
+            }
+        ]
+    },
+    {
+        "name": "The Blood Dance",
+        "baseType": "Sharkskin Boots",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Bloodgrip"
+                ],
+                "icon": "https://www.poewiki.net/images/c/c8/The_Blood_Dance_bloodgrip_inventory_icon.png",
+                "asset": "2DItems/Armours/Boots/GoreFrenzyAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 3
+                }
+            }
+        ]
+    },
+    {
+        "name": "The Blood Thorn",
+        "baseType": "Gnarled Branch",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Bloodgrip"
+                ],
+                "icon": "https://www.poewiki.net/images/7/71/The_Blood_Thorn_bloodgrip_inventory_icon.png",
+                "asset": "2DItems/Weapons/TwoHandWeapons/Staves/TheBloodThornALT",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "The Bringer of Rain",
+        "baseType": "Nightmare Bascinet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 9"
+                ],
+                "icon": "https://www.poewiki.net/images/0/0a/The_Bringer_of_Rain_race_season_9_inventory_icon.png",
+                "asset": "2DItems/Armours/Helmets/BringerOfRain",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 98
+                }
+            }
+        ]
+    },
+    {
+        "name": "The Ignomon",
+        "baseType": "Gold Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 4"
+                ],
+                "icon": "https://www.poewiki.net/images/d/d5/The_Ignomon_race_season_4_inventory_icon.png",
+                "asset": "2DItems/Amulets/TheIgnomonAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1.77
+                }
+            }
+        ]
+    },
+    {
+        "name": "The Princess",
+        "baseType": "Sabre",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Soulthirst"
+                ],
+                "icon": "https://www.poewiki.net/images/e/e0/The_Princess_soulthirst_inventory_icon.png",
+                "asset": "2DItems/Weapons/OneHandWeapons/OneHandSwords/ThePrincessAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "The Searing Touch",
+        "baseType": "Lathi",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 4"
+                ],
+                "icon": "https://www.poewiki.net/images/a/aa/The_Searing_Touch_race_season_4_inventory_icon.png",
+                "asset": "2DItems/Weapons/TwoHandWeapons/Staves/TheSearingTouchAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 6
+                }
+            }
+        ]
+    },
+    {
+        "name": "The Taming",
+        "baseType": "Prismatic Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 8"
+                ],
+                "icon": "https://www.poewiki.net/images/0/06/The_Taming_race_season_8_inventory_icon.png",
+                "asset": "2DItems/Rings/TheTamingAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 120
+                }
+            }
+        ]
+    },
+    {
+        "name": "The Three Dragons",
+        "baseType": "Golden Mask",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 8"
+                ],
+                "icon": "https://www.poewiki.net/images/e/e1/The_Three_Dragons_race_season_8_inventory_icon.png",
+                "asset": "2DItems/Armours/Helmets/TheThreeDragonsAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1.77
+                }
+            }
+        ]
+    },
+    {
+        "name": "The Whispering Ice",
+        "baseType": "Vile Staff",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Winterheart"
+                ],
+                "icon": "https://www.poewiki.net/images/e/e3/The_Whispering_Ice_winterheart_inventory_icon.png",
+                "asset": "2DItems/Weapons/TwoHandWeapons/Staves/TheWhisperingIceRaceAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Thief's Torment",
+        "baseType": "Prismatic Ring",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 7"
+                ],
+                "icon": "https://www.poewiki.net/images/b/b9/Thief%27s_Torment_race_season_7_inventory_icon.png",
+                "asset": "2DItems/Rings/ThiefsTorment2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 2
+                }
+            }
+        ]
+    },
+    {
+        "name": "Thousand Ribbons",
+        "baseType": "Simple Robe",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 7"
+                ],
+                "icon": "https://www.poewiki.net/images/c/c6/Thousand_Ribbons_race_season_7_inventory_icon.png",
+                "asset": "2DItems/Armours/BodyArmours/ThousandribbonsAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 9
+                }
+            }
+        ]
+    },
+    {
+        "name": "Topaz Ring",
+        "baseType": "Topaz Ring",
+        "group": "base",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 9"
+                ],
+                "icon": "https://www.poewiki.net/images/7/74/Topaz_Ring_race_season_9_inventory_icon.png",
+                "asset": "2DItems/Rings/TopazRing"
+            }
+        ]
+    },
+    {
+        "name": "Two-Stone Ring (sapphire and topaz)",
+        "baseType": "Two-Stone Ring",
+        "group": "base",
+        "artworks": [
+            {
+                "labels": [
+                    "Emberwake"
+                ],
+                "icon": "https://www.poewiki.net/images/b/b6/Two-Stone_Ring_%28sapphire_and_topaz%29_emberwake_race_season_inventory_icon.png",
+                "asset": "2DItems/Rings/LightningColdTwoStoneRingAlt"
+            }
+        ]
+    },
+    {
+        "name": "Ungil's Gauche",
+        "baseType": "Boot Knife",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "PvP season 1"
+                ],
+                "icon": "https://www.poewiki.net/images/1/1d/Ungil%27s_Gauche_pvp_season_1_inventory_icon.png",
+                "asset": "2DItems/Weapons/OneHandWeapons/Daggers/UngilsGaucheAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 18
+                }
+            }
+        ]
+    },
+    {
+        "name": "Ungil's Harmony",
+        "baseType": "Turquoise Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Emberwake"
+                ],
+                "icon": "https://www.poewiki.net/images/e/e1/Ungil%27s_Harmony_emberwake_race_season_inventory_icon.png",
+                "asset": "2DItems/Amulets/UngilsHarmonyAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Unset Ring",
+        "baseType": "Unset Ring",
+        "group": "base",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 7"
+                ],
+                "icon": "https://www.poewiki.net/images/a/a4/Unset_Ring_race_season_7_inventory_icon.png",
+                "asset": "2DItems/Rings/Empty-Socket2"
+            }
+        ]
+    },
+    {
+        "name": "Victario's Acuity",
+        "baseType": "Turquoise Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Medallion"
+                ],
+                "icon": "https://www.poewiki.net/images/0/09/Victario%27s_Acuity_medallion_inventory_icon.png",
+                "asset": "2DItems/Amulets/VictariosAcuityAltArt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    },
+    {
+        "name": "Void Battery",
+        "baseType": "Prophecy Wand",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 6"
+                ],
+                "icon": "https://www.poewiki.net/images/4/4c/Void_Battery_race_season_6_inventory_icon.png",
+                "asset": "2DItems/Weapons/OneHandWeapons/Wands/VoidBatteryAlt"
+            }
+        ]
+    },
+    {
+        "name": "Voll's Devotion",
+        "baseType": "Agate Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 9"
+                ],
+                "icon": "https://www.poewiki.net/images/b/b0/Voll%27s_Devotion_race_season_9_inventory_icon.png",
+                "asset": "2DItems/Amulets/AgateAmuletUnique2",
+                "historicalAsk": {
+                    "date": "2025-10-13",
+                    "mirrors": 80
+                }
+            },
+            {
+                "labels": [
+                    "Medallion"
+                ],
+                "icon": "https://www.poewiki.net/images/9/9a/Voll%27s_Devotion_medallion_inventory_icon.png",
+                "asset": "2DItems/Amulets/VollsDevotionAltArt2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 65
+                }
+            }
+        ]
+    },
+    {
+        "name": "Wanderlust",
+        "baseType": "Wool Shoes",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 1"
+                ],
+                "icon": "https://www.poewiki.net/images/e/eb/Wanderlust_race_season_1_inventory_icon.png",
+                "asset": "2DItems/Armours/Boots/Wanderlust2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 2
+                }
+            },
+            {
+                "labels": [
+                    "PvP season 2"
+                ],
+                "icon": "https://www.poewiki.net/images/8/83/Wanderlust_pvp_season_2_inventory_icon.png",
+                "asset": "2DItems/Armours/Boots/WanderlustAlt3",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 2
+                }
+            }
+        ]
+    },
+    {
+        "name": "Warped Timepiece",
+        "baseType": "Turquoise Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 11"
+                ],
+                "icon": "https://www.poewiki.net/images/c/c0/Warped_Timepiece_race_season_11_inventory_icon.png",
+                "asset": "2DItems/Amulets/WarpedTimepieceAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 70
+                }
+            }
+        ]
+    },
+    {
+        "name": "Windscream",
+        "baseType": "Reinforced Greaves",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 3"
+                ],
+                "icon": "https://www.poewiki.net/images/3/38/Windscream_race_season_3_inventory_icon.png",
+                "asset": "2DItems/Armours/Boots/WindscreamAlt",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 30
+                }
+            }
+        ]
+    },
+    {
+        "name": "Winterheart",
+        "baseType": "Gold Amulet",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Winterheart"
+                ],
+                "icon": "https://www.poewiki.net/images/1/10/Winterheart_winterheart_inventory_icon.png",
+                "asset": "2DItems/Amulets/WinterHeart",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 35
+                }
+            }
+        ]
+    },
+    {
+        "name": "Wurm's Molt",
+        "baseType": "Leather Belt",
+        "group": "unique",
+        "artworks": [
+            {
+                "labels": [
+                    "Race season 7"
+                ],
+                "icon": "https://www.poewiki.net/images/a/a9/Wurm%27s_Molt_race_season_7_inventory_icon.png",
+                "asset": "2DItems/Belts/Belt6Unique2",
+                "historicalAsk": {
+                    "date": "2026-03-31",
+                    "mirrors": 1
+                }
+            }
+        ]
+    }
+]

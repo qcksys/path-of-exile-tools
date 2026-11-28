@@ -1,7 +1,8 @@
 // biome-ignore-all lint/style/useNamingConvention: Fixtures preserve upstream field names.
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import { flushRollups } from "../../../packages/poe-stash-ingest/src/pipeline";
-import { applyStashChanges } from "../../../packages/poe-stash-ingest/src/ps/ingest";
+import { applyStashChanges, ingestPs } from "../../../packages/poe-stash-ingest/src/ps/ingest";
+import { listingRows } from "../../../packages/poe-stash-ingest/src/ps/listing-rows";
 import { rollupPs } from "../../../packages/poe-stash-ingest/src/ps/rollup";
 import { openDb, queryAll } from "../../../packages/poe-stash-ingest/src/shared/db";
 import { configureSource } from "../../../packages/poe-stash-ingest/src/shared/source";
@@ -77,6 +78,92 @@ async function deliveredHour() {
 }
 
 const itemKeys = () => pushed.map((row) => row.itemKey).sort();
+
+it("delivers Standard collector art alongside a challenge league and records a subsequent removal", async () => {
+    vi.stubEnv("PS_COLLECT_STANDARD", "true");
+    const db = await openDb(":memory:");
+    const beacon = (alternate: boolean) =>
+        item(
+            "Demigod's Beacon",
+            "Golden Flame",
+            `Armours/Shields/DemigodsShield${alternate ? "Alt" : ""}`,
+        );
+    const original = beacon(false);
+    const alt = { ...beacon(true), id: "alternate", flavourText: ["SG Race Season Reward"] };
+    const plain = item("Ordinary unique");
+    const season = { ...stash("season", plain)[0]!, league: "Challenge" };
+    const send = async (changes: Changes, minute: number) =>
+        ingestPs(
+            db.conn,
+            {
+                public: {
+                    stashTabs: async () => ({ next_change_id: String(minute), stashes: changes }),
+                },
+            } as Parameters<typeof ingestPs>[1],
+            {
+                league: "Challenge",
+                pages: 1,
+                observedAt: at(minute),
+                listingsObservedAt: at(minute),
+            },
+        );
+    try {
+        await send([season, ...stash("standard", original, alt, plain)], 1);
+        await send(stash("standard", alt, plain), 8);
+        await flushRollups(db.conn, { league: "Challenge", stashBeforeHour: HOUR + 3600 });
+        const key = "collector:2DItems/Armours/Shields/DemigodsShield";
+        expect(itemKeys()).toEqual([plain.name, key, `${key}Alt`].sort());
+        expect(pushed).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    itemKey: key,
+                    league: "Standard",
+                    signatureKind: "collector-art",
+                    removedCount: 1,
+                }),
+                expect.objectContaining({
+                    itemKey: `${key}Alt`,
+                    league: "Standard",
+                    listingCount: 1,
+                    prices: { divine: expect.objectContaining({ min: 10 }) },
+                }),
+                expect.objectContaining({ itemKey: plain.name, league: "Challenge" }),
+            ]),
+        );
+    } finally {
+        await db.close();
+    }
+});
+
+it("separates base artworks and pools copies with the same artwork across race reward origins", () => {
+    const ring = (asset: string) => ({
+        ...item("Rolled name", "Coral Ring", `Rings/${asset}`),
+        frameType: 2,
+    });
+    const first = ring("Ring2b");
+    const second = ring("CoralRingAlt");
+    const rows = listingRows(
+        {
+            ...stash("standard")[0]!,
+            items: [
+                first,
+                { ...first, flavourText: ["TH Race Season Reward"] },
+                second,
+                { ...first, foilVariation: 1 },
+                { ...first, frameType: 3 },
+                ring("Ring2"),
+            ],
+        },
+        "seller",
+        "Standard",
+        true,
+    );
+    expect(rows.map((row) => row.itemKey)).toEqual([
+        "collector:2DItems/Rings/Ring2b",
+        "collector:2DItems/Rings/Ring2b",
+        "collector:2DItems/Rings/CoralRingAlt",
+    ]);
+});
 
 async function rowCount(conn: Awaited<ReturnType<typeof openDb>>["conn"]) {
     const [state] = await queryAll<{ n: number }>(

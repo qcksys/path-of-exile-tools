@@ -62,6 +62,11 @@ test("opens the collector gallery and narrows it to a Demigod's artwork", async 
     await expect(count).toHaveText("1 item · 2 artworks");
     await expect(page.getByRole("heading", { name: "Demigod's Beacon" })).toBeVisible();
     await expect(page.getByText("Emberwake · Bloodgrip · Soulthirst")).toBeVisible();
+    const alternate = page.locator("figure").filter({ hasText: "Emberwake" });
+    await expect(alternate.getByText("Historical ask")).toBeVisible();
+    await expect(alternate.getByText("99 mirrors")).toBeVisible();
+    await expect(alternate.getByText("Likely sales (30d)")).toBeVisible();
+    await expect(alternate.getByText("Unavailable")).toBeVisible();
     await page.getByRole("link", { name: "Clear filters" }).click();
     await expect(count).toHaveText("136 items · 156 artworks");
 });

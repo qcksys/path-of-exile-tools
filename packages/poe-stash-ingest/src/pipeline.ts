@@ -25,6 +25,7 @@ import {
 import { rollupPs } from "#src/ps/rollup.ts";
 import { type ArchiveOptions, archiveBehindStream, archiveOldData } from "#src/shared/archive.ts";
 import { REALM } from "#src/shared/auth.ts";
+import { collectStandardAlongsideLeague } from "#src/shared/collector-art.ts";
 import { getCursor } from "#src/shared/cursor.ts";
 import { queryAll, TransactionRollbackError } from "#src/shared/db.ts";
 import { deliverLeagues } from "#src/shared/leagues.ts";
@@ -148,7 +149,8 @@ export async function flushRollups(
         WHERE hour < epoch(date_trunc('hour', current_timestamp))
             AND (stream = 'cxapi' OR $3 IS NULL OR hour < $3)
             AND (stream <> 'psapi' OR $4 IS NULL OR hour < $4)
-            AND ($1 IS NULL OR league = $1 OR stream = 'cxapi')
+            AND ($1 IS NULL OR league = $1 OR stream = 'cxapi'
+                OR ($6 AND stream = 'psapi' AND league = 'Standard'))
         -- The receiver prices a stash hour at that hour's exchange, so the exchange goes first.
         -- Equipment reclassification re-dirties days of hours; it must not hold back market hours.
         ORDER BY CASE stream WHEN 'cxapi' THEN 0 WHEN 'psapi' THEN 1 ELSE 2 END, hour, league
@@ -159,6 +161,7 @@ export async function flushRollups(
             opts.stashBeforeHour ?? null,
             opts.exchangeBeforeHour ?? null,
             opts.redeliverAfterMinutes ?? 0,
+            collectStandardAlongsideLeague(REALM ?? "pc", opts.league),
         ],
     ).catch((error: unknown) => {
         throw operationFailure("Pending rollup discovery", error);

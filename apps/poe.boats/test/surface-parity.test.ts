@@ -13,6 +13,7 @@ import { MAP_DEVICE_UNLOCKS } from "~/data/map-device-unlocks";
 import { SCARABS } from "~/data/scarab-data";
 import { createDbConnection } from "~/db/client";
 import * as bossQueries from "~/db/queries/boss-rota.queries";
+import * as collectorQueries from "~/db/queries/collector-items.queries";
 import * as craftingExchangeQueries from "~/db/queries/crafting-exchange.queries";
 import * as exchangeMembership from "~/db/queries/crafting-exchange-membership.queries";
 import * as craftingMarketQueries from "~/db/queries/crafting-market.queries";
@@ -3305,6 +3306,14 @@ it("prices solo boss runs alike over HTTP and MCP and rejects invalid runs", asy
 });
 
 it("serves the collector gallery and validates its filters over HTTP and MCP", async () => {
+    const hours = vi.spyOn(collectorQueries, "findCollectorHours").mockResolvedValue([
+        {
+            asset: "2DItems/Armours/Shields/DemigodsShield",
+            hour: 3600,
+            prices: { mirror: { count: 1, min: 7, median: 7, max: 7 } },
+            likelySales: 2,
+        },
+    ]);
     const search = async (collection: string) => {
         const args = { q: "Beacon", collection };
         const response = await api.request(
@@ -3327,11 +3336,28 @@ it("serves the collector gallery and validates its filters over HTTP and MCP", a
     const { response, tool } = await search("demigod");
     expect(response.status).toBe(200);
     const gallery = await response.json();
-    expect(gallery).toMatchObject({ items: [{ name: "Demigod's Beacon" }] });
+    expect(gallery).toMatchObject({
+        marketAvailable: true,
+        items: [
+            {
+                name: "Demigod's Beacon",
+                artworks: [
+                    {
+                        market: {
+                            ask: { hour: 3600, prices: [{ currency: "mirror", amount: 7 }] },
+                            likelySales30d: 2,
+                        },
+                    },
+                    { market: null, historicalAsk: { date: "2026-03-31", mirrors: 99 } },
+                ],
+            },
+        ],
+    });
     expect(tool.structuredContent).toEqual(gallery);
     const invalid = await search("unknown");
     expect(invalid.response.status).toBe(400);
     expect(invalid.tool.isError).toBe(true);
+    hours.mockRestore();
 });
 
 it("analyzes a manual rota log alike over HTTP and MCP", async () => {

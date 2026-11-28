@@ -1,5 +1,7 @@
 import type { PublicStashChange } from "@poe-tools/api-client";
+import { collectorMarketKey } from "@poe-tools/market/collector-items";
 import { isEldritchInvitation, isMapItem, shouldCapture } from "#src/shared/capture.ts";
+import { collectorArt } from "#src/shared/collector-art.ts";
 import { decodeIconAsset } from "#src/shared/icon.ts";
 import { itemKey, itemLinks } from "#src/shared/item-key.ts";
 import { rowDigest } from "#src/shared/item-memo.ts";
@@ -92,20 +94,29 @@ export const UPDATED_COLUMNS = [
     "content_digest",
 ];
 
-export function listingRows(change: PublicStashChange, accountName: string, league: string) {
+export function listingRows(
+    change: PublicStashChange,
+    accountName: string,
+    league: string,
+    collectorsOnly = false,
+) {
     const rows: ListingRow[] = [];
     const tab = listingTab(change);
     for (const item of change.items) {
-        if (!item.id || !shouldCapture(item)) continue;
-        const iconAsset = decodeIconAsset(item.icon);
+        if (!item.id) continue;
+        const collector = league === "Standard" ? collectorArt(item) : undefined;
+        if (!collector && (collectorsOnly || !shouldCapture(item))) continue;
+        const iconAsset = collector?.asset ?? decodeIconAsset(item.icon);
         const price = extractListingPrice(item, change.stash);
-        const signature = extractModSignature(item);
+        const signature = collector ? null : extractModSignature(item);
         const row = {
             accountName,
             stashId: change.id,
             itemId: item.id,
             league,
-            itemKey: itemKey(item, iconAsset),
+            itemKey: collector
+                ? collectorMarketKey(collector.asset, item.identified)
+                : itemKey(item, iconAsset),
             iconAsset,
             // Crafting base markets do not split by identification, so sales compare across it.
             identified: signature?.kind === "base" || item.identified,
@@ -114,13 +125,14 @@ export function listingRows(change: PublicStashChange, accountName: string, leag
             typeLine: item.typeLine,
             baseType: item.baseType,
             // A rare map's or crafting base's random name is not part of its market.
-            name:
-                item.identified &&
-                !isMapItem(item) &&
-                !isEldritchInvitation(item) &&
-                signature?.kind !== "base"
-                    ? item.name
-                    : null,
+            name: collector
+                ? collector.item.name
+                : item.identified &&
+                    !isMapItem(item) &&
+                    !isEldritchInvitation(item) &&
+                    signature?.kind !== "base"
+                  ? item.name
+                  : null,
             rarity: item.rarity ?? null,
             corrupted: item.corrupted ?? false,
             foilVariation: item.foilVariation ?? null,
@@ -129,8 +141,12 @@ export function listingRows(change: PublicStashChange, accountName: string, leag
             priceAmount: price?.amount ?? null,
             priceCurrency: price?.currency ?? null,
             stackSize: item.stackSize ?? null,
-            modSignature: signature ? JSON.stringify(signature) : null,
-            signatureValue: signatureValue(signature),
+            modSignature: collector
+                ? JSON.stringify({ kind: "collector-art", asset: collector.asset })
+                : signature
+                  ? JSON.stringify(signature)
+                  : null,
+            signatureValue: collector?.asset ?? signatureValue(signature),
         };
         rows.push({ ...row, rawItem: JSON.stringify(item), contentDigest: rowDigest(item, row) });
     }
