@@ -2,7 +2,10 @@ import { createHash } from "node:crypto";
 import type { Item } from "@poe-tools/api-client";
 import { beastExtractor } from "#src/shared/mod-extractors/beast.ts";
 import { emptyResonatorExtractor } from "#src/shared/mod-extractors/empty-resonator.ts";
-import { forbiddenJewelExtractor } from "#src/shared/mod-extractors/forbidden-jewels.ts";
+import {
+    forbiddenJewelExtractor,
+    unidentifiedForbiddenJewelExtractor,
+} from "#src/shared/mod-extractors/forbidden-jewels.ts";
 import { forbiddenShakoExtractor } from "#src/shared/mod-extractors/forbidden-shako.ts";
 import { foulbornExtractor } from "#src/shared/mod-extractors/foulborn.ts";
 import { gemExtractor } from "#src/shared/mod-extractors/gem.ts";
@@ -19,6 +22,7 @@ import { wombgiftExtractor } from "#src/shared/mod-extractors/wombgift.ts";
 
 export const EXTRACTORS: readonly ModExtractor[] = [
     forbiddenJewelExtractor,
+    unidentifiedForbiddenJewelExtractor,
     ...MOD_POOL_EXTRACTORS,
     impossibleEscapeExtractor,
     forbiddenShakoExtractor,

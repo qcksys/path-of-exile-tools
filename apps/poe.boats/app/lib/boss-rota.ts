@@ -1,3 +1,4 @@
+import { isForbiddenJewelLevel } from "@poe-tools/market";
 import { type BossEncounter, type BossId, type BossItem, bossIcon } from "~/data/boss-encounters";
 import {
     type BossItemMarket,
@@ -8,6 +9,7 @@ import {
 import { bossProfitChances } from "./boss-profit-chances";
 
 export function bossItemLabel([name, , market]: BossItem) {
+    if (isForbiddenJewelLevel(market)) return `Unidentified ${name} (${market})`;
     return market === "unidentified" ? `Unidentified ${name}` : name;
 }
 

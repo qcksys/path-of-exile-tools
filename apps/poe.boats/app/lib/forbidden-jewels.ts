@@ -1,3 +1,4 @@
+import { FORBIDDEN_JEWEL_LEVEL_KIND, isForbiddenJewelLevel } from "@poe-tools/market";
 import ascendancyNotables from "~/data/ascendancy-notables-poe1.json";
 
 /** The signature kind ingest gives identified Forbidden Flame and Flesh: the allocated notable. */
@@ -64,12 +65,19 @@ export function forbiddenJewelClasses<Row extends ForbiddenMarket>(
         if (!isForbiddenJewel(row.name)) continue;
         const notable =
             row.identified && row.signatureKind === FORBIDDEN_JEWEL_KIND ? row.signatureValue : "";
-        const key = JSON.stringify([notable, row.identified, row.corrupted]);
+        const level =
+            !row.identified &&
+            row.signatureKind === FORBIDDEN_JEWEL_LEVEL_KIND &&
+            isForbiddenJewelLevel(row.signatureValue)
+                ? row.signatureValue
+                : "";
+        const key = JSON.stringify([notable, level, row.identified, row.corrupted]);
         let pair = pairs.get(key);
         if (!pair) {
             const group = notable ? (ascendancyOfNotable(notable) ?? OTHER) : UNIDENTIFIED;
+            const label = notable || (row.identified ? "Unknown notable" : "Unidentified");
             pair = {
-                notable: notable || (row.identified ? "Unknown notable" : "Unidentified"),
+                notable: level ? `Unidentified (${level})` : label,
                 corrupted: row.corrupted,
                 group,
             };

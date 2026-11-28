@@ -4,6 +4,7 @@ export * from "./coverage.ts";
 export * from "./equipment-window.ts";
 export * from "./exchange.ts";
 export * from "./exchange-window.ts";
+export * from "./forbidden-jewels.ts";
 export * from "./gem-variants.ts";
 export * from "./ingest-status.ts";
 export * from "./leagues.ts";

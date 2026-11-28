@@ -50,6 +50,23 @@ describe("ascendancy notables", () => {
 });
 
 describe("forbiddenJewelClasses", () => {
+    it("pairs unidentified listings only within the same item level band", () => {
+        const normal = {
+            ...jewel("Forbidden Flame", ""),
+            signatureKind: "forbidden-jewel-level",
+            signatureValue: "ilvl 86-",
+        };
+        const uber = { ...normal, name: "Forbidden Flesh", signatureValue: "ilvl 87+" };
+        const old = jewel("Forbidden Flesh", "");
+        const pairs = forbiddenJewelClasses([normal, uber, old])[0]?.ascendancies[0]?.pairs;
+        expect(
+            pairs?.map(({ notable, flame, flesh }) => [notable, flame?.name, flesh?.name]),
+        ).toEqual([
+            ["Unidentified (ilvl 86-)", "Forbidden Flame", undefined],
+            ["Unidentified (ilvl 87+)", undefined, "Forbidden Flesh"],
+            ["Unidentified", undefined, "Forbidden Flesh"],
+        ]);
+    });
     it("pairs Flame and Flesh by notable and corruption, in passive tree order", () => {
         const flame = jewel("Forbidden Flame", "Pious Path");
         const flesh = jewel("Forbidden Flesh", "Pious Path");

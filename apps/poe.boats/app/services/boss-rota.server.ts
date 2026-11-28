@@ -1,4 +1,10 @@
-import { marketLeagueTracked, TEMPLE_CHRONICLE } from "@poe-tools/market";
+import {
+    FORBIDDEN_JEWEL_ICONS,
+    FORBIDDEN_JEWEL_LEVEL_KIND,
+    isForbiddenJewelLevel,
+    marketLeagueTracked,
+    TEMPLE_CHRONICLE,
+} from "@poe-tools/market";
 import {
     BOSS_ENCOUNTERS,
     BOSS_RATES,
@@ -15,6 +21,7 @@ import {
 } from "~/db/queries/boss-rota.queries";
 import { getMarketExchangePrices, getMarketSeasons } from "~/db/queries/market.queries";
 import { bossItemLabel, calculateBossRota } from "~/lib/boss-rota";
+import { isForbiddenJewel } from "~/lib/forbidden-jewels";
 import { marketCategory } from "~/lib/market-categories.server";
 import { marketExchangeItemId } from "~/lib/market-exchange.server";
 import type { BossItemMarket, BossOrder, BossRotaInput, BossRotaResult } from "~/schemas/boss-rota";
@@ -147,6 +154,23 @@ export async function loadBossRota(db: TDatabase, input: BossRotaInput): Promise
                 artName: name,
                 itemId,
                 href: marketExchangeLink({ ...filters, category }, itemId),
+                exact: true,
+            });
+        } else if (isForbiddenJewelLevel(kind) && isForbiddenJewel(name)) {
+            const iconAsset = FORBIDDEN_JEWEL_ICONS[name];
+            markets.set(label, {
+                artName: name,
+                iconAsset,
+                href: marketLink(
+                    { ...filters, category: "forbidden", corruption: "all" },
+                    {
+                        itemKey: `unid:${iconAsset}`,
+                        identified: false,
+                        corrupted: true,
+                        signatureKind: FORBIDDEN_JEWEL_LEVEL_KIND,
+                        signatureValue: kind,
+                    },
+                ),
                 exact: true,
             });
         } else if (kind === "temple-room") {

@@ -1,4 +1,4 @@
-import { apexRoomMarket } from "@poe-tools/market";
+import { apexRoomMarket, NORMAL_FORBIDDEN_LEVEL, UBER_FORBIDDEN_LEVEL } from "@poe-tools/market";
 
 // Entry quantities and baseline drop rates from Perandus Ledger's public encounter catalog.
 // https://xddbsns.com/js/boss-config.js (retrieved 2026-11-27)
@@ -7,7 +7,7 @@ export const BOSS_RATES = { source: "https://xddbsns.com/boss-profit.html", capt
 export type BossItem = readonly [
     name: string,
     amount: number,
-    market?: "corrupted" | "foulborn" | "gem" | "invitation" | "map-entry" | "temple-room" | "unidentified" | "unpriced",
+    market?: "corrupted" | "foulborn" | "gem" | "invitation" | "map-entry" | "temple-room" | "unidentified" | "unpriced" | typeof NORMAL_FORBIDDEN_LEVEL | typeof UBER_FORBIDDEN_LEVEL,
 ];
 
 export interface BossEncounter {
@@ -456,7 +456,7 @@ export const BOSS_ENCOUNTERS = {
         ],
         quantityBonus: 70,
         extraDrops: [
-            ["Unidentified Forbidden Flame (ilvl 86-)", 5, "unpriced"],
+            ["Forbidden Flame", 5, NORMAL_FORBIDDEN_LEVEL],
             ["Exceptional Eldritch Ember", 15],
             ["Eldritch Orb of Annulment", 5],
             ["Eldritch Chaos Orb", 5],
@@ -476,7 +476,7 @@ export const BOSS_ENCOUNTERS = {
         ],
         quantityBonus: 70,
         extraDrops: [
-            ["Unidentified Forbidden Flesh (ilvl 86-)", 5, "unpriced"],
+            ["Forbidden Flesh", 5, NORMAL_FORBIDDEN_LEVEL],
             ["Exceptional Eldritch Ichor", 15],
             ["Eldritch Orb of Annulment", 5],
             ["Eldritch Chaos Orb", 5],
@@ -496,7 +496,7 @@ export const BOSS_ENCOUNTERS = {
             ["The Celestial Brace", 1.5],
         ],
         extraDrops: [
-            ["Unidentified Forbidden Flame (ilvl 87+)", 5, "unpriced"],
+            ["Forbidden Flame", 5, UBER_FORBIDDEN_LEVEL],
             ["Exceptional Eldritch Ember", 15],
             ["Eldritch Orb of Annulment", 5],
             ["Eldritch Chaos Orb", 5],
@@ -517,7 +517,7 @@ export const BOSS_ENCOUNTERS = {
             ["Nimis", 2],
         ],
         extraDrops: [
-            ["Unidentified Forbidden Flesh (ilvl 87+)", 5, "unpriced"],
+            ["Forbidden Flesh", 5, UBER_FORBIDDEN_LEVEL],
             ["Exceptional Eldritch Ichor", 15],
             ["Eldritch Orb of Annulment", 5],
             ["Eldritch Chaos Orb", 5],

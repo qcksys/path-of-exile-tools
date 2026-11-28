@@ -110,6 +110,10 @@ which pairs them by notable under each class and ascendancy with the pair's comb
 likely sales, sorted within each ascendancy by the list's `order` and with each jewel's recent sales
 bars; the notable-to-ascendancy table in `app/data/ascendancy-notables-poe1.json` comes from GGG's passive
 tree export (`vp run game-data:ascendancies`).
+Unidentified Forbidden jewels carry kind `forbidden-jewel-level` when their captured item level
+is known. Normal Eater and Exarch use the `ilvl 86-` market, and their Uber encounters use
+`ilvl 87+`. Each boss uses the matching jewel's listing price, listing count and inferred sales.
+Older summaries without an item level remain available as a separate unidentified market.
 Stash markets track Faustus's merchant tabs only (the public stash API's `stashType` `TradeStash`,
 where every item has a `~b/o` price and sells without contacting the seller). The worker still
 captures and archives every public tab, but its rollup delivers only merchant listings; a change

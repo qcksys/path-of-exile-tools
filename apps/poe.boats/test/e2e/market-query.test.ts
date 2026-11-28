@@ -2775,6 +2775,57 @@ it("prices boss entries by open Apex level or invitation and uses verified Foulb
     }
 });
 
+it("prices normal and Uber Forbidden drops from their own unidentified item level markets", async () => {
+    const league = "ForbiddenRotas";
+    const database = db as unknown as TDatabase;
+    const inputs = [
+        ["eater-of-worlds", "Forbidden Flesh", "ilvl 86-", 100],
+        ["uber-eater-of-worlds", "Forbidden Flesh", "ilvl 87+", 500],
+        ["searing-exarch", "Forbidden Flame", "ilvl 86-", 200],
+        ["uber-searing-exarch", "Forbidden Flame", "ilvl 87+", 800],
+    ] as const;
+    const ask = (name: string, level: string, median: number, identified = false) =>
+        observation({
+            league,
+            name,
+            baseType: name === "Forbidden Flame" ? "Crimson Jewel" : "Cobalt Jewel",
+            itemKey: identified ? name : `unid:${name}`,
+            identified,
+            corrupted: true,
+            signatureKind: level ? "forbidden-jewel-level" : "",
+            signatureValue: level,
+            listingCount: 3,
+            likelySales: 2,
+            prices: { chaos: { count: 3, min: median, median, max: median } },
+        });
+    await upsertStashUniqueHourly(database, [
+        ...inputs.slice(0, 3).map(([, name, level, price]) => ask(name, level, price)),
+        ask("Forbidden Flame", "", 1),
+        ask("Forbidden Flame", "ilvl 87+", 2, true),
+    ]);
+    const rota = async (boss: (typeof inputs)[number][0]) =>
+        (
+            await loadBossRota(database, bossRotaInputSchema.parse({ league, boss }))
+        ).encounters[0]!.drops.find((drop) => drop.name.startsWith("Unidentified Forbidden"))!;
+    expect((await rota("uber-searing-exarch")).quote).toBeNull();
+    await upsertStashUniqueHourly(database, [
+        { ...ask("Forbidden Flame", "ilvl 87+", 800), hour: hour - 3600 },
+        { ...ask("Forbidden Flame", "ilvl 87+", 0), prices: {}, likelySales: 0 },
+    ]);
+    for (const [boss, name, band, price] of inputs) {
+        const drop = await rota(boss);
+        expect(drop.name).toBe(`Unidentified ${name} (${band})`);
+        expect(drop.quote).toMatchObject({ unitChaos: price, listings: 3, likelySales24h: 2 });
+        expect(drop.valueChaos).toBeCloseTo(price * drop.quantityPerKill);
+        const link = new URL(drop.market!.href, "https://example.invalid");
+        expect(Object.fromEntries(link.searchParams)).toMatchObject({
+            identified: "false",
+            kind: "forbidden-jewel-level",
+            value: band,
+        });
+    }
+});
+
 it("values a solo Shaper rota from both captured markets in the same league", async () => {
     const league = "SoloShaper";
     const database = db as unknown as TDatabase;

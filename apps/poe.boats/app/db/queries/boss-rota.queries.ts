@@ -1,4 +1,11 @@
-import { gemVariantValues, marketObservationRange, TEMPLE_CHRONICLE } from "@poe-tools/market";
+import {
+    FORBIDDEN_JEWEL_LEVEL_KIND,
+    gemVariantValues,
+    marketObservationRange,
+    NORMAL_FORBIDDEN_LEVEL,
+    TEMPLE_CHRONICLE,
+    UBER_FORBIDDEN_LEVEL,
+} from "@poe-tools/market";
 import { and, eq, gt, gte, inArray, like, lte, notInArray, or, sql } from "drizzle-orm";
 import type { BossItem } from "~/data/boss-encounters";
 import type { TDatabase } from "~/db/client";
@@ -45,6 +52,7 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
     if (!items.some((item) => item[2] !== "unpriced")) return quotes;
     const { earliestHour, latestHour } = marketObservationRange();
     const label = sql<string>`case when ${market.signatureKind} = 'gem' then ${market.baseType}
+        when ${market.signatureKind} = ${FORBIDDEN_JEWEL_LEVEL_KIND} then concat('Unidentified ', ${market.name}, ' (', ${market.signatureValue}, ')')
         when ${market.signatureKind} = 'temple-room' then ${market.signatureValue}
         when ${market.identified} or ${market.itemKey} not like 'unid:%' then ${market.itemKey}
         when ${market.signatureKind} = 'foulborn' then ${market.name}
@@ -76,6 +84,8 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
                     case when ${market.listingCount} > 0 then 0 else 1 end,
                     case when ${market.signatureKind} = 'foulborn' then
                         case when ${market.priceChaos} > 0 then ${market.identified} else 2 end
+                        when ${market.signatureKind} = ${FORBIDDEN_JEWEL_LEVEL_KIND} then
+                        case when ${market.priceChaos} > 0 then 0 else 2 end
                         when ${inArray(market.itemKey, invitations)} then
                         case when ${market.priceChaos} > 0 then ${market.corrupted} else 2 end
                         else 0 end,
@@ -97,6 +107,20 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
                 or(
                     and(eq(market.identified, true), inArray(market.itemKey, mapEntries)),
                     inArray(market.itemKey, invitations),
+                    and(
+                        eq(market.identified, false),
+                        eq(market.signatureKind, FORBIDDEN_JEWEL_LEVEL_KIND),
+                        like(market.itemKey, "unid:%"),
+                        or(
+                            ...([NORMAL_FORBIDDEN_LEVEL, UBER_FORBIDDEN_LEVEL] as const).map(
+                                (level) =>
+                                    and(
+                                        eq(market.signatureValue, level),
+                                        inArray(market.name, names(level)),
+                                    ),
+                            ),
+                        ),
+                    ),
                     and(
                         eq(market.signatureKind, "foulborn"),
                         eq(market.corrupted, false),

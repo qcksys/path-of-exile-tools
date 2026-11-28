@@ -55,6 +55,39 @@ describe("upstream modifier formats", () => {
     });
 });
 
+describe("unidentified Forbidden jewel levels", () => {
+    const jewel = (baseType, art, levels) => ({
+        baseType,
+        name: "",
+        identified: false,
+        frameType: 3,
+        corrupted: true,
+        icon: `https://example.invalid/gen/image/${Buffer.from(JSON.stringify([0, 0, { f: `2DItems/Jewels/${art}` }])).toString("base64url")}`,
+        ...levels,
+    });
+
+    it.each([
+        ["Cobalt Jewel", "PuzzlePieceJewel_GreatTangle", { ilvl: 86 }, "ilvl 86-"],
+        ["Crimson Jewel", "PuzzlePieceJewel_CleansingFire", { itemLevel: 87 }, "ilvl 87+"],
+        ["Cobalt Jewel", "PuzzlePieceJewel_GreatTangle", { ilvl: 88 }, "ilvl 87+"],
+        ["Crimson Jewel", "PuzzlePieceJewel_CleansingFire", { itemLevel: 84 }, "ilvl 86-"],
+    ])("classifies %s using the art and captured level", (base, art, fields, band) => {
+        const signature = extractModSignature(jewel(base, art, fields));
+        expect(signature?.kind).toBe("forbidden-jewel-level");
+        expect(signatureValue(signature)).toBe(band);
+    });
+
+    it("leaves missing levels, wrong bases and unrelated icons outside both bands", () => {
+        for (const item of [
+            jewel("Cobalt Jewel", "PuzzlePieceJewel_GreatTangle", {}),
+            jewel("Cobalt Jewel", "PuzzlePieceJewel_GreatTangle", { ilvl: 0 }),
+            jewel("Crimson Jewel", "PuzzlePieceJewel_GreatTangle", { ilvl: 87 }),
+            jewel("Cobalt Jewel", "OtherJewel", { ilvl: 86 }),
+        ])
+            expect(extractModSignature(item)).toBeNull();
+    });
+});
+
 describe("Foulborn uniques", () => {
     const foulborn = {
         name: "Foulborn Hand of Thought and Motion",
