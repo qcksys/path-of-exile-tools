@@ -58,6 +58,7 @@ describe("game routes", () => {
         ["/2/crafting/projects", "routes/crafting/poe2.tsx"],
         ["/crafting/share/example", "routes/crafting/share.tsx"],
         ["/extension", "routes/extension.tsx"],
+        ["/1/collectors", "routes/collectors.tsx"],
     ])("routes %s to %s", (path, id) => {
         expect(matchRoutes(routes, path)?.at(-1)?.route.id).toBe(id);
     });
@@ -76,6 +77,7 @@ describe("site layout", () => {
         ["/1/boss-rota", true],
         ["/1/boss-rota/shaper", true],
         ["/1/recombinator", true],
+        ["/1/collectors", true],
         ["/1/market/items/example", true],
         ["/1/market/exchange/Currency/CurrencyRerollRare", true],
         ["/1/market/bases/base%3Atitan-plate%3A86-100%3A6-link", true],

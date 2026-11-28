@@ -1,4 +1,4 @@
-import { Anvil, ArrowRightLeft, ChartNoAxesCombined, Combine, Grid2X2, type LucideIcon, Swords } from "lucide-react";
+import { Anvil, ArrowRightLeft, ChartNoAxesCombined, Combine, Grid2X2, type LucideIcon, Swords, Trophy } from "lucide-react";
 
 export type ToolGame = "1" | "2";
 
@@ -17,6 +17,7 @@ export const GAME_TOOLS: Record<ToolGame, readonly GameTool[]> = {
         { to: "/1/boss-rota", label: "Boss Rota Profits", icon: Swords },
         { to: "/1/recombinator", label: "Recombinator Simulator", icon: Combine },
         { to: "/1/market/currency", sectionPath: "/1/market", label: "Season market", icon: ChartNoAxesCombined },
+        { to: "/1/collectors", label: "Collector Gallery", icon: Trophy },
     ],
     "2": [
         { to: "/2/crafting", label: "Crafting Calculator", icon: Anvil },

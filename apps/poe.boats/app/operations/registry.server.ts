@@ -7,6 +7,11 @@ import {
 import { sStashUniqueHourlyS } from "~/db/schema/stash.unique-hourly";
 import { analyzeRotaLog, analyzeRotaSchema, rotaAnalysisSchema } from "~/lib/boss-rota-log";
 import {
+    collectorFilters,
+    collectorResult,
+    listCollectorItems,
+} from "~/lib/collector-items.server";
+import {
     ArbitrageGameSchema,
     ClusterRecipeItemLevelSchema,
     ClusterRecipeSnapshotSchema,
@@ -136,6 +141,20 @@ const watchersEyeModValues = z
 
 export const operations = [
     serverStatusOperation,
+    defineOperation({
+        family: "collectors",
+        path: "/items",
+        name: "list_collector_items",
+        description:
+            "Browse PoE 1 alternate artwork and Demigod uniques by name, base type or artwork label. Returns inventory images and Standard listing searches. Alternate-art searches include every season and Garena origin for the item.",
+        ui: "/1/collectors",
+        method: "get",
+        access: "public",
+        readOnly: true,
+        input: collectorFilters,
+        output: collectorResult,
+        execute: listCollectorItems,
+    }),
     defineOperation({
         family: "boss-rota",
         path: "/analyze",

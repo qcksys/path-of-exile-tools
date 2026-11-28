@@ -3262,6 +3262,36 @@ it("prices solo boss runs alike over HTTP and MCP and rejects invalid runs", asy
     }
 });
 
+it("serves the collector gallery and validates its filters over HTTP and MCP", async () => {
+    const search = async (collection: string) => {
+        const args = { q: "Beacon", collection };
+        const response = await api.request(
+            `https://poe.boats/api/v1/collectors/items?${new URLSearchParams(args)}`,
+            {},
+            { runtime },
+        );
+        const tool = CallToolResultSchema.parse(
+            RpcSchema.parse(
+                await (
+                    await mcp("tools/call", {
+                        name: "list_collector_items",
+                        arguments: args,
+                    })
+                ).json(),
+            ).result,
+        );
+        return { response, tool };
+    };
+    const { response, tool } = await search("demigod");
+    expect(response.status).toBe(200);
+    const gallery = await response.json();
+    expect(gallery).toMatchObject({ items: [{ name: "Demigod's Beacon" }] });
+    expect(tool.structuredContent).toEqual(gallery);
+    const invalid = await search("unknown");
+    expect(invalid.response.status).toBe(400);
+    expect(invalid.tool.isError).toBe(true);
+});
+
 it("analyzes a manual rota log alike over HTTP and MCP", async () => {
     const input = {
         log: {

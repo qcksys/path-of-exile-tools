@@ -11,6 +11,7 @@ test("lists each game's tools under its home page link", async ({ page }) => {
         "Boss Rota Profits",
         "Recombinator Simulator",
         "Season market",
+        "Collector Gallery",
     ]);
     const second = page.getByRole("navigation", { name: "Path of Exile 2 tools" });
     await expect(second.getByRole("link")).toHaveText([
@@ -49,4 +50,18 @@ test("keeps the current tool visible on narrow screens and follows nested routes
     await page.goBack();
     await page.goBack();
     await expect(simulator).toHaveAttribute("aria-current", "page");
+});
+
+test("opens the collector gallery and narrows it to a Demigod's artwork", async ({ page }) => {
+    await page.goto("/1/");
+    await page.getByRole("link", { name: "Collector Gallery" }).click();
+    const count = page.getByRole("region", { name: "Gallery results" }).getByRole("status");
+    await expect(count).toHaveText("136 items · 156 artworks");
+    await page.getByRole("searchbox").fill("Golden Flame");
+    await page.getByRole("button", { name: "Search", exact: true }).click();
+    await expect(count).toHaveText("1 item · 2 artworks");
+    await expect(page.getByRole("heading", { name: "Demigod's Beacon" })).toBeVisible();
+    await expect(page.getByText("Emberwake · Bloodgrip · Soulthirst")).toBeVisible();
+    await page.getByRole("link", { name: "Clear filters" }).click();
+    await expect(count).toHaveText("136 items · 156 artworks");
 });
