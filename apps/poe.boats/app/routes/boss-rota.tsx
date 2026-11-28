@@ -703,8 +703,8 @@ export default function BossRotaPage({ loaderData }: Pick<Route.ComponentProps, 
                             )}
                             {invitation && (
                                 <p className="text-sm">
-                                    Invitation quantity increases each additional drop chance by{" "}
-                                    {selected.quantityBonus}%, up to a 100% chance per drop.
+                                    Additional drop chances use {selected.quantityBonus}% invitation
+                                    quantity and cap at 100% per drop.
                                 </p>
                             )}
                             <div className="grid items-start gap-x-6 gap-y-6 [grid-template-columns:repeat(auto-fit,minmax(min(100%,38rem),1fr))]">
