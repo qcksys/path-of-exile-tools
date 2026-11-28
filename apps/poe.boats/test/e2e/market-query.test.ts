@@ -2721,6 +2721,10 @@ it("prices boss entries by open Apex level or invitation and uses verified Foulb
         ask(chronicle, 31, { signatureKind: "temple-room", signatureValue: regular }),
         ask(chronicle, 145, { signatureKind: "temple-room", signatureValue: uber }),
         ask("Polaric Invitation", 17, { name: null, identified: false, corrupted: true }),
+        ask("Polaric Invitation", 0, { prices: {}, hour: hour - 3600 }),
+        ask("Screaming Invitation", 125, { listingCount: 456, hour: hour - 3600 }),
+        ask("Screaming Invitation", 124, { listingCount: 6, corrupted: true }),
+        ask("Screaming Invitation", 0, { prices: {} }),
         ask("unid:bow", 1, { name: bow, identified: false }),
         ask("unid:bow", 12, {
             name: bow,
@@ -2743,12 +2747,23 @@ it("prices boss entries by open Apex level or invitation and uses verified Foulb
         [regular, 1, "temple-room"],
         [uber, 1, "temple-room"],
         ["Polaric Invitation", 1, "invitation"],
+        ["Screaming Invitation", 1, "invitation"],
         [bow, 11.11, "foulborn"],
         [wand, 2.22, "foulborn"],
     ]);
     expect(quotes.get(regular)?.unitChaos).toBe(31);
     expect(quotes.get(uber)?.unitChaos).toBe(145);
-    expect(quotes.get("Polaric Invitation")?.unitChaos).toBe(17);
+    expect(quotes.get("Polaric Invitation")).toMatchObject({
+        unitChaos: 17,
+        invitationState: "corrupted",
+    });
+    expect(quotes.get("Screaming Invitation")).toMatchObject({
+        unitChaos: 125,
+        listings: 456,
+        hour: hour - 3600,
+        invitationState: "uncorrupted",
+        market: { href: expect.stringContaining("corrupted=false") },
+    });
     expect(quotes.get(bow)).toMatchObject({ unitChaos: 12, foulbornState: "unidentified" });
     expect(quotes.get(wand)).toMatchObject({ unitChaos: 20, foulbornState: "identified" });
     for (const level of [regular, uber]) {

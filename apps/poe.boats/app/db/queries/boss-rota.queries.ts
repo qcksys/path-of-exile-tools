@@ -76,6 +76,8 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
                     case when ${market.listingCount} > 0 then 0 else 1 end,
                     case when ${market.signatureKind} = 'foulborn' then
                         case when ${market.priceChaos} > 0 then ${market.identified} else 2 end
+                        when ${inArray(market.itemKey, invitations)} then
+                        case when ${market.priceChaos} > 0 then ${market.corrupted} else 2 end
                         else 0 end,
                     ${market.hour} desc, case when ${market.priceChaos} > 0 then 0 else 1 end,
                     ${market.priceChaos}, ${market.itemKey}, ${market.corrupted},
@@ -161,6 +163,11 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
         const category = marketCategory("pc", row.baseType, row.signatureKind, row.name);
         quotes.set(row.label, {
             source: "stash",
+            invitationState: invitations.includes(row.itemKey)
+                ? row.corrupted
+                    ? "corrupted"
+                    : "uncorrupted"
+                : undefined,
             foulbornState:
                 row.signatureKind === "foulborn"
                     ? row.identified

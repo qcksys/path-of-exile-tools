@@ -5,6 +5,7 @@ import {
     type BossEncounter,
     type BossId,
     type BossItem,
+    bossInvitation,
 } from "~/data/boss-encounters";
 import type { TDatabase } from "~/db/client";
 import {
@@ -181,7 +182,17 @@ export async function loadBossRota(db: TDatabase, input: BossRotaInput): Promise
         family.iconAsset =
             art.get(family.artName) ?? art.get(family.artName.replace(/^Foulborn /, ""));
     const encounters = bosses
-        .map(([id, boss]) => calculateBossRota(id, boss, runs, quotes, markets))
+        .map(([id, boss]) => {
+            const invitation = bossInvitation(id);
+            return calculateBossRota(
+                id,
+                boss,
+                runs,
+                quotes,
+                markets,
+                invitation && input[invitation.field],
+            );
+        })
         .filter(({ perKill }) => {
             if (input.boss !== "all" || input.pricing === "all") return true;
             if (perKill.profitChaos !== null) return input.pricing === "complete";

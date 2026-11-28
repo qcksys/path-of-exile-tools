@@ -174,7 +174,7 @@ export const operations = [
         path: "/profits",
         name: "get_boss_rota_profits",
         description:
-            "Filter and sort solo PoE 1 boss profits. Each kill consumes one entry set and awards one instance's loot. Returns chaos values, the league's Divine Orb rate, drop pools, item markets, and the chance total loot exceeds cost after 1, 5, 10, 50 and 100 runs. Odds use priced drops only. A missing entry price leaves profit and odds unknown.",
+            "Filter and sort solo PoE 1 boss profits. Each kill consumes one entry set and awards one instance's loot. Craftable invitations prefer uncorrupted asks. Each invitation quantity input scales that boss's independent additional drop chances, capped at 100%. Returns chaos values, the league's Divine Orb rate, drop pools, item markets, and the chance total loot exceeds cost after 1, 5, 10, 50 and 100 runs. Odds use priced drops only. A missing entry price leaves profit and odds unknown.",
         ui: "/1/boss-rota",
         method: "get",
         access: "public",

@@ -58,7 +58,7 @@ it("inherits each boss's most recent saved time and keeps league overrides and c
     expect(next.result.current[0].shaper).toBe(55);
 });
 
-it("opens a boss breakdown and reprices the requested number of solo kills", async () => {
+function setupRoutes() {
     vi.mocked(getMarketSeasons).mockResolvedValue({
         seasons: [
             { league: "Standard", firstHour: 3600, latestHour: 3600 },
@@ -76,7 +76,7 @@ it("opens a boss breakdown and reprices the requested number of solo kills", asy
     context.set(dbContext, createDbConnection("mysql://user:pass@example.invalid/test"));
     const path = "/1/boss-rota/:boss?";
     const Component = () => <BossRotaPage loaderData={useLoaderData()} />;
-    const Routes = createRoutesStub([
+    return createRoutesStub([
         {
             path,
             loader: ({ request, params }) =>
@@ -90,6 +90,35 @@ it("opens a boss breakdown and reprices the requested number of solo kills", asy
             Component,
         },
     ]);
+}
+
+it("applies, shares and clears a saved invitation quantity per boss", async () => {
+    const Routes = setupRoutes();
+    const path = "/1/boss-rota/eater-of-worlds?league=Standard";
+    render(<Routes initialEntries={[path]} />);
+    const field = await screen.findByRole("spinbutton", { name: "Invitation quantity (%)" });
+    expect(field.getAttribute("placeholder")).toBe("Default 70");
+    fireEvent.change(field, { target: { value: "0" } });
+    fireEvent.click(screen.getByRole("button", { name: "Calculate" }));
+    await screen.findByText(/Additional drop chances use 0%/);
+    expect(screen.getByRole("link", { name: "All bosses" }).getAttribute("href")).toContain(
+        "eaterQuantity=0",
+    );
+    cleanup();
+    render(<Routes initialEntries={[path]} />);
+    await screen.findByText(/Additional drop chances use 0%/);
+    fireEvent.change(screen.getByLabelText("Invitation quantity (%)"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Calculate" }));
+    await screen.findByText(/Additional drop chances use 70%/);
+    expect(localStorage.getItem("boss-rota:eaterQuantity")).toBeNull();
+    cleanup();
+    render(<Routes initialEntries={["/1/boss-rota/uber-eater-of-worlds?league=Standard"]} />);
+    await screen.findByText("Uber Eater rota");
+    expect(screen.queryByLabelText("Invitation quantity (%)")).toBeNull();
+});
+
+it("opens a boss breakdown and reprices the requested number of solo kills", async () => {
+    const Routes = setupRoutes();
     render(<Routes initialEntries={["/1/boss-rota"]} />);
     const filter = await screen.findByRole("searchbox", { name: "Filter bosses" });
     const shaperTime = screen.getByRole("spinbutton", { name: "Seconds per kill for Shaper" });

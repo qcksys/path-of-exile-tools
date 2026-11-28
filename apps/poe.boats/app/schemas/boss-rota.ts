@@ -23,6 +23,9 @@ const orderSchema = z.enum([
     "chance100",
 ]);
 export type BossOrder = z.infer<typeof orderSchema>;
+export const invitationQuantitySchema = z
+    .union([z.literal("").transform(() => undefined), z.coerce.number().nonnegative()])
+    .optional();
 export const bossRotaInputSchema = z.object({
     league: z.string().max(100).default(""),
     boss: z.enum(["all", ...(Object.keys(BOSS_ENCOUNTERS) as BossId[])]).default("all"),
@@ -31,12 +34,25 @@ export const bossRotaInputSchema = z.object({
     pricing: z.enum(["all", "complete", "partial", "unknown"]).default("all"),
     order: orderSchema.default("profit"),
     direction: z.enum(["asc", "desc"]).default("desc"),
+    blackStarQuantity: invitationQuantitySchema.describe(
+        "Additional drop quantity percent on the Polaric Invitation (default 50)",
+    ),
+    exarchQuantity: invitationQuantitySchema.describe(
+        "Additional drop quantity percent on the Incandescent Invitation (default 70)",
+    ),
+    eaterQuantity: invitationQuantitySchema.describe(
+        "Additional drop quantity percent on the Screaming Invitation (default 70)",
+    ),
+    hungerQuantity: invitationQuantitySchema.describe(
+        "Additional drop quantity percent on the Writhing Invitation (default 50)",
+    ),
 });
 export type BossRotaInput = z.infer<typeof bossRotaInputSchema>;
 
 const quoteSchema = z.object({
     source: z.enum(["exchange", "stash"]),
     foulbornState: z.enum(["identified", "unidentified"]).optional(),
+    invitationState: z.enum(["uncorrupted", "corrupted"]).optional(),
     unitChaos: z.number().positive(),
     hour: z.number().int(),
     listings: z.number().int().nonnegative().optional(),

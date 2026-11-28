@@ -120,6 +120,41 @@ describe("solo boss rota", () => {
                 ?.quantityPerKill,
         ).toBeCloseTo(0.255);
     });
+
+    it.each([
+        [0, 0.15],
+        [82.5, 0.27375],
+        [1000, 1],
+    ])(
+        "recalculates additional drop odds, returns and new logs at %s%% quantity",
+        (quantity, expected) => {
+            const result = calculateBossRota(
+                "eater-of-worlds",
+                BOSS_ENCOUNTERS["eater-of-worlds"],
+                5,
+                new Map([
+                    ["Screaming Invitation", { source: "stash", hour: 3600, unitChaos: 1 }],
+                    [
+                        "Exceptional Eldritch Ichor",
+                        { source: "exchange", hour: 3600, unitChaos: 10 },
+                    ],
+                ]),
+                undefined,
+                quantity,
+            );
+            expect(result.quantityBonus).toBe(quantity);
+            expect(
+                result.drops.find((row) => row.name === "Melding of the Flesh")?.quantityPerKill,
+            ).toBe(0.02);
+            expect(result.profitChances[0]?.chance).toBeCloseTo(expected);
+            expect(result.total.profitFromPricedDropsChaos).toBeCloseTo(5 * (10 * expected - 1));
+            expect(
+                startRotaLog(result, 5).drops.find(
+                    (row) => row.name === "Exceptional Eldritch Ichor",
+                )?.chance,
+            ).toBeCloseTo(expected);
+        },
+    );
 });
 
 describe("manual rota log", () => {

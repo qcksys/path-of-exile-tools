@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { Form, Link } from "react-router";
+import { useEffect, useMemo } from "react";
+import { Form, Link, useSearchParams } from "react-router";
 import { bossMoney as money } from "~/components/boss-money";
 import { BossKillTime, BossRotaTracker, useBossPace } from "~/components/boss-rota-tracker";
 import { CurrencyLabel } from "~/components/currency-label";
@@ -18,6 +18,7 @@ import {
     TableRow,
 } from "~/components/ui/table";
 import { dbContext } from "~/context";
+import { bossInvitation, INVITATION_QUANTITY_FIELDS } from "~/data/boss-encounters";
 import { PROFIT_TRIALS } from "~/lib/boss-profit-chances";
 import { netPerHour } from "~/lib/boss-rota-log";
 import { marketItemArtUrl } from "~/lib/item-presentation";
@@ -28,6 +29,7 @@ import {
     type BossOrder,
     type BossRotaResult,
     bossRotaInputSchema,
+    invitationQuantitySchema,
     PROFIT_RUNS,
 } from "~/schemas/boss-rota";
 import { loadBossRota } from "~/services/boss-rota.server";
@@ -46,7 +48,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
         boss: params.boss,
     });
     if (!input.success)
-        throw new Response(null, { status: 400, statusText: "Invalid boss, league or kill count" });
+        throw new Response(null, { status: 400, statusText: "Invalid boss rota settings" });
     return {
         ...input.data,
         result: await loadBossRota(context.get(dbContext), input.data),
@@ -107,6 +109,13 @@ function QuoteActivity({
                     {quote.foulbornState === "unidentified"
                         ? "Unidentified Foulborn"
                         : "Lowest identified Foulborn variant in quote hour"}
+                </span>
+            )}
+            {quote.invitationState && (
+                <span>
+                    {quote.invitationState === "corrupted"
+                        ? "Corrupted invitation fallback"
+                        : "Uncorrupted invitation"}
                 </span>
             )}
             {quote.source === "exchange" ? (
@@ -270,9 +279,31 @@ function ItemTable({
     );
 }
 
-export default function BossRotaPage({
-    loaderData: { boss, result, q, pricing, order, direction },
-}: Pick<Route.ComponentProps, "loaderData">) {
+const quantityFields = Object.values(INVITATION_QUANTITY_FIELDS);
+
+export default function BossRotaPage({ loaderData }: Pick<Route.ComponentProps, "loaderData">) {
+    const { boss, result, q, pricing, order, direction } = loaderData;
+    const invitation = bossInvitation(boss);
+    const [params, setParams] = useSearchParams();
+    useEffect(() => {
+        const next = new URLSearchParams(params);
+        try {
+            for (const field of quantityFields) {
+                if (next.has(field)) continue;
+                const saved = localStorage.getItem(`boss-rota:${field}`);
+                if (saved === null) continue;
+                const parsed = invitationQuantitySchema.safeParse(saved);
+                if (parsed.success && parsed.data !== undefined)
+                    next.set(field, String(parsed.data));
+            }
+        } catch {
+            return;
+        }
+        if (next.size !== params.size) setParams(next, { replace: true, preventScrollReset: true });
+    }, [params, setParams]);
+    const quantityParams = quantityFields.flatMap((field) =>
+        loaderData[field] === undefined ? [] : [[field, String(loaderData[field])] as const],
+    );
     const { leagues, league, runs, encounters, chaosPerDivine: divine } = result;
     const [pace, savePace] = useBossPace(league, result.priorLeagues);
     const selected = boss === "all" ? undefined : encounters[0];
@@ -305,7 +336,7 @@ export default function BossRotaPage({
     );
     const link = (id: string, sort = order, dir = direction) => {
         const path = id === "all" ? "/1/boss-rota" : `/1/boss-rota/${id}`;
-        return `${path}?${new URLSearchParams({ league, runs: String(runs), ...(q && { q }), pricing, order: sort, direction: dir })}`;
+        return `${path}?${new URLSearchParams({ league, runs: String(runs), ...(q && { q }), pricing, order: sort, direction: dir, ...Object.fromEntries(quantityParams) })}`;
     };
     function heading(label: string, key: BossOrder) {
         const active = order === key;
@@ -352,12 +383,30 @@ export default function BossRotaPage({
                 </p>
             </header>
             <Form
-                key={`${league}-${runs}-${boss}-${q}-${pricing}`}
+                key={`${league}-${runs}-${boss}-${q}-${pricing}-${invitation && loaderData[invitation.field]}`}
                 method="get"
+                onSubmit={(event) => {
+                    if (!invitation) return;
+                    const value = new FormData(event.currentTarget).get(invitation.field);
+                    const key = `boss-rota:${invitation.field}`;
+                    try {
+                        if (value === "" || Number(value) === invitation.defaultQuantity)
+                            localStorage.removeItem(key);
+                        else if (typeof value === "string") localStorage.setItem(key, value);
+                    } catch {
+                        // The URL retains the quantity when browser storage is unavailable.
+                    }
+                }}
                 className="flex flex-wrap items-end gap-3"
             >
                 <Input type="hidden" name="order" value={order} />
                 <Input type="hidden" name="direction" value={direction} />
+                {quantityParams.map(
+                    ([field, value]) =>
+                        field !== invitation?.field && (
+                            <Input key={field} type="hidden" name={field} value={value} />
+                        ),
+                )}
                 {boss === "all" ? (
                     <label htmlFor="boss-pricing" className="grid gap-1 text-sm">
                         Price coverage
@@ -413,6 +462,21 @@ export default function BossRotaPage({
                         defaultValue={runs}
                     />
                 </label>
+                {invitation && (
+                    <label htmlFor="invitation-quantity" className="grid gap-1 text-sm">
+                        Invitation quantity (%)
+                        <Input
+                            id="invitation-quantity"
+                            name={invitation.field}
+                            className="w-32"
+                            type="number"
+                            min={0}
+                            step="any"
+                            defaultValue={loaderData[invitation.field] ?? ""}
+                            placeholder={`Default ${invitation.defaultQuantity}`}
+                        />
+                    </label>
+                )}
                 <Button type="submit" disabled={!leagues.length}>
                     Calculate
                 </Button>
@@ -637,10 +701,10 @@ export default function BossRotaPage({
                                     hours.
                                 </p>
                             )}
-                            {selected.quantityBonus > 0 && (
+                            {invitation && (
                                 <p className="text-sm">
-                                    Extra drop chances include the source's {selected.quantityBonus}
-                                    % invitation quantity bonus.
+                                    Invitation quantity increases each additional drop chance by{" "}
+                                    {selected.quantityBonus}%, up to a 100% chance per drop.
                                 </p>
                             )}
                             <div className="grid items-start gap-x-6 gap-y-6 [grid-template-columns:repeat(auto-fit,minmax(min(100%,38rem),1fr))]">

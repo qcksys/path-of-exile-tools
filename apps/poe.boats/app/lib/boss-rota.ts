@@ -17,6 +17,7 @@ export function calculateBossRota(
     runs: number,
     quotes: ReadonlyMap<string, LocatedBossQuote>,
     markets?: ReadonlyMap<string, BossItemMarket>,
+    invitationQuantity?: number,
 ) {
     function value(item: BossItem, quantityPerKill: number) {
         const name = bossItemLabel(item);
@@ -25,6 +26,7 @@ export function calculateBossRota(
             ? {
                   source: located.source,
                   foulbornState: located.foulbornState,
+                  invitationState: located.invitationState,
                   unitChaos: located.unitChaos,
                   hour: located.hour,
                   units24h: located.units24h,
@@ -41,7 +43,8 @@ export function calculateBossRota(
         };
     }
     const entries = boss.entries.map((item) => value(item, item[1]));
-    const quantityBonus = boss.quantityBonus ?? 0;
+    const quantityBonus =
+        boss.quantityBonus === undefined ? 0 : (invitationQuantity ?? boss.quantityBonus);
     const drop = (item: BossItem, chance: number, pool: DropPool) => ({
         ...value(item, chance),
         pool,

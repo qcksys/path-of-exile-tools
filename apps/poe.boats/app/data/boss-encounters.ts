@@ -753,6 +753,19 @@ export const BOSS_ENCOUNTERS = {
 
 export type BossId = keyof typeof BOSS_ENCOUNTERS;
 
+export const INVITATION_QUANTITY_FIELDS = {
+    "black-star": "blackStarQuantity",
+    "searing-exarch": "exarchQuantity",
+    "eater-of-worlds": "eaterQuantity",
+    "infinite-hunger": "hungerQuantity",
+} as const satisfies Partial<Record<BossId, string>>;
+
+export function bossInvitation(id: string) {
+    if (!Object.hasOwn(INVITATION_QUANTITY_FIELDS, id)) return undefined;
+    const boss = id as keyof typeof INVITATION_QUANTITY_FIELDS;
+    return { field: INVITATION_QUANTITY_FIELDS[boss], defaultQuantity: BOSS_ENCOUNTERS[boss].quantityBonus };
+}
+
 // Available artwork in Perandus Ledger's encounter catalog. Uber encounters share the base art.
 const encounterArt = new Set([
     "shaper", "elder", "sirus", "cortex", "maven", "atziri", "mora", "zorath",

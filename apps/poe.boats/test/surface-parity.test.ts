@@ -3242,6 +3242,48 @@ it("prices solo boss runs alike over HTTP and MCP and rejects invalid runs", asy
         expect((await api.request(`${url}0`, {}, { runtime })).status).toBe(400);
         expect((await call(0)).isError).toBe(true);
         expect(exchange).toHaveBeenCalledTimes(2);
+        const quantityInput = { boss: "eater-of-worlds", eaterQuantity: 0 };
+        const quantityResponse = await api.request(
+            "https://poe.boats/api/v1/boss-rota/profits?boss=eater-of-worlds&eaterQuantity=0",
+            {},
+            { runtime },
+        );
+        const quantityResult = await quantityResponse.json();
+        expect(quantityResult).toMatchObject({
+            encounters: [
+                {
+                    quantityBonus: 0,
+                    drops: expect.arrayContaining([
+                        expect.objectContaining({
+                            name: "Exceptional Eldritch Ichor",
+                            quantityPerKill: 0.15,
+                        }),
+                    ]),
+                },
+            ],
+        });
+        const quantityCall = async (eaterQuantity: number) =>
+            CallToolResultSchema.parse(
+                RpcSchema.parse(
+                    await (
+                        await mcp("tools/call", {
+                            name: "get_boss_rota_profits",
+                            arguments: { ...quantityInput, eaterQuantity },
+                        })
+                    ).json(),
+                ).result,
+            );
+        expect((await quantityCall(0)).structuredContent).toEqual(quantityResult);
+        expect(
+            (
+                await api.request(
+                    "https://poe.boats/api/v1/boss-rota/profits?eaterQuantity=-1",
+                    {},
+                    { runtime },
+                )
+            ).status,
+        ).toBe(400);
+        expect((await quantityCall(-1)).isError).toBe(true);
         for (const [league, priorLeagues] of [
             ["Hardcore Covens", ["Hard event", "Hardcore"]],
             ["Standard", []],
