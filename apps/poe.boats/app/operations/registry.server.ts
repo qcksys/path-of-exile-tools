@@ -84,14 +84,24 @@ const shared = {
 } as const;
 // List rows and history merge or filter link counts, and show merchant tabs only, so a market row
 // has neither. Its locked prices only order and filter the list.
-const marketRow = sStashUniqueHourlyS.omit({
-    links: true,
-    tab: true,
-    priceChaos: true,
-    priceDivine: true,
-    allTabsPriceChaos: true,
-    allTabsPriceDivine: true,
-});
+const marketRow = sStashUniqueHourlyS
+    .omit({
+        links: true,
+        tab: true,
+        priceChaos: true,
+        priceDivine: true,
+        allTabsPriceChaos: true,
+        allTabsPriceDivine: true,
+    })
+    .extend({
+        soldAgeSeconds: z
+            .number()
+            .nonnegative()
+            .nullable()
+            .describe(
+                "Mean age in seconds at likely sale, weighted across the selected link groups",
+            ),
+    });
 const priceRates = (when: string) =>
     z
         .record(z.string(), z.number())

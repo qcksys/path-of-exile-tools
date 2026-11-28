@@ -3026,11 +3026,16 @@ it("shares market categories, search, ordering and filters across HTTP and MCP",
         expect(CallToolResultSchema.parse(rpc.result).structuredContent).toEqual(expected);
         expect(query).toHaveBeenLastCalledWith(context.db, expect.objectContaining(input), "list");
         // Item lookups skip the list; the API keeps the all-categories list the web dropped.
-        await api.request(
+        const itemMarket = marketFixture({ item: "Headhunter" });
+        itemMarket.history[0]!.soldAgeSeconds = 156624.5;
+        query.mockResolvedValueOnce(itemMarket);
+        const history = await api.request(
             "https://poe.boats/api/v1/market?league=Allflame&item=Headhunter",
             {},
             { runtime },
         );
+        expect(history.status).toBe(200);
+        expect((await history.json()).history[0].soldAgeSeconds).toBe(156624.5);
         expect(query).toHaveBeenLastCalledWith(
             context.db,
             expect.objectContaining({ item: "Headhunter", category: "all" }),
