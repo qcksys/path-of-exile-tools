@@ -1,5 +1,5 @@
 import type { PublicStashChange } from "@poe-tools/api-client";
-import { isMapItem, shouldCapture } from "#src/shared/capture.ts";
+import { isEldritchInvitation, isMapItem, shouldCapture } from "#src/shared/capture.ts";
 import { decodeIconAsset } from "#src/shared/icon.ts";
 import { itemKey, itemLinks } from "#src/shared/item-key.ts";
 import { rowDigest } from "#src/shared/item-memo.ts";
@@ -115,7 +115,10 @@ export function listingRows(change: PublicStashChange, accountName: string, leag
             baseType: item.baseType,
             // A rare map's or crafting base's random name is not part of its market.
             name:
-                item.identified && !isMapItem(item) && signature?.kind !== "base"
+                item.identified &&
+                !isMapItem(item) &&
+                !isEldritchInvitation(item) &&
+                signature?.kind !== "base"
                     ? item.name
                     : null,
             rarity: item.rarity ?? null,

@@ -102,6 +102,13 @@ function QuoteActivity({
     const observed = new Date(quote.hour * 1000).toISOString();
     return (
         <div className="mt-1 grid gap-0.5 whitespace-normal text-xs text-muted-foreground">
+            {quote.foulbornState && (
+                <span>
+                    {quote.foulbornState === "unidentified"
+                        ? "Unidentified Foulborn"
+                        : "Lowest identified Foulborn variant in quote hour"}
+                </span>
+            )}
             {quote.source === "exchange" ? (
                 <span style={scales.volume(quote.units24h)}>
                     {quote.units24h === undefined

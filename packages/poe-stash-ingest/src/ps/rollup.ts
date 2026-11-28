@@ -90,6 +90,9 @@ WITH observations AS (
         -- beast's name is random, and every beast shares the Bestiary Orb icon a spirit beast
         -- teaches the basemap.
         CASE WHEN json_extract_string(l.mod_signature, '$.kind') IN ('map', 'beast', 'base') THEN NULL
+            WHEN NOT l.identified AND json_extract_string(l.mod_signature, '$.kind') = 'foulborn'
+                THEN CASE WHEN b.base_type = l.base_type
+                    THEN 'Foulborn ' || regexp_replace(b.name, '^Foulborn ', '') END
             ELSE COALESCE(l.name, b.name) END AS resolved_name,
         l.frame_type,
         l.identified,
@@ -124,6 +127,10 @@ pool_mods AS (
     )
     WHERE len(mods) >= 2
 ),
+temple_rooms AS (
+    SELECT *, unnest(json_extract_string(signature_data, '$.roomMarkets[*]')) AS room
+    FROM windowed WHERE signature_kind = 'temple'
+),
 masked_mods AS (
     -- Listings stored before ingest masked rolls keep them; older Watcher's Eyes store {aura, stat}.
     SELECT * EXCLUDE (mods, mod), regexp_replace(
@@ -137,6 +144,8 @@ markets AS (
         CASE WHEN signature_kind IN (${POOL_KINDS}) THEN '' ELSE signature_value END AS signature_value,
         CASE WHEN signature_kind IN (${POOL_KINDS})
             THEN json_object('kind', signature_kind)::VARCHAR
+            WHEN signature_kind = 'temple' THEN json_object('kind', 'temple',
+                'rooms', json_extract(signature_data, '$.rooms'))::VARCHAR
             ELSE signature_data END AS signature_data
     )
     FROM windowed
@@ -146,6 +155,12 @@ markets AS (
         json_object('kind', signature_kind, 'mod', mod, 'modCount', mod_count)::VARCHAR AS signature_data
     )
     FROM masked_mods
+    UNION ALL
+    SELECT * EXCLUDE (room) REPLACE (
+        'temple-room' AS signature_kind, room AS signature_value,
+        json_object('kind', 'temple-room', 'room', room)::VARCHAR AS signature_data
+    )
+    FROM temple_rooms
 ),
 prices AS (
     SELECT

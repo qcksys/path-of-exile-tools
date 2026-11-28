@@ -1,4 +1,4 @@
-import { marketLeagueTracked } from "@poe-tools/market";
+import { marketLeagueTracked, TEMPLE_CHRONICLE } from "@poe-tools/market";
 import {
     BOSS_ENCOUNTERS,
     BOSS_RATES,
@@ -17,7 +17,7 @@ import { bossItemLabel, calculateBossRota } from "~/lib/boss-rota";
 import { marketCategory } from "~/lib/market-categories.server";
 import { marketExchangeItemId } from "~/lib/market-exchange.server";
 import type { BossItemMarket, BossOrder, BossRotaInput, BossRotaResult } from "~/schemas/boss-rota";
-import { marketExchangeLink, marketFiltersSchema } from "~/schemas/market";
+import { marketExchangeLink, marketFiltersSchema, marketLink } from "~/schemas/market";
 
 // These tradable entries share a catalog name with a quest item or a legacy fragment.
 const fragmentIds: Readonly<Record<string, string>> = {
@@ -28,10 +28,6 @@ const fragmentIds: Readonly<Record<string, string>> = {
     "Echo of Reverence": "AtlasMemory/CurrencyBenevolenceKey",
     "Echo of Loneliness": "AtlasMemory/CurrencyIgnoranceKey",
     "Echo of Trauma": "AtlasMemory/CurrencyFearKey",
-    "Polaric Invitation": "Primordial/CurrencyCleansingFireKey",
-    "Incandescent Invitation": "Primordial/CurrencyCleansingFireBossKey",
-    "Writhing Invitation": "Primordial/CurrencyTangleKey",
-    "Screaming Invitation": "Primordial/CurrencyTangleBossKey",
 };
 
 function priorBossLeagues(
@@ -142,7 +138,7 @@ export async function loadBossRota(db: TDatabase, input: BossRotaInput): Promise
     }
     const filters = marketFiltersSchema.parse({ league, currency: "chaos" });
     const markets = new Map<string, BossItemMarket>();
-    for (const [label, [name]] of items) {
+    for (const [label, [name, , kind]] of items) {
         const itemId = ids.get(label);
         if (itemId) {
             const category = marketCategory("pc", name);
@@ -152,9 +148,23 @@ export async function loadBossRota(db: TDatabase, input: BossRotaInput): Promise
                 href: marketExchangeLink({ ...filters, category }, itemId),
                 exact: true,
             });
+        } else if (kind === "temple-room") {
+            markets.set(label, {
+                artName: TEMPLE_CHRONICLE,
+                href: marketLink(
+                    { ...filters, category: "encounters" },
+                    {
+                        itemKey: TEMPLE_CHRONICLE,
+                        signatureKind: kind,
+                        signatureValue: name,
+                        identified: true,
+                        corrupted: false,
+                    },
+                ),
+                exact: true,
+            });
         } else if (!quotes.get(label)?.market) {
             let item = name.replace(/^(Unidentified |Veiled )/, "").replace(/ \([^)]+\)$/, "");
-            if (item === "Chronicle") item = "Chronicle of Atzoatl";
             if (item === "Devouring Diadem" || item === "Queen's Hunger") item = `The ${item}`;
             markets.set(label, {
                 artName: item,

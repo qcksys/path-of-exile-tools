@@ -147,6 +147,139 @@ describe("beast and temple rollup", () => {
         vi.unstubAllEnvs();
     });
 
+    it("prices each accessible room once and separates Apex access by area level", async () => {
+        const apex = "Apex of Atzoatl";
+        const room = "Hall of Lords (Tier 2)";
+        const items = [
+            chronicle([apex, room, room]),
+            chronicle([apex], [room], {
+                id: "uber",
+                note: "~price 9 chaos",
+                ilvl: 83,
+                properties: [{ name: "Area Level", values: [["84", 0]], displayMode: 0 }],
+            }),
+            chronicle([room], [apex], { id: "blocked", note: "~price 3 chaos" }),
+            chronicle([apex], [], { id: "unknown-level", ilvl: 84, properties: [] }),
+        ];
+        upstream.mockResolvedValueOnce({
+            next_change_id: "temples",
+            stashes: [
+                {
+                    id: "temples",
+                    public: true,
+                    accountName: "seller",
+                    league: "Standard",
+                    stash: "",
+                    stashType: "TradeStash",
+                    items,
+                },
+            ],
+        });
+        await ingestPs(db.conn, client, { pages: 1, league: "Standard" });
+        const [{ hour }] = await queryAll<{ hour: number }>(
+            db.conn,
+            "SELECT MAX(observed_hour)::DOUBLE AS hour FROM ps_listing_hour",
+        );
+        await rollupPs(db.conn, { hour, league: "Standard" });
+        const markets = deliveries.flatMap((delivery) => delivery.rows);
+        expect(markets.filter((row) => row.signatureKind === "temple")).toHaveLength(1);
+        expect(markets.find((row) => row.signatureKind === "temple")?.listingCount).toBe(4);
+        expect(
+            Object.fromEntries(
+                markets
+                    .filter((row) => row.signatureKind === "temple-room")
+                    .map((row) => [
+                        row.signatureValue,
+                        [row.listingCount, row.prices.chaos?.median],
+                    ]),
+            ),
+        ).toEqual({
+            [room]: [2, 2],
+            [apex]: [3, 1],
+            [`${apex} · Area level 83`]: [1, 1],
+            [`${apex} · Area level 84`]: [1, 9],
+        });
+    });
+
+    it("retains tradable eldritch invitations and splits unidentified Foulborn from shared art", async () => {
+        const base = beast({
+            properties: [],
+            baseType: "Polaric Invitation",
+            name: "Rare name",
+            rarity: "Rare",
+            frameType: 2,
+        });
+        const names = [
+            "Polaric Invitation",
+            "Incandescent Invitation",
+            "Screaming Invitation",
+            "Writhing Invitation",
+        ];
+        const invitations = names.map((baseType, i) => ({
+            ...base,
+            id: baseType,
+            baseType,
+            identified: i !== 0,
+        }));
+        expect(shouldCapture({ ...base, frameType: 7, rarity: undefined })).toBe(false);
+        expect(shouldCapture({ ...base, frameType: 7, rarity: "Normal" })).toBe(false);
+        expect(shouldCapture({ ...base, lockedToAccount: true })).toBe(false);
+        const bow = beast({
+            baseType: "Citadel Bow",
+            typeLine: "Citadel Bow",
+            properties: [],
+            rarity: "Unique",
+            frameType: 3,
+        });
+        const items = [
+            ...invitations,
+            { ...bow, id: "known", name: "Xoph's Inception" },
+            { ...bow, id: "ordinary", name: "", identified: false, note: "~price 1 chaos" },
+            {
+                ...bow,
+                id: "mutated",
+                name: "",
+                identified: false,
+                mutated: true,
+                note: "~price 7 chaos",
+            },
+        ];
+        upstream.mockResolvedValueOnce({
+            next_change_id: "entries",
+            stashes: [
+                {
+                    id: "entries",
+                    public: true,
+                    accountName: "seller",
+                    league: "Standard",
+                    stash: "",
+                    stashType: "TradeStash",
+                    items,
+                },
+            ],
+        });
+        await ingestPs(db.conn, client, { pages: 1, league: "Standard" });
+        const [{ hour }] = await queryAll<{ hour: number }>(
+            db.conn,
+            "SELECT MAX(observed_hour)::DOUBLE AS hour FROM ps_listing_hour",
+        );
+        await rollupPs(db.conn, { hour, league: "Standard" });
+        const rows = deliveries.flatMap((delivery) => delivery.rows);
+        for (const name of names)
+            expect(rows.find((row) => row.itemKey === name)?.listingCount).toBe(1);
+        expect(rows.find((row) => row.signatureKind === "foulborn")).toMatchObject({
+            identified: false,
+            name: "Foulborn Xoph's Inception",
+            listingCount: 1,
+            prices: { chaos: { median: 7 } },
+        });
+        expect(
+            rows.find(
+                (row) => !row.identified && row.itemKey.startsWith("unid:") && !row.signatureKind,
+            ),
+        ).toMatchObject({ listingCount: 1, prices: { chaos: { median: 1 } } });
+    });
+
     it("drops a rare beast's random name even after a spirit beast teaches the shared icon", async () => {
         upstream.mockResolvedValueOnce({
             next_change_id: "fixture-1",

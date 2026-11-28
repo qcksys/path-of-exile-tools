@@ -1,4 +1,4 @@
-import { gemVariantValues, marketObservationRange } from "@poe-tools/market";
+import { gemVariantValues, marketObservationRange, TEMPLE_CHRONICLE } from "@poe-tools/market";
 import { and, eq, gt, gte, inArray, like, lte, notInArray, or, sql } from "drizzle-orm";
 import type { BossItem } from "~/data/boss-encounters";
 import type { TDatabase } from "~/db/client";
@@ -34,6 +34,9 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
     const names = (kind: BossItem[2]) =>
         items.filter((item) => item[2] === kind).map(([name]) => name);
     const regular = names(undefined);
+    const foulborn = names("foulborn");
+    const temples = names("temple-room");
+    const invitations = names("invitation");
     const corrupted = names("corrupted");
     const mapEntries = names("map-entry");
     const gems = names("gem");
@@ -42,7 +45,10 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
     if (!items.some((item) => item[2] !== "unpriced")) return quotes;
     const { earliestHour, latestHour } = marketObservationRange();
     const label = sql<string>`case when ${market.signatureKind} = 'gem' then ${market.baseType}
-        when ${market.identified} then ${market.itemKey} else concat('Unidentified ', ${market.name}) end`;
+        when ${market.signatureKind} = 'temple-room' then ${market.signatureValue}
+        when ${market.identified} or ${market.itemKey} not like 'unid:%' then ${market.itemKey}
+        when ${market.signatureKind} = 'foulborn' then ${market.name}
+        else concat('Unidentified ', ${market.name}) end`;
     // The locked merchant quote pools link counts for the same item state and signature.
     const variant = sql`${market.itemKey}, ${market.identified}, ${market.corrupted}, ${market.signatureKind}, ${market.signatureValue}`;
     const ranked = db
@@ -68,6 +74,9 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
                 .as("variant_sales"),
             rank: sql<number>`row_number() over (partition by ${label} order by
                     case when ${market.listingCount} > 0 then 0 else 1 end,
+                    case when ${market.signatureKind} = 'foulborn' then
+                        case when ${market.priceChaos} > 0 then ${market.identified} else 2 end
+                        else 0 end,
                     ${market.hour} desc, case when ${market.priceChaos} > 0 then 0 else 1 end,
                     ${market.priceChaos}, ${market.itemKey}, ${market.corrupted},
                     ${market.links}, ${market.signatureKind}, ${market.signatureValue})`.as(
@@ -85,6 +94,26 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
                 or(gt(market.listingCount, 0), gt(market.likelySales, 0)),
                 or(
                     and(eq(market.identified, true), inArray(market.itemKey, mapEntries)),
+                    inArray(market.itemKey, invitations),
+                    and(
+                        eq(market.signatureKind, "foulborn"),
+                        eq(market.corrupted, false),
+                        or(
+                            and(eq(market.identified, true), inArray(market.itemKey, foulborn)),
+                            and(
+                                eq(market.identified, false),
+                                like(market.itemKey, "unid:%"),
+                                inArray(market.name, foulborn),
+                            ),
+                        ),
+                    ),
+                    and(
+                        eq(market.itemKey, TEMPLE_CHRONICLE),
+                        eq(market.signatureKind, "temple-room"),
+                        eq(market.identified, true),
+                        eq(market.corrupted, false),
+                        inArray(market.signatureValue, temples),
+                    ),
                     and(
                         eq(market.identified, true),
                         eq(market.corrupted, true),
@@ -132,6 +161,12 @@ export async function findBossStashQuotes(db: TDatabase, league: string, items: 
         const category = marketCategory("pc", row.baseType, row.signatureKind, row.name);
         quotes.set(row.label, {
             source: "stash",
+            foulbornState:
+                row.signatureKind === "foulborn"
+                    ? row.identified
+                        ? "identified"
+                        : "unidentified"
+                    : undefined,
             hour: row.hour,
             unitChaos: row.unitChaos,
             listings: row.listings,

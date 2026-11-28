@@ -105,6 +105,8 @@ function variantLabel(variant: VariantRow, linkSplit: boolean) {
 
 /** The variant table's group: a Forbidden jewel's class and ascendancy, else its state. */
 function variantGroup(variant: VariantRow) {
+    if (variant.signatureKind === "temple-room") return "Open room";
+    if (variant.signatureKind === "temple") return "Crafting room combination";
     // A crafting base's first band: its item level, or a Cluster Jewel's skill.
     if (variant.signatureKind === "base") return variant.signatureValue.split(" · ")[0]!;
     return (
@@ -712,6 +714,12 @@ export default function MarketItem({ loaderData }: Pick<Route.ComponentProps, "l
                             ({variants.length})
                         </span>
                     </h2>
+                    {variants.some((variant) => variant.signatureKind === "temple-room") && (
+                        <p className="text-sm text-muted-foreground">
+                            Each open room price is for the whole temple. A temple with several open
+                            rooms contributes to each matching row.
+                        </p>
+                    )}
                     {variants.every(
                         (variant) =>
                             variant.signatureKind === "base" &&

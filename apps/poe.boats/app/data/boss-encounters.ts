@@ -1,3 +1,5 @@
+import { apexRoomMarket } from "@poe-tools/market";
+
 // Entry quantities and baseline drop rates from Perandus Ledger's public encounter catalog.
 // https://xddbsns.com/js/boss-config.js (retrieved 2026-11-27)
 export const BOSS_RATES = { source: "https://xddbsns.com/boss-profit.html", capturedOn: "2026-11-27" };
@@ -5,7 +7,7 @@ export const BOSS_RATES = { source: "https://xddbsns.com/boss-profit.html", capt
 export type BossItem = readonly [
     name: string,
     amount: number,
-    market?: "corrupted" | "gem" | "map-entry" | "unidentified" | "unpriced",
+    market?: "corrupted" | "foulborn" | "gem" | "invitation" | "map-entry" | "temple-room" | "unidentified" | "unpriced",
 ];
 
 export interface BossEncounter {
@@ -428,7 +430,7 @@ export const BOSS_ENCOUNTERS = {
     "black-star": {
         name: "Black Star",
         entries: [
-            ["Polaric Invitation", 1],
+            ["Polaric Invitation", 1, "invitation"],
         ],
         quantityBonus: 50,
         extraDrops: [
@@ -445,7 +447,7 @@ export const BOSS_ENCOUNTERS = {
     "searing-exarch": {
         name: "Exarch",
         entries: [
-            ["Incandescent Invitation", 1],
+            ["Incandescent Invitation", 1, "invitation"],
         ],
         drops: [
             ["Dawnbreaker", 63],
@@ -465,7 +467,7 @@ export const BOSS_ENCOUNTERS = {
     "eater-of-worlds": {
         name: "Eater",
         entries: [
-            ["Screaming Invitation", 1],
+            ["Screaming Invitation", 1, "invitation"],
         ],
         drops: [
             ["Inextricable Fate", 55],
@@ -528,7 +530,7 @@ export const BOSS_ENCOUNTERS = {
     "infinite-hunger": {
         name: "Infinite Hunger",
         entries: [
-            ["Writhing Invitation", 1],
+            ["Writhing Invitation", 1, "invitation"],
         ],
         quantityBonus: 50,
         extraDrops: [
@@ -632,39 +634,39 @@ export const BOSS_ENCOUNTERS = {
             ["Hivebrain Gland", 1],
         ],
         guaranteedDrops: [
-            ["Foulborn Xoph's Inception", 11.11, "unpriced"],
-            ["Foulborn Xoph's Nurture", 2.22, "unpriced"],
-            ["Foulborn The Formless Flame", 4.17, "unpriced"],
-            ["Foulborn The Formless Inferno", 0.83, "unpriced"],
-            ["Foulborn Xoph's Heart", 1.39, "unpriced"],
-            ["Foulborn Xoph's Blood", 0.28, "unpriced"],
-            ["Foulborn The Red Dream", 1.39, "unpriced"],
-            ["Foulborn The Red Nightmare", 0.28, "unpriced"],
-            ["Foulborn Tulborn", 11.11, "unpriced"],
-            ["Foulborn Tulfall", 2.22, "unpriced"],
-            ["Foulborn The Snowblind Grace", 4.17, "unpriced"],
-            ["Foulborn The Perfect Form", 0.83, "unpriced"],
-            ["Foulborn The Halcyon", 1.39, "unpriced"],
-            ["Foulborn The Pandemonius", 0.28, "unpriced"],
-            ["Foulborn The Blue Dream", 1.39, "unpriced"],
-            ["Foulborn The Blue Nightmare", 0.28, "unpriced"],
-            ["Foulborn Hand of Thought and Motion", 11.11, "unpriced"],
-            ["Foulborn Hand of Wisdom and Action", 2.22, "unpriced"],
-            ["Foulborn Esh's Mirror", 4.17, "unpriced"],
-            ["Foulborn Esh's Visage", 0.83, "unpriced"],
-            ["Foulborn Voice of the Storm", 1.39, "unpriced"],
-            ["Foulborn Choir of the Storm", 0.28, "unpriced"],
-            ["Foulborn The Green Dream", 1.39, "unpriced"],
-            ["Foulborn The Green Nightmare", 0.28, "unpriced"],
-            ["Foulborn Uul-Netol's Kiss", 4.17, "unpriced"],
-            ["Foulborn Uul-Netol's Embrace", 0.83, "unpriced"],
-            ["Foulborn The Infinite Pursuit", 11.11, "unpriced"],
-            ["Foulborn The Red Trail", 2.22, "unpriced"],
-            ["Foulborn The Anticipation", 1.39, "unpriced"],
-            ["Foulborn The Surrender", 0.28, "unpriced"],
-            ["Foulborn Severed in Sleep", 11.11, "unpriced"],
-            ["Foulborn United in Dream", 2.22, "unpriced"],
-            ["Foulborn Presence of Chayula", 1.67, "unpriced"],
+            ["Foulborn Xoph's Inception", 11.11, "foulborn"],
+            ["Foulborn Xoph's Nurture", 2.22, "foulborn"],
+            ["Foulborn The Formless Flame", 4.17, "foulborn"],
+            ["Foulborn The Formless Inferno", 0.83, "foulborn"],
+            ["Foulborn Xoph's Heart", 1.39, "foulborn"],
+            ["Foulborn Xoph's Blood", 0.28, "foulborn"],
+            ["Foulborn The Red Dream", 1.39, "foulborn"],
+            ["Foulborn The Red Nightmare", 0.28, "foulborn"],
+            ["Foulborn Tulborn", 11.11, "foulborn"],
+            ["Foulborn Tulfall", 2.22, "foulborn"],
+            ["Foulborn The Snowblind Grace", 4.17, "foulborn"],
+            ["Foulborn The Perfect Form", 0.83, "foulborn"],
+            ["Foulborn The Halcyon", 1.39, "foulborn"],
+            ["Foulborn The Pandemonius", 0.28, "foulborn"],
+            ["Foulborn The Blue Dream", 1.39, "foulborn"],
+            ["Foulborn The Blue Nightmare", 0.28, "foulborn"],
+            ["Foulborn Hand of Thought and Motion", 11.11, "foulborn"],
+            ["Foulborn Hand of Wisdom and Action", 2.22, "foulborn"],
+            ["Foulborn Esh's Mirror", 4.17, "foulborn"],
+            ["Foulborn Esh's Visage", 0.83, "foulborn"],
+            ["Foulborn Voice of the Storm", 1.39, "foulborn"],
+            ["Foulborn Choir of the Storm", 0.28, "foulborn"],
+            ["Foulborn The Green Dream", 1.39, "foulborn"],
+            ["Foulborn The Green Nightmare", 0.28, "foulborn"],
+            ["Foulborn Uul-Netol's Kiss", 4.17, "foulborn"],
+            ["Foulborn Uul-Netol's Embrace", 0.83, "foulborn"],
+            ["Foulborn The Infinite Pursuit", 11.11, "foulborn"],
+            ["Foulborn The Red Trail", 2.22, "foulborn"],
+            ["Foulborn The Anticipation", 1.39, "foulborn"],
+            ["Foulborn The Surrender", 0.28, "foulborn"],
+            ["Foulborn Severed in Sleep", 11.11, "foulborn"],
+            ["Foulborn United in Dream", 2.22, "foulborn"],
+            ["Foulborn Presence of Chayula", 1.67, "foulborn"],
         ],
         drops: [
             ["The Will of Xoph", 17],
@@ -687,7 +689,7 @@ export const BOSS_ENCOUNTERS = {
     atziri: {
         name: "Atziri",
         entries: [
-            ["Chronicle (Apex)", 1, "unpriced"],
+            [apexRoomMarket(83), 1, "temple-room"],
         ],
         drops: [
             ["Atziri's Promise", 48],
@@ -715,7 +717,7 @@ export const BOSS_ENCOUNTERS = {
     "uber-atziri": {
         name: "Uber Atziri",
         entries: [
-            ["Chronicle (Cradle)", 1, "unpriced"],
+            [apexRoomMarket(84), 1, "temple-room"],
         ],
         drops: [
             ["The Vertex", 42],

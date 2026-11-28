@@ -13,4 +13,5 @@ export * from "./observation-time.ts";
 export * from "./prices.ts";
 export * from "./reference.ts";
 export * from "./stash-checkpoint.ts";
+export * from "./temple-rooms.ts";
 export * from "./yellow-beasts.ts";

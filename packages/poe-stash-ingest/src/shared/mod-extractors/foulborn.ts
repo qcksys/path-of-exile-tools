@@ -26,15 +26,17 @@ export const foulbornExtractor: ModExtractor = {
     kind: "foulborn",
     value: (signature) => {
         const mods = (signature.mods as string[]).join(" / ");
+        if (!mods) return "Foulborn";
         const value = signature.variant ? `${mods} (${signature.variant})` : mods;
         return value.length <= MAX_VALUE_LENGTH
             ? value
             : createHash("sha256").update(value).digest("hex");
     },
     matches(item: Item): boolean {
-        return isUniqueItem(item) && item.identified && item.mutated === true;
+        return isUniqueItem(item) && item.mutated === true;
     },
     extract(item: Item): ModSignature | null {
+        if (!item.identified) return { kind: "foulborn", mods: [] };
         const mods = mutatedModLines(item);
         if (!mods.length) return null;
         // Masking hides numbers that split a unique's markets, such as Foulborn Mageblood's flask count.

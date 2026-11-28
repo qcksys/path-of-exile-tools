@@ -36,6 +36,7 @@ export type BossRotaInput = z.infer<typeof bossRotaInputSchema>;
 
 const quoteSchema = z.object({
     source: z.enum(["exchange", "stash"]),
+    foulbornState: z.enum(["identified", "unidentified"]).optional(),
     unitChaos: z.number().positive(),
     hour: z.number().int(),
     listings: z.number().int().nonnegative().optional(),

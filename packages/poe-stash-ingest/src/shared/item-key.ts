@@ -2,6 +2,7 @@ import type { Item } from "@poe-tools/api-client";
 import { gemMarketKey } from "@poe-tools/market";
 import {
     HEIST_BLUEPRINT_KEY,
+    isEldritchInvitation,
     isGemItem,
     isHeistBlueprint,
     isMapItem,
@@ -63,7 +64,7 @@ export function itemLinks(item: Item): number {
  *   - Currency / non-unique identified → `${baseType}`
  */
 export function itemKey(item: Item, iconAsset?: string | null): string {
-    if (isMapItem(item)) return item.baseType;
+    if (isMapItem(item) || isEldritchInvitation(item)) return item.baseType;
     if (isHeistBlueprint(item)) return HEIST_BLUEPRINT_KEY;
     if (!item.identified) {
         return isMarketBaseItem(item) ? item.baseType : `unid:${iconAsset ?? item.baseType}`;

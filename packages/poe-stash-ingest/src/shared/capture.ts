@@ -24,11 +24,31 @@ export const ITEM_CATEGORIES: ReadonlyArray<{ name: string; matches: (item: Item
     { name: "divination-card", matches: (item) => item.identified && item.frameType === 6 },
     { name: "gem", matches: isGemItem },
     { name: "map", matches: isMapItem },
+    { name: "invitation", matches: isEldritchInvitation },
     { name: "beast", matches: isCapturedBeast },
     { name: "heist", matches: isHeistMarketItem },
     { name: "reliquary-key", matches: isReliquaryKey },
     { name: "base", matches: isMarketBaseItem },
 ];
+
+const ELDRITCH_INVITATIONS = new Set([
+    "Polaric Invitation",
+    "Incandescent Invitation",
+    "Screaming Invitation",
+    "Writhing Invitation",
+]);
+
+export function isEldritchInvitation(item: Item) {
+    return (
+        ELDRITCH_INVITATIONS.has(item.baseType) &&
+        item.frameType !== 7 &&
+        (item.rarity !== undefined
+            ? ["Normal", "Magic", "Rare"].includes(item.rarity)
+            : item.frameType !== undefined && [0, 1, 2].includes(item.frameType)) &&
+        !item.lockedToAccount &&
+        !item.lockedToCharacter
+    );
+}
 
 /**
  * Every Vault Key base is named `<name> Reliquary Key`. All but the Voidborn key are Normal items,

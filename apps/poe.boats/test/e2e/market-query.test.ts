@@ -2700,6 +2700,66 @@ it("prices boss drops from the latest eligible merchant hour and exact item stat
     );
 });
 
+it("prices boss entries by open Apex level or invitation and uses verified Foulborn asks", async () => {
+    const league = "BossMarkets";
+    const database = db as unknown as TDatabase;
+    const chronicle = "Chronicle of Atzoatl";
+    const regular = "Apex of Atzoatl · Area level 83";
+    const uber = "Apex of Atzoatl · Area level 84";
+    const bow = "Foulborn Xoph's Inception";
+    const wand = "Foulborn Tulfall";
+    const ask = (itemKey: string, median: number, overrides: Partial<TStashUniqueHourlyI>) =>
+        observation({
+            league,
+            itemKey,
+            prices: { chaos: { min: median, max: median, median, count: 1 } },
+            ...overrides,
+        });
+    await upsertStashUniqueHourly(database, [
+        ask(chronicle, 1, { signatureKind: "temple", signatureValue: "" }),
+        ask(chronicle, 2, { signatureKind: "temple-room", signatureValue: "Apex of Atzoatl" }),
+        ask(chronicle, 31, { signatureKind: "temple-room", signatureValue: regular }),
+        ask(chronicle, 145, { signatureKind: "temple-room", signatureValue: uber }),
+        ask("Polaric Invitation", 17, { name: null, identified: false, corrupted: true }),
+        ask("unid:bow", 1, { name: bow, identified: false }),
+        ask("unid:bow", 12, {
+            name: bow,
+            identified: false,
+            signatureKind: "foulborn",
+            signatureValue: "Foulborn",
+            hour: hour - 3600,
+        }),
+        ask(bow, 35, { name: bow, signatureKind: "foulborn", signatureValue: "Mod A" }),
+        ask(wand, 50, { name: wand, signatureKind: "foulborn", signatureValue: "Mod A" }),
+        ask(wand, 20, { name: wand, signatureKind: "foulborn", signatureValue: "Mod B" }),
+        ask(wand, 3, {
+            name: wand,
+            signatureKind: "foulborn",
+            signatureValue: "Mod B",
+            corrupted: true,
+        }),
+    ]);
+    const quotes = await findBossStashQuotes(database, league, [
+        [regular, 1, "temple-room"],
+        [uber, 1, "temple-room"],
+        ["Polaric Invitation", 1, "invitation"],
+        [bow, 11.11, "foulborn"],
+        [wand, 2.22, "foulborn"],
+    ]);
+    expect(quotes.get(regular)?.unitChaos).toBe(31);
+    expect(quotes.get(uber)?.unitChaos).toBe(145);
+    expect(quotes.get("Polaric Invitation")?.unitChaos).toBe(17);
+    expect(quotes.get(bow)).toMatchObject({ unitChaos: 12, foulbornState: "unidentified" });
+    expect(quotes.get(wand)).toMatchObject({ unitChaos: 20, foulbornState: "identified" });
+    for (const level of [regular, uber]) {
+        const link = new URL(quotes.get(level)!.market!.href, "https://example.invalid");
+        expect(Object.fromEntries(link.searchParams)).toMatchObject({
+            kind: "temple-room",
+            value: level,
+        });
+    }
+});
+
 it("values a solo Shaper rota from both captured markets in the same league", async () => {
     const league = "SoloShaper";
     const database = db as unknown as TDatabase;

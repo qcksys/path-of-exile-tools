@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import type { Item } from "@poe-tools/api-client";
 import type { MarketCohortManifest } from "@poe-tools/market";
-import { isCapturedBeast, isUniqueItem } from "#src/shared/capture.ts";
+import { isCapturedBeast, isEldritchInvitation, isUniqueItem } from "#src/shared/capture.ts";
 import { memoizeByItem } from "#src/shared/item-memo.ts";
 
 const CAPTURE_CACHE_SIZE = 500_000;
@@ -97,6 +97,7 @@ export function compileCraftingCapture(manifest: MarketCohortManifest, policy: C
     return (item: Item): boolean => {
         if (
             isUniqueItem(item) ||
+            isEldritchInvitation(item) ||
             isCapturedBeast(item) ||
             item.frameType === 9 ||
             item.rarity === "Currency" ||

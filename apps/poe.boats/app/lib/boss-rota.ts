@@ -24,6 +24,7 @@ export function calculateBossRota(
         const quote = located
             ? {
                   source: located.source,
+                  foulbornState: located.foulbornState,
                   unitChaos: located.unitChaos,
                   hour: located.hour,
                   units24h: located.units24h,
